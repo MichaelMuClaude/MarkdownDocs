@@ -287,7 +287,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
     let mut tabs: Vec<(String, bool)> = vec![("File".to_string(), false)];
     tabs.extend(user_tabs.iter().filter(|e| !e.hidden).map(|e| (e.name.clone(), e.custom)));
     if markdown_mode {
-        tabs.retain(|(name, custom)| *custom || wordcraft_engine::ribbon::MARKDOWN_TABS.contains(&name.as_str()));
+        tabs.retain(|(name, custom)| name == "File" || *custom || wordcraft_engine::ribbon::MARKDOWN_TABS.contains(&name.as_str()));
     }
     for ct in contextual_tabs(&app.session) {
         if ct == "Outlining" {
@@ -3100,15 +3100,28 @@ mod tests {
 
     /// #3353-ribbon: a tab only the regular ribbon has (Design) isn't on the strip once a Markdown
     /// file is open, so `show` resolves off it onto one of `MARKDOWN_TABS` instead of leaving the
-    /// ribbon on a tab it no longer draws anything for.
-    fn frame(ctx: &egui::Context, app: &mut WordApp) {
+    /// ribbon on a tab it no longer draws anything for. Returns every text string drawn this
+    /// frame, so a test can also check what is (or isn't) on the tab strip itself.
+    fn frame(ctx: &egui::Context, app: &mut WordApp) -> Vec<String> {
+        fn texts(shape: &egui::Shape, out: &mut Vec<String>) {
+            match shape {
+                egui::Shape::Text(t) => out.push(t.galley.text().to_string()),
+                egui::Shape::Vec(v) => v.iter().for_each(|s| texts(s, out)),
+                _ => {}
+            }
+        }
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(1440.0, 900.0));
         let input = egui::RawInput { screen_rect: Some(screen), ..Default::default() };
-        ctx.run_ui(input, |ui| {
+        let out = ctx.run_ui(input, |ui| {
             app.logic(ui.ctx());
             app.ui(ui);
-        })
-        .drop_without_applying_deltas();
+        });
+        let mut drawn = Vec::new();
+        for s in &out.shapes {
+            texts(&s.shape, &mut drawn);
+        }
+        out.drop_without_applying_deltas();
+        drawn
     }
 
     #[test]
@@ -3122,6 +3135,22 @@ mod tests {
         app.ui.tab = "Design".into();
         frame(&ctx, &mut app);
         assert!(wordcraft_engine::ribbon::MARKDOWN_TABS.contains(&app.ui.tab.as_str()), "{}", app.ui.tab);
+    }
+
+    /// #3353-ribbon: the File tab (Backstage: New, Open, Save, Export, Options, Close…) is not
+    /// one of `MARKDOWN_TABS` and isn't a contextual or custom tab either, so the markdown-mode
+    /// filter must special-case it explicitly or it silently drops off the strip — there would be
+    /// no ribbon way left to open, save or export a document at all.
+    #[test]
+    fn the_file_tab_survives_markdown_mode() {
+        let ctx = egui::Context::default();
+        let mut app = WordApp::new(Session::new(wordcraft_doc::Document::new()), crate::Services::default());
+        for _ in 0..2 {
+            frame(&ctx, &mut app);
+        }
+        app.session.path = Some("notes.md".into());
+        let drawn = frame(&ctx, &mut app);
+        assert!(drawn.iter().any(|t| t == "File"), "{drawn:?}");
     }
 
     /// Two clicks arm and disarm the painter; the double-click handling then leaves it sticky (#2785).
