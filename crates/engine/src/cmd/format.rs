@@ -55,6 +55,22 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("format.strikethrough", "Strikethrough", "Home › Font", |s, v| toggle(s, v, |r| r.strike, |c, on| c.strike = Some(on)))
             .key("Mod+Shift+X")
             .params(r#"{"value"?: bool}"#),
+        // A monospace font is how this product's format converters already recognise "code" text
+        // (`wordcraft_formats::model::is_mono`/`MONO_FONT`, relied on for Markdown's inline code
+        // spans and RTF/HTML's <code>): this just gives that convention its own toggle button,
+        // the way Word gives bold and italic theirs, instead of making every agent and user find
+        // it by hand in the font box.
+        CommandSpec::new("format.code", "Code", "Home › Font", |s, v| {
+            toggle(
+                s,
+                v,
+                |r| wordcraft_formats::model::is_mono(&r.font),
+                |c, on| {
+                    c.font = on.then(|| wordcraft_formats::model::MONO_FONT.to_string());
+                },
+            )
+        })
+        .params(r#"{"value"?: bool}"#),
         // Note: off clears the direct property only; a border inherited from a character style stays on.
         CommandSpec::new("format.border", "Character Border", "Home › Font", |s, v| {
             toggle(s, v, |r| r.border.is_some(), |c, on| c.border = on.then(|| Border::single(0.5)))
@@ -678,6 +694,7 @@ pub fn state(s: &Session) -> Value {
         "italic": all.iter().all(|r| r.italic),
         "underline": all.iter().all(|r| r.underline != Underline::None),
         "strike": all.iter().all(|r| r.strike),
+        "code": all.iter().all(|r| wordcraft_formats::model::is_mono(&r.font)),
         "border": all.iter().all(|r| r.border.is_some()),
         "subscript": all.iter().all(|r| r.vert_align == VertAlign::Subscript),
         "superscript": all.iter().all(|r| r.vert_align == VertAlign::Superscript),
@@ -699,7 +716,11 @@ pub fn state(s: &Session) -> Value {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+    use wordcraft_doc::Document;
+
     use super::convert;
+    use crate::Session;
 
     #[test]
     fn case_conversions() {
@@ -709,6 +730,28 @@ mod tests {
         assert_eq!(convert("straße", "upper", true), "STRASSE");
         assert_eq!(convert("hello world", "title", false), "Hello World");
         assert_eq!(convert("ΣΟΦΟΣ ΟΔΟΣ", "lower", true), "σοφος οδος");
+    }
+
+    /// `format.code` is a dedicated toggle for the monospace-font convention the format
+    /// converters already use to recognise "this is code" (Markdown's inline code spans,
+    /// RTF/HTML's `<code>`): it turns that convention on and off without the user or agent
+    /// having to find a specific font name in the font box.
+    #[test]
+    fn code_toggle_sets_and_clears_a_monospace_font() {
+        let mut s = Session::new(Document::from_text("let x = 1;"));
+        s.run("select.all", &json!({})).unwrap();
+        let state = |s: &mut Session| s.run("format.state", &json!({})).unwrap()["font"].as_str().unwrap_or_default().to_string();
+        let default_font = state(&mut s);
+        assert_ne!(default_font, "Courier New", "not already code before toggling");
+        s.run("format.code", &json!({})).unwrap();
+        assert_eq!(state(&mut s), "Courier New");
+        s.run("format.code", &json!({})).unwrap();
+        assert_eq!(state(&mut s), default_font, "toggling again clears the direct font, falling back to the default");
+        // Any monospace-looking font already counts as "on" (matching `is_mono`, used on export):
+        // toggling clears it instead of replacing it with Courier New.
+        s.run("format.font", &json!({"name": "Consolas"})).unwrap();
+        s.run("format.code", &json!({})).unwrap();
+        assert_eq!(state(&mut s), default_font, "an existing monospace font is recognised as already on");
     }
 }
 
