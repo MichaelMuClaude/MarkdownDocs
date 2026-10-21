@@ -89,6 +89,7 @@ work**: never ship a feature through a panic path, and fix a crash before buildi
   The UI is thin and reads `Session` state; colours come from `theme::Tokens`. This also means a
   fully headless build (CLI + MCP only, no GUI) is architecturally straightforward if that's ever
   worth doing.
+- **Time goes through `chrono`** (workspace dependency). Never hand-roll UTC/calendar conversion (days-to-date algorithms, leap-year math). A crate owns only its output format string. The one exception is range extension: past the years chrono can represent, shift the date by whole 400-year Gregorian cycles (146,097 days, after which the calendar repeats), let chrono compute the month and day, and add the cycles back to the year (splitting seconds into hours, minutes and seconds is plain arithmetic).
 - **Rust only** (no handwritten JS/TS). **Never break wasm** (`cargo xtask wasm`).
 
 ## Quality gates
