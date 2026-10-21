@@ -2514,6 +2514,14 @@ pub fn keeps_everything(name: &str) -> bool {
     matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json" | "xml" | "md")
 }
 
+/// Whether `name`'s extension is Markdown (`.md`/`.markdown`): the ribbon switches to its
+/// Markdown-mode layout for these (`ribbon::MARKDOWN_TABS`, `ribbon::home_markdown`,
+/// `ribbon::insert_markdown`), hiding the commands and tabs for things Markdown can't hold.
+pub fn is_markdown_name(name: &str) -> bool {
+    let ext = std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    matches!(ext.as_str(), "md" | "markdown")
+}
+
 /// The dialog a user-run command opens when it lacks the input it needs (scripts and agents get
 /// the command's own error or default instead): Select Recipients and Edit Recipient List without
 /// data, Insert Merge Field without a field, Find Recipient without text, the If and Skip
@@ -2726,6 +2734,16 @@ mod tests {
 
     fn mod_key(key: egui::Key) -> egui::Event {
         egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND }
+    }
+
+    #[test]
+    fn is_markdown_name_matches_md_and_markdown_only() {
+        for name in ["notes.md", "notes.MD", "notes.markdown", "a/b/notes.md"] {
+            assert!(is_markdown_name(name), "{name}");
+        }
+        for name in ["notes.docx", "notes.txt", "notes", "notes.mdx"] {
+            assert!(!is_markdown_name(name), "{name}");
+        }
     }
 
     /// Issue #14: Mod+- (optional hyphen) also zoomed the whole window out, so it read as "zoom out".

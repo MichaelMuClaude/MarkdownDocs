@@ -274,12 +274,21 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
     {
         app.ui.tab = prev;
     }
+    // Markdown mode (#3353-ribbon): editing a .md/.markdown file shows a Markdown-oriented Home
+    // and Insert, trims Review and View to what survives a Markdown save, and hides the built-in
+    // tabs with nothing Markdown can hold at all (`ribbon::MARKDOWN_TABS`). A custom tab is always
+    // kept, since it's the user's own choice; contextual tabs (Table Design, Picture Format…)
+    // aren't filtered either, since they come and go with the selection regardless of mode.
+    let markdown_mode = app.session.path.as_deref().is_some_and(|p| crate::is_markdown_name(&p.to_string_lossy()));
     // The tabs shown: File, the user's tabs in their order (Customize Ribbon, #379), then the
     // contextual ones (the Outlining tab right after File). A contextual tab (Table, Picture
     // Format) may be stored while the selection moved away, and a tab may have been hidden.
     let user_tabs = app.session.ribbon.tabs().into_owned();
     let mut tabs: Vec<(String, bool)> = vec![("File".to_string(), false)];
     tabs.extend(user_tabs.iter().filter(|e| !e.hidden).map(|e| (e.name.clone(), e.custom)));
+    if markdown_mode {
+        tabs.retain(|(name, custom)| *custom || wordcraft_engine::ribbon::MARKDOWN_TABS.contains(&name.as_str()));
+    }
     for ct in contextual_tabs(&app.session) {
         if ct == "Outlining" {
             tabs.insert(1.min(tabs.len()), (ct.to_string(), false));
@@ -501,15 +510,17 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                         _ => {}
                     }
                     match app.ui.tab.as_str() {
+                        "Home" if markdown_mode => home_markdown(app, ui),
                         "Home" => home(app, ui),
+                        "Insert" if markdown_mode => insert_markdown(app, ui),
                         "Insert" => insert(app, ui),
                         "Draw" => draw(app, ui),
                         "Design" => design(app, ui),
                         "Layout" => layout(app, ui),
                         "References" => references(app, ui),
                         "Mailings" => mailings(app, ui),
-                        "Review" => review(app, ui),
-                        "View" => view(app, ui),
+                        "Review" => review(app, ui, markdown_mode),
+                        "View" => view(app, ui, markdown_mode),
                         "Developer" => developer(app, ui),
                         "Zotero" => zotero(app, ui),
                         "Help" => help(app, ui),
@@ -521,6 +532,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                         "SmartArt Design" => smart_art_design(app, ui),
                         "Outlining" => outlining(app, ui),
                         "Chart Design" => chart_design(app, ui),
+                        _ if markdown_mode => home_markdown(app, ui),
                         _ => home(app, ui),
                     }
                     if let Some(e) = entry {
@@ -944,9 +956,9 @@ fn painter_double_click(app: &mut WordApp) {
     let _ = app.run("edit.formatPainter", json!({"sticky": true}));
 }
 
-fn home(app: &mut WordApp, ui: &mut Ui) {
-    let st = app.session.run("format.state", &json!({})).unwrap_or_default();
-    let flag = |k: &str| st.get(k).and_then(Value::as_bool).unwrap_or(false);
+/// Clipboard group: identical on the regular and Markdown-mode Home tabs (cut/copy/paste are
+/// generic, not tied to any one document format).
+fn clipboard_group(ui: &mut Ui, app: &mut WordApp) {
     group(ui, "Clipboard", Some("edit.clipboardPane"), app, |ui, app| {
         menu_button(ui, app, "paste", Some("Paste"), "Paste (⌘V)", true, "edit.paste", |ui, app| {
             mi(ui, app, "Paste", "edit.paste", json!({}));
@@ -960,6 +972,12 @@ fn home(app: &mut WordApp, ui: &mut Ui) {
             format_painter_button(ui, app);
         });
     });
+}
+
+fn home(app: &mut WordApp, ui: &mut Ui) {
+    let st = app.session.run("format.state", &json!({})).unwrap_or_default();
+    let flag = |k: &str| st.get(k).and_then(Value::as_bool).unwrap_or(false);
+    clipboard_group(ui, app);
     group(ui, "Font", Some("format.fontDialog"), app, |ui, app| {
         stack(ui, |ui| {
             crate::widgets::row(ui, |ui| {
@@ -1212,6 +1230,146 @@ fn home(app: &mut WordApp, ui: &mut Ui) {
     });
     group(ui, "Editor", None, app, |ui, app| {
         big(ui, app, "editor", "Editor", "review.spelling", json!({}), false);
+    });
+}
+
+/// Home tab for a Markdown document (#3353-ribbon): only the formatting Markdown actually has
+/// syntax for. Dropped from the regular Home: the Font group's family/size/colour/highlight/
+/// underline/sub/superscript/effects controls (CommonMark plus GFM tables has no way to keep any
+/// of them - `crates/formats/src/markdown.rs`'s own module doc says exactly what it writes:
+/// bold, italic, strikethrough, code spans, links, images), the full Styles gallery (replaced by
+/// quick Heading 1-6 buttons, since those are the only styles with a direct Markdown spelling:
+/// `#`..`######`), and paragraph alignment/shading/borders/line spacing (Markdown has no concept
+/// of any of them). Bullets, numbering, Blockquote (the Quote style, Markdown's `>`), indenting
+/// and Show/Hide ¶ survive, since nested lists and block quotes round-trip fine.
+fn home_markdown(app: &mut WordApp, ui: &mut Ui) {
+    let st = app.session.run("format.state", &json!({})).unwrap_or_default();
+    let flag = |k: &str| st.get(k).and_then(Value::as_bool).unwrap_or(false);
+    let style = st.get("style").and_then(Value::as_str).unwrap_or("Normal").to_string();
+    clipboard_group(ui, app);
+    group(ui, "Font", Some("format.fontDialog"), app, |ui, app| {
+        crate::widgets::row(ui, |ui| {
+            small(ui, app, "bold", None, "Bold", "format.bold", json!({}), flag("bold"));
+            small(ui, app, "italic", None, "Italic", "format.italic", json!({}), flag("italic"));
+            small(ui, app, "strike", None, "Strikethrough", "format.strikethrough", json!({}), flag("strike"));
+            small(ui, app, "code", None, "Code", "format.code", json!({}), flag("code"));
+            ui.add_space(4.0);
+            small(ui, app, "clear", None, "Clear All Formatting", "format.clear", json!({}), false);
+        });
+    });
+    group(ui, "Headings", Some("styles.pane"), app, |ui, app| {
+        crate::widgets::row(ui, |ui| {
+            small(ui, app, "normalStyle", Some("Normal"), "Normal", "para.style", json!({"style": "Normal"}), style == "Normal");
+            for n in 1..=6u8 {
+                let id = format!("Heading{n}");
+                small(
+                    ui,
+                    app,
+                    &format!("heading{n}"),
+                    Some(&format!("Heading {n}")),
+                    &format!("Heading {n}"),
+                    "para.style",
+                    json!({"style": id}),
+                    style.as_str() == id,
+                );
+            }
+        });
+    });
+    group(ui, "Paragraph", Some("para.dialog"), app, |ui, app| {
+        let rp = app.session.doc.para_at(&app.session.sel.focus).map(|p| app.session.doc.styles.resolve_para(&p.props));
+        let lists = wordcraft_engine::cmd::para::list_buttons(&app.session.doc, rp.as_ref().and_then(|r| r.numbering));
+        stack(ui, |ui| {
+            crate::widgets::row(ui, |ui| {
+                small(ui, app, "bullets", Some("Bullets"), "Bullets", "para.bullets", json!({}), lists.bullets);
+                small(ui, app, "numbering", Some("Numbering"), "Numbering", "para.numbering", json!({}), lists.numbering);
+                ui.add_space(4.0);
+                small(ui, app, "outdent", None, "Decrease Indent", "para.outdent", json!({}), false);
+                small(ui, app, "indent", None, "Increase Indent", "para.indent", json!({}), false);
+            });
+            ui.add_space(3.0);
+            crate::widgets::row(ui, |ui| {
+                small(ui, app, "quote", Some("Quote"), "Quote", "para.style", json!({"style": "Quote"}), style == "Quote");
+                small(ui, app, "horizontalLine", Some("Horizontal Line"), "Horizontal Line", "insert.horizontalLine", json!({}), false);
+                ui.add_space(4.0);
+                let marks = app.session.view.marks;
+                small(ui, app, "pilcrow", None, "Show/Hide ¶", "view.marks", json!({}), marks);
+            });
+        });
+    });
+    group(ui, "Editing", None, app, |ui, app| {
+        stack(ui, |ui| {
+            menu_button(ui, app, "find", Some("Find"), "Find", false, "edit.find", |ui, app| {
+                mi(ui, app, "Find", "edit.find", json!({}));
+                mi(ui, app, "Advanced Find…", "edit.advancedFind", json!({}));
+                mi(ui, app, "Go To…", "ui.dialog", json!({"name": "goto"}));
+            });
+            small(ui, app, "replace", Some("Replace"), "Replace", "ui.dialog", json!({"name": "replace"}), false);
+            menu_button(ui, app, "select", Some("Select"), "Select", false, "select.all", |ui, app| {
+                mi(ui, app, "Select All", "select.all", json!({}));
+                mi(ui, app, "Select Paragraph", "select.paragraph", json!({}));
+                mi(ui, app, "Select Sentence", "select.sentence", json!({}));
+            });
+        });
+    });
+}
+
+/// Insert tab for a Markdown document (#3353-ribbon): only what a Markdown save keeps. Dropped
+/// from the regular Insert: Pages (no page concept), Shapes/Icons/SmartArt/Chart (no vector or
+/// diagram syntax), Bookmark/Cross-reference (no anchors-with-references syntax beyond a plain
+/// `<a id>`, which isn't exposed as its own command yet), Comments, Header & Footer (no page
+/// furniture), the Text group's Text Box/Quick Parts/WordArt/Drop Cap/Signature/Date & Time/
+/// Object (none of these survive), and the equation button in Symbols (an equation degrades to
+/// its plain linear text on export, which isn't a good Markdown experience to steer toward).
+/// Tables, Pictures, Links and the Symbol picker round-trip fine and stay.
+fn insert_markdown(app: &mut WordApp, ui: &mut Ui) {
+    group(ui, "Tables", None, app, |ui, app| {
+        menu_button(ui, app, "table", Some("Table"), "Add a Table", true, "insert.table", |ui, app| {
+            crate::dialogs::table_grid_picker(ui, app);
+            ui.separator();
+            mi(ui, app, "Insert Table…", "ui.dialog", json!({"name": "insertTable"}));
+            mi(ui, app, "Convert Text to Table…", "table.fromText", json!({}));
+        });
+    });
+    group(ui, "Illustrations", None, app, |ui, app| {
+        big(ui, app, "picture", "Pictures", "insert.picture", json!({}), false);
+    });
+    group(ui, "Links", None, app, |ui, app| {
+        small(ui, app, "link", Some("Link"), "Link", "ui.dialog", json!({"name": "link"}), false);
+    });
+    group(ui, "Paragraph", None, app, |ui, app| {
+        small(ui, app, "horizontalLine", Some("Horizontal Line"), "Horizontal Line", "insert.horizontalLine", json!({}), false);
+    });
+    group(ui, "Symbols", None, app, |ui, app| {
+        menu_button(ui, app, "symbol", Some("Symbol"), "Symbol", true, "insert.symbol", |ui, app| {
+            let mut items: Vec<(String, String)> = app.ui.recent_symbols.iter().map(|r| (r.ch.clone(), r.font.clone())).collect();
+            for c in [
+                "©", "®", "™", "§", "¶", "€", "£", "¥", "°", "±", "≠", "≤", "≥", "÷", "×", "∞", "µ", "α", "β", "π", "Ω", "∑", "√", "→", "←", "✓",
+                "★", "♥", "—", "…",
+            ] {
+                if !items.iter().any(|(ch, f)| ch == c && f.is_empty()) {
+                    items.push((c.to_string(), String::new()));
+                }
+            }
+            items.truncate(30);
+            egui::Grid::new("syms").show(ui, |ui| {
+                for (i, (c, font)) in items.iter().enumerate() {
+                    let b = ui.button(egui::RichText::new(c).size(16.0));
+                    let b = if font.is_empty() { b } else { b.on_hover_text(font) };
+                    if b.clicked() {
+                        let params = if font.is_empty() { json!({"char": c}) } else { json!({"char": c, "font": font}) };
+                        if app.run("insert.symbol", params).is_ok() {
+                            crate::dialogs_insert::remember_symbol(app, c, font);
+                        }
+                        ui.close();
+                    }
+                    if i % 6 == 5 {
+                        ui.end_row();
+                    }
+                }
+            });
+            ui.separator();
+            mi(ui, app, "More Symbols…", "ui.dialog", json!({"name": "symbol"}));
+        });
     });
 }
 
@@ -1976,7 +2134,11 @@ fn zotero(app: &mut WordApp, ui: &mut Ui) {
     });
 }
 
-fn review(app: &mut WordApp, ui: &mut Ui) {
+/// Review tab. `markdown`: a Markdown document hides Comments, Tracking, Changes, Compare,
+/// Protect and Ink - a Markdown save has no syntax for comments or revisions, so leaving these on
+/// would just let the user build up state that silently disappears the moment the file is saved.
+/// Proofing, Speech, Accessibility and Language are generic editing help and stay either way.
+fn review(app: &mut WordApp, ui: &mut Ui, markdown: bool) {
     group(ui, "Proofing", None, app, |ui, app| {
         big(ui, app, "spelling", "Spelling &\nGrammar", "review.spelling", json!({}), false);
         stack(ui, |ui| {
@@ -1994,6 +2156,9 @@ fn review(app: &mut WordApp, ui: &mut Ui) {
         big(ui, app, "translate", "Translate", "review.translate", json!({}), false);
         menu_button(ui, app, "language", Some("Language"), "Language", true, "", language_menu);
     });
+    if markdown {
+        return;
+    }
     group(ui, "Comments", None, app, |ui, app| {
         big(ui, app, "newComment", "New\nComment", "review.newComment", json!({}), false);
         stack(ui, |ui| {
@@ -2090,7 +2255,10 @@ fn developer(app: &mut WordApp, ui: &mut Ui) {
     });
 }
 
-fn view(app: &mut WordApp, ui: &mut Ui) {
+/// View tab. `markdown`: a Markdown document hides Macros and Templates - macros aren't
+/// representable in a Markdown save and templates are a `.dotx`-shaped idea - everything else
+/// here is generic view/window state, kept either way.
+fn view(app: &mut WordApp, ui: &mut Ui, markdown: bool) {
     let v = app.session.view.clone();
     group(ui, "Views", None, app, |ui, app| {
         big(ui, app, "readMode", "Read\nMode", "view.readMode", json!({}), false);
@@ -2163,6 +2331,9 @@ fn view(app: &mut WordApp, ui: &mut Ui) {
         big(ui, app, "split", "Split", "view.split", json!({}), false);
         big(ui, app, "fullScreen", "Full\nScreen", "view.fullScreen", json!({}), v.full_screen);
     });
+    if markdown {
+        return;
+    }
     group(ui, "Macros", None, app, |ui, app| {
         big(ui, app, "macros", "Macros", "tools.macros", json!({}), false);
     });
@@ -2926,6 +3097,32 @@ fn table_layout(app: &mut WordApp, ui: &mut Ui) {
 mod tests {
     use super::*;
     use wordcraft_engine::Session;
+
+    /// #3353-ribbon: a tab only the regular ribbon has (Design) isn't on the strip once a Markdown
+    /// file is open, so `show` resolves off it onto one of `MARKDOWN_TABS` instead of leaving the
+    /// ribbon on a tab it no longer draws anything for.
+    fn frame(ctx: &egui::Context, app: &mut WordApp) {
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, vec2(1440.0, 900.0));
+        let input = egui::RawInput { screen_rect: Some(screen), ..Default::default() };
+        ctx.run_ui(input, |ui| {
+            app.logic(ui.ctx());
+            app.ui(ui);
+        })
+        .drop_without_applying_deltas();
+    }
+
+    #[test]
+    fn opening_a_markdown_file_resolves_off_a_tab_markdown_mode_does_not_have() {
+        let ctx = egui::Context::default();
+        let mut app = WordApp::new(Session::new(wordcraft_doc::Document::new()), crate::Services::default());
+        for _ in 0..2 {
+            frame(&ctx, &mut app); // fonts install over the first frames; the ribbon isn't drawn yet
+        }
+        app.session.path = Some("notes.md".into());
+        app.ui.tab = "Design".into();
+        frame(&ctx, &mut app);
+        assert!(wordcraft_engine::ribbon::MARKDOWN_TABS.contains(&app.ui.tab.as_str()), "{}", app.ui.tab);
+    }
 
     /// Two clicks arm and disarm the painter; the double-click handling then leaves it sticky (#2785).
     #[test]

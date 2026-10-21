@@ -20,6 +20,15 @@ pub const TABS: [&str; 13] =
 /// Tabs that come up with the selection; custom tabs can't take their names.
 pub const CONTEXTUAL_TABS: [&str; 7] =
     ["Table Design", "Table Layout", "Picture Format", "Shape Format", "Equation", "Chart Design", "SmartArt Design"];
+/// The built-in tabs worth showing while editing a Markdown document (`Home`, `Insert`, `Review`,
+/// `View`, `Help`; `File` is always shown and isn't part of this list either). The rest - `Draw`,
+/// `Design`, `Layout`, `References`, `Mailings`, `Developer`, `Zotero` - set up things Markdown's
+/// CommonMark-plus-GFM-tables syntax has no way to hold: page layout, ink strokes, footnotes and
+/// citations, mail merge fields, macros, a citation manager. A custom tab (the user's own) is
+/// always shown regardless; contextual tabs (Table Design, Picture Format…) come and go with the
+/// selection the same as always, since Markdown mode only changes which *entry points* for
+/// unsupported content are offered, not whether content already in the document can be edited.
+pub const MARKDOWN_TABS: [&str; 5] = ["Home", "Insert", "Review", "View", "Help"];
 /// The Quick Access Toolbar's commands until the user changes them.
 pub const DEFAULT_QAT: [&str; 3] = ["file.save", "edit.undo", "edit.redo"];
 
@@ -437,6 +446,18 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    /// `MARKDOWN_TABS` names real built-in tabs, and leaves out exactly the ones whose content
+    /// Markdown has no syntax for.
+    #[test]
+    fn markdown_tabs_are_a_subset_that_excludes_unsupported_ones() {
+        for tab in MARKDOWN_TABS {
+            assert!(TABS.contains(&tab), "{tab} isn't a real tab");
+        }
+        for excluded in ["Draw", "Design", "Layout", "References", "Mailings", "Developer", "Zotero"] {
+            assert!(!MARKDOWN_TABS.contains(&excluded), "{excluded} has nothing Markdown can keep");
+        }
+    }
 
     /// #379: custom tabs and groups, hidden and moved tabs, and the Quick Access Toolbar, changed
     /// through the command (as agents do) without opening the dialog.

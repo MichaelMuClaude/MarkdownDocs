@@ -147,6 +147,9 @@ impl Exempt {
         for m in crate::credits::MODELS {
             names.extend([m.company, m.model, m.version].map(str::to_string));
         }
+        // The document's own file name (or its title/an Untitled placeholder), drawn in the title
+        // bar and Backstage: the author's or the file system's choice, not interface wording.
+        names.insert(app.title_stem());
         Exempt { body: app.session.doc.plain_text(wordcraft_doc::StoryRef::Body), names }
     }
 
@@ -200,6 +203,15 @@ fn untranslated_interface_text() {
         let drawn = frame(&ctx, &mut app);
         record(&app, &format!("tab {tab}"), drawn);
     }
+    // Markdown mode (#3353-ribbon) swaps in its own Home and Insert, and trims Review and View:
+    // none of that is reached by the loop above, since it never opens a Markdown-named document.
+    app.session.path = Some("notes.md".into());
+    for tab in wordcraft_engine::ribbon::MARKDOWN_TABS {
+        let _ = app.run("ui.tab", json!({"tab": tab}));
+        let drawn = frame(&ctx, &mut app);
+        record(&app, &format!("Markdown mode, tab {tab}"), drawn);
+    }
+    app.session.path = None;
     let _ = app.run("ui.tab", json!({"tab": "Home"}));
     for page in ["home", "new", "open", "info", "export", "options"] {
         let _ = app.run("ui.backstage", json!({"value": true, "page": page}));

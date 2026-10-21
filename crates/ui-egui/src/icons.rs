@@ -79,6 +79,13 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32, accent: Color32) {
     {
         return;
     }
+    // Markdown mode's heading-level buttons ("heading1".."heading6"): one glyph per level.
+    if let Some(n) = name.strip_prefix("heading")
+        && !n.is_empty()
+    {
+        pen.text(10.0, 10.5, 10.0, &format!("H{n}"), c, true);
+        return;
+    }
     let a = accent;
     let red = Color32::from_rgb(0xD1, 0x3B, 0x3B);
     let yellow = Color32::from_rgb(0xF2, 0xC8, 0x11);
@@ -121,6 +128,15 @@ pub fn paint(p: &Painter, r: Rect, name: &str, c: Color32, accent: Color32) {
             pen.text(10.0, 10.0, 12.0, "ab", c, false);
             pen.line_c(&[(3.0, 10.5), (17.0, 10.5)], c);
         }
+        "code" => pen.text(10.0, 10.5, 10.5, "</>", c, false),
+        // Markdown mode's "Normal" (body text) button: a plain paragraph of full-width lines, as
+        // opposed to "pilcrow"'s single ¶ mark (Show/Hide ¶ — a different thing to toggle).
+        "normalStyle" => pen.lines(4.0, 16.0, &[6.0, 10.0, 14.0]),
+        "quote" => {
+            pen.line(&[(5.0, 3.5), (5.0, 17.0)]);
+            pen.lines(8.0, 17.0, &[6.5, 10.5, 14.5]);
+        }
+        "horizontalLine" => pen.line(&[(3.0, 10.0), (17.0, 10.0)]),
         "charborder" => {
             pen.rect(3.0, 3.0, 17.0, 17.0, a);
             pen.text(10.0, 6.0, 9.0, "A", c, false);
