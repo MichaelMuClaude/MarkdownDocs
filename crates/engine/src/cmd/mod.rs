@@ -314,6 +314,17 @@ fn insert_text(s: &mut Session, text: &str, enter: bool) -> Result<(), CmdError>
         first = false;
         let part = part.replace('\u{000B}', "\n");
         if !part.is_empty() {
+            // Review › Language › Detect language automatically (#3353): typing or pasting text
+            // in a script `detect_language` recognises (Cyrillic, Greek, Arabic, Hebrew, Thai,
+            // Hangul, kana, Han) assigns that language to it without a manual Review › Language
+            // trip, the same way the Read Aloud voice is already picked (`speech_language`); an
+            // explicit tag that already names a language in the same script family (Bulgarian and
+            // Russian are both Cyrillic, say) is left alone rather than flattened to one script's
+            // default language. Latin-script text keeps whatever language it already had: the
+            // script alone can't tell English from French from Polish.
+            if s.prefs.detect_language {
+                props.lang = crate::speech::speech_language(&part, props.lang.as_deref(), props.lang_bidi.as_deref());
+            }
             let starts_para = direction_unset(s, &at);
             at = s.doc.insert_text(&at, &part, &props)?;
             // Typing Arabic, Hebrew… as the first letters of a paragraph whose direction nothing

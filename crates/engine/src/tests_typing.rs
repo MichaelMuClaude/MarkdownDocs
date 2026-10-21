@@ -1333,6 +1333,61 @@ fn typing_rtl_letters_into_an_empty_paragraph_makes_it_rtl() {
     assert!(x < 300.0, "left-to-right paragraph: caret at {x}");
 }
 
+/// #3353: "Detect language automatically" (on by default) assigns a run's proofing language from
+/// its own script as it's typed, the same way Read Aloud already picks a voice — so a document
+/// doesn't need a trip to Review › Language every time typing switches script.
+#[test]
+fn typed_text_in_a_recognised_script_is_tagged_with_its_language() {
+    let lang = |s: &Session, i: usize, at: usize| s.doc.para_at(&Pos::body(i, 0)).and_then(|p| p.props_of_char(at).lang.clone());
+    // Typing Russian after English tags only the Russian run; the English text before it, typed
+    // with no language detected yet, is untouched (falls through to the document's default).
+    let s = typed("Hello Привет");
+    assert_eq!(lang(&s, 0, 0), None, "Latin text: the script alone can't name a language");
+    assert_eq!(lang(&s, 0, "Hello ".len()), Some("ru".to_string()));
+    // A word that opens with a telltale Ukrainian letter is tagged Ukrainian from its first
+    // character on, not the generic Russian guess plain Cyrillic gets (typing is char by char,
+    // like a keyboard, so the tag only has that letter's evidence once it's actually been typed).
+    let s = typed("їжа");
+    assert_eq!(lang(&s, 0, 0), Some("uk".to_string()));
+    assert_eq!(lang(&s, 0, "ї".len() + "ж".len()), Some("uk".to_string()), "later plain-Cyrillic letters keep the run's language");
+    // Arabic script is tagged Arabic.
+    let s = typed("مرحبا");
+    assert_eq!(lang(&s, 0, 0), Some("ar".to_string()));
+}
+
+/// An explicit language already covering the script being typed is left alone, even when
+/// `detect_language`'s own default for that script is a different (but related) language: typing
+/// more plain Cyrillic into a run manually set to Bulgarian doesn't flatten it to Russian just
+/// because Russian is the generic Cyrillic guess.
+#[test]
+fn detected_language_does_not_override_an_explicit_one_in_the_same_script() {
+    let mut s = typed("Текст");
+    run(&mut s, "select.all", json!({}));
+    run(&mut s, "review.language", json!({"lang": "bg-BG"}));
+    run(&mut s, "caret.end", json!({}));
+    typ(&mut s, " текст");
+    let lang = |s: &Session| s.doc.para_at(&Pos::body(0, 0)).and_then(|p| p.props_of_char(p.len() - 1).lang.clone());
+    assert_eq!(lang(&s).as_deref(), Some("bg-BG"), "Bulgarian is Cyrillic too; plain Cyrillic typing keeps it");
+    // A script switch away from Cyrillic altogether does override it: the explicit tag only
+    // survives typing in a script it already covers.
+    typ(&mut s, " مرحبا");
+    assert_eq!(lang(&s).as_deref(), Some("ar"), "Arabic isn't in Bulgarian's script family, so it does switch");
+}
+
+/// Turning "Detect language automatically" off (Review › Language) stops typed text from being
+/// tagged by its script at all.
+#[test]
+fn detect_language_off_leaves_typed_text_untagged() {
+    // Confirm the same typing is tagged when the preference is on (the default), so turning it
+    // off is shown changing something, not just being vacuously untagged either way.
+    assert_eq!(typed("Привет").doc.para_at(&Pos::body(0, 0)).and_then(|p| p.props_of_char(0).lang.clone()), Some("ru".to_string()));
+    let mut s = s();
+    run(&mut s, "review.language", json!({"detect": false}));
+    typ(&mut s, "Привет");
+    let lang = s.doc.para_at(&Pos::body(0, 0)).and_then(|p| p.props_of_char(0).lang.clone());
+    assert_eq!(lang, None);
+}
+
 /// Select All then Delete or Backspace empties the document, tables included (Word, #1198):
 /// whether the text starts with a table or with a paragraph.
 #[test]
