@@ -81,6 +81,7 @@
 	Blank document	Pusty dokument
 	Block\nAuthors	Blokuj\nautorów
 	Bold	Pogrubienie
+	Code	Kod
 	Bookmark	Zakładka
 	Bookmark name:	Nazwa zakładki:
 	Delete Bookmark	Usuń zakładkę
@@ -308,6 +309,9 @@
 	Heading 1	Nagłówek 1
 	Heading 2	Nagłówek 2
 	Heading 3	Nagłówek 3
+	Heading 4	Nagłówek 4
+	Heading 5	Nagłówek 5
+	Heading 6	Nagłówek 6
 	Headings	Nagłówki
 	Heart	Serce
 	Help	Pomoc

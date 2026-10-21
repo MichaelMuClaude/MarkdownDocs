@@ -148,6 +148,7 @@
 	Blank Page	빈 페이지
 	Block\nAuthors	작성자\n차단
 	Bold	굵게
+	Code	코드
 	Bookmark	책갈피
 	Bookmark name:	책갈피 이름:
 	Border Painter	테두리 그리기
@@ -442,6 +443,9 @@
 	Heading 1	제목 1
 	Heading 2	제목 2
 	Heading 3	제목 3
+	Heading 4	제목 4
+	Heading 5	제목 5
+	Heading 6	제목 6
 	Headings	제목
 	Heart	하트
 	Help	도움말

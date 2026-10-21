@@ -125,6 +125,7 @@
 	Blank Page	Page vierge
 	Block\nAuthors	Bloquer\nles auteurs
 	Bold	Gras
+	Code	Code
 	Bookmark	Signet
 	Bookmark name:	Nom du signet :
 	Delete Bookmark	Supprimer le signet
@@ -404,6 +405,9 @@
 	Heading 1	Titre 1
 	Heading 2	Titre 2
 	Heading 3	Titre 3
+	Heading 4	Titre 4
+	Heading 5	Titre 5
+	Heading 6	Titre 6
 	Headings	Titres
 	Heart	Cœur
 	Help	Aide

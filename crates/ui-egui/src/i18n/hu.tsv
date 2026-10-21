@@ -84,6 +84,7 @@
 	Block\nAuthors	Szerzők\nletiltása
 	Body text in a short paragraph to show spacing.	Szövegtörzs egy rövid bekezdésben, hogy látszódjon a térköz.
 	Bold	Félkövér
+	Code	Kód
 	Book Title	Könyvcím
 	Bookmark	Könyvjelző
 	Bookmark name:	Könyvjelző neve:
@@ -312,6 +313,9 @@
 	Heading 1	Címsor 1
 	Heading 2	Címsor 2
 	Heading 3	Címsor 3
+	Heading 4	Címsor 4
+	Heading 5	Címsor 5
+	Heading 6	Címsor 6
 	Heading {n}	Címsor {n}
 	Headings	Címsorok
 	Heart	Szív

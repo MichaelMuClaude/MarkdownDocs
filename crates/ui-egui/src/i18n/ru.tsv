@@ -82,6 +82,7 @@
 	Block\nAuthors	Блокировать\nавторов
 	Body text in a short paragraph to show spacing.	Основной текст в коротком абзаце, чтобы показать интервалы.
 	Bold	Полужирный
+	Code	Код
 	Book Title	Название книги
 	Bookmark	Закладка
 	Bookmark name:	Имя закладки:
@@ -314,6 +315,9 @@
 	Heading 1	Заголовок 1
 	Heading 2	Заголовок 2
 	Heading 3	Заголовок 3
+	Heading 4	Заголовок 4
+	Heading 5	Заголовок 5
+	Heading 6	Заголовок 6
 	Heading {n}	Заголовок {n}
 	Headings	Заголовки
 	Heart	Сердце

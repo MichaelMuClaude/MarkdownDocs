@@ -183,6 +183,7 @@
 	Blank Page	空白のページ
 	Block\nAuthors	作成者のブロック
 	Bold	太字
+	Code	コード
 	Bookmark	ブックマーク
 	Bookmark name:	ブックマーク名:
 	Delete Bookmark	ブックマークの削除
@@ -449,6 +450,9 @@
 	Heading 1	見出し 1
 	Heading 2	見出し 2
 	Heading 3	見出し 3
+	Heading 4	見出し 4
+	Heading 5	見出し 5
+	Heading 6	見出し 6
 	Headings	見出し
 	Heart	ハート
 	Help	ヘルプ

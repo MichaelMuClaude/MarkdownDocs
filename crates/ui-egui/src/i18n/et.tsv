@@ -78,6 +78,7 @@
 	Blank document	Tühi dokument
 	Block\nAuthors	Blokeeri\nautorid
 	Bold	Paks
+	Code	Kood
 	Bookmark	Järjehoidja
 	Bookmark name:	Järjehoidja nimi:
 	Delete Bookmark	Kustuta järjehoidja
@@ -318,6 +319,9 @@
 	Heading 1	Pealkiri 1
 	Heading 2	Pealkiri 2
 	Heading 3	Pealkiri 3
+	Heading 4	Pealkiri 4
+	Heading 5	Pealkiri 5
+	Heading 6	Pealkiri 6
 	Headings	Pealkirjad
 	Heart	Süda
 	Help	Abi

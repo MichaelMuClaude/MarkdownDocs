@@ -184,6 +184,7 @@
 	Blank Page	空白頁
 	Block\nAuthors	封鎖作者
 	Bold	粗體
+	Code	程式碼
 	Bookmark	書籤
 	Bookmark name:	書籤名稱：
 	Delete Bookmark	刪除書籤
@@ -450,6 +451,9 @@
 	Heading 1	標題 1
 	Heading 2	標題 2
 	Heading 3	標題 3
+	Heading 4	標題 4
+	Heading 5	標題 5
+	Heading 6	標題 6
 	Headings	標題
 	Heart	心形
 	Help	說明

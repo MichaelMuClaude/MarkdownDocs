@@ -266,6 +266,7 @@
 	Body Text	Tijelo teksta
 	Body text in a short paragraph to show spacing.	Tekst u kratkom odlomku radi prikaza razmaka.
 	Bold	Podebljano
+	Code	Kôd
 	Book	Knjiga
 	Book Title	Naslov knjige
 	Book title	Naslov knjige
@@ -964,6 +965,9 @@
 	Heading 1	Naslov 1
 	Heading 2	Naslov 2
 	Heading 3	Naslov 3
+	Heading 4	Naslov 4
+	Heading 5	Naslov 5
+	Heading 6	Naslov 6
 	Heading styles (levels 1–{n})	Stilovi naslova (razine 1–{n})
 	Heading {n}	Naslov {n}
 	Headings	Naslovi

@@ -195,6 +195,7 @@
 	Blank Page	空白页
 	Block\nAuthors	阻止作者
 	Bold	加粗
+	Code	代码
 	Bookmark	书签
 	Bookmark name:	书签名：
 	Delete Bookmark	删除书签
@@ -461,6 +462,9 @@
 	Heading 1	标题 1
 	Heading 2	标题 2
 	Heading 3	标题 3
+	Heading 4	标题 4
+	Heading 5	标题 5
+	Heading 6	标题 6
 	Headings	标题
 	Heart	心形
 	Help	帮助

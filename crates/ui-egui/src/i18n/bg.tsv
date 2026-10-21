@@ -127,6 +127,7 @@
 	Blank document	Празен документ
 	Block\nAuthors	Блокиране\nна автори
 	Bold	Получер
+	Code	Код
 	Bookmark	Отметка
 	Bookmark name:	Име на отметката:
 	Delete Bookmark	Изтриване на отметка
@@ -392,6 +393,9 @@
 	Heading 1	Заглавие 1
 	Heading 2	Заглавие 2
 	Heading 3	Заглавие 3
+	Heading 4	Заглавие 4
+	Heading 5	Заглавие 5
+	Heading 6	Заглавие 6
 	Headings	Заглавия
 	Heart	Сърце
 	Help	Помощ

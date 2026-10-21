@@ -139,6 +139,7 @@
 	Blank Page	Leere Seite
 	Block\nAuthors	Block-\nAutoren
 	Bold	Fett
+	Code	Code
 	Bookmark	Textmarke
 	Bookmark name:	Textmarkenname:
 	Delete Bookmark	Textmarke löschen
@@ -392,6 +393,9 @@
 	Heading 1	Überschrift 1
 	Heading 2	Überschrift 2
 	Heading 3	Überschrift 3
+	Heading 4	Überschrift 4
+	Heading 5	Überschrift 5
+	Heading 6	Überschrift 6
 	Headings	Überschriften
 	Heart	Herz
 	Help	Hilfe

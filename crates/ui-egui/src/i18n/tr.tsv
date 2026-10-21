@@ -81,6 +81,7 @@
 	Block\nAuthors	Yazarları\nEngelle
 	Body text in a short paragraph to show spacing.	Aralığı göstermek için kısa bir paragrafta gövde metni.
 	Bold	Kalın
+	Code	Kod
 	Book Title	Kitap Başlığı
 	Bookmark	Yer İşareti
 	Bookmark name:	Yer işareti adı:
@@ -310,6 +311,9 @@
 	Heading 1	Başlık 1
 	Heading 2	Başlık 2
 	Heading 3	Başlık 3
+	Heading 4	Başlık 4
+	Heading 5	Başlık 5
+	Heading 6	Başlık 6
 	Heading {n}	Başlık {n}
 	Headings	Başlıklar
 	Heart	Kalp

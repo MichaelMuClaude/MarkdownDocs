@@ -244,6 +244,7 @@
 	Blank Page	Празна страна
 	Block\nAuthors	Блокирај\nауторе
 	Bold	Подебљано
+	Code	Код
 	Bookmark	Обележивач
 	Bookmark name:	Назив обележивача:
 	Delete Bookmark	Обриши обележивач
@@ -501,6 +502,9 @@
 	Heading 1	Наслов 1
 	Heading 2	Наслов 2
 	Heading 3	Наслов 3
+	Heading 4	Наслов 4
+	Heading 5	Наслов 5
+	Heading 6	Наслов 6
 	Headings	Наслови
 	Heart	Срце
 	Help	Помоћ

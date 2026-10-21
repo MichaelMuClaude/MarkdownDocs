@@ -124,6 +124,7 @@
 	Blank document	Documento vuoto
 	Block\nAuthors	Blocca\nautori
 	Bold	Grassetto
+	Code	Codice
 	Bookmark	Segnalibro
 	Bookmark name:	Nome segnalibro:
 	Delete Bookmark	Elimina segnalibro
@@ -387,6 +388,9 @@
 	Heading 1	Titolo 1
 	Heading 2	Titolo 2
 	Heading 3	Titolo 3
+	Heading 4	Titolo 4
+	Heading 5	Titolo 5
+	Heading 6	Titolo 6
 	Headings	Titoli
 	Heart	Cuore
 	Help	Guida
