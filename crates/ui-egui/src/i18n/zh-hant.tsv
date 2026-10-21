@@ -2298,3 +2298,43 @@
 	Import…	匯入…
 	A fork of WordCraft, built for AI agents and Markdown first.	WordCraft 的一個分支(fork),首先為 AI 代理和 Markdown 而打造。
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	著作權所有 (c) 2026 MarkdownDocs 貢獻者(此分支自身的修改)。
+	Format Shape Pane	設定圖形格式窗格
+	Format Shape	設定圖形格式
+	Format Shape…	設定圖形格式…
+	No fill	無填滿
+	Solid fill	實心填滿
+	Gradient fill	漸層填滿
+	Preset gradients	預設漸層
+	Radial	放射狀
+	Rectangular	矩形
+	Path	路徑
+	Direction	方向
+	Angle	角度
+	Gradient stops	漸層停駐點
+	Add gradient stop	新增漸層停駐點
+	Remove gradient stop	移除漸層停駐點
+	Rotate with shape	隨圖形旋轉
+	Gradient	漸層
+	No Gradient	無漸層
+	Light Variations	淺色變化
+	Dark Variations	深色變化
+	More Gradients…	其他漸層…
+	Select a shape, text box or drawing canvas to format its fill.	請選取圖形、文字方塊或繪圖畫布以設定其填滿格式。
+	Linear Right	線性 向右
+	Linear Diagonal - Top Left to Bottom Right	線性對角 - 左上到右下
+	Linear Down	線性 向下
+	Linear Diagonal - Top Right to Bottom Left	線性對角 - 右上到左下
+	Linear Left	線性 向左
+	Linear Diagonal - Bottom Right to Top Left	線性對角 - 右下到左上
+	Linear Up	線性 向上
+	Linear Diagonal - Bottom Left to Top Right	線性對角 - 左下到右上
+	From Top Left Corner	從左上角
+	From Top Right Corner	從右上角
+	From Bottom Left Corner	從左下角
+	From Bottom Right Corner	從右下角
+	From Center	從中央
+	Soft	柔和
+	Lit from Top	頂部照亮
+	Deep	深沉
+	Lit from Bottom	底部照亮
+	Center Glow	中央光暈
