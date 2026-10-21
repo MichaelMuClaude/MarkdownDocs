@@ -1028,6 +1028,26 @@ impl WordApp {
         {
             self.autosave_path = self.session.path.clone();
         }
+        // Opening a Markdown file (or this app's own .json dump of the document model) lets
+        // AutoSave start covering it immediately, without a throwaway explicit save first: unlike
+        // .docx/.odt/.rtf/.xml, these formats hold nothing our reader can fail to round-trip —
+        // Markdown is plain text we both read and write by the same CommonMark/GFM rules, and
+        // .json is a direct serialization of the Document struct itself. Richer formats keep
+        // requiring an explicit save, since a file opened from elsewhere may carry content
+        // controls, charts or macros our reader doesn't model, which a blind AutoSave would drop.
+        if let Ok(v) = &r
+            && id == "file.open"
+            && v.get("path").and_then(Value::as_str).map(std::path::Path::new) == self.session.path.as_deref()
+            && self
+                .session
+                .path
+                .as_deref()
+                .and_then(|p| p.extension())
+                .is_some_and(|ext| matches!(ext.to_string_lossy().to_ascii_lowercase().as_str(), "md" | "markdown" | "json"))
+        {
+            self.autosave_path = self.session.path.clone();
+        }
+
         // A renamed file is the same file: AutoSave keeps covering it, and Recent drops the old name.
         if r.is_ok()
             && id == "file.rename"
@@ -6540,6 +6560,27 @@ mod tests {
         assert!(!a.session.dirty);
         let saved = wordcraft_engine::io::open_path(&path).unwrap();
         assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Original Typed More"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Opening an already-saved file in a format AutoSave can cover (.md, like .docx) turns
+    /// AutoSave on right away — an agent shouldn't need a throwaway no-op Save first just to
+    /// start AutoSave covering a document it only opened to edit.
+    #[test]
+    fn autosave_covers_a_reopened_markdown_file_without_an_extra_save() {
+        let dir = scratch("autosave-md-reopen");
+        let path = dir.join("notes.md");
+        std::fs::write(&path, "Existing notes\n").unwrap();
+        let mut a = app();
+        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        assert_eq!(a.autosave_block(), None, "opening a .md file covers it immediately");
+        assert!(a.autosaves());
+        a.run("text.insert", json!({"text": "Typed "})).unwrap();
+        assert!(a.session.dirty);
+        a.autosave_tick(now_ms() + 10_000.0);
+        assert!(!a.session.dirty, "AutoSave wrote the .md file without an explicit save first");
+        let saved = wordcraft_engine::io::open_path(&path).unwrap();
+        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Typed"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
