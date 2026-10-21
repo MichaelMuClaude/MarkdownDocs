@@ -310,6 +310,41 @@ fn list_autoformat_triggers() {
     assert_eq!(s.doc.numbering.level(n.num, 0).map(|l| l.format), Some(wordcraft_doc::section::NumFormat::LowerLetter));
 }
 
+/// #3352: typing the trigger at the start of an already-written paragraph (not only a fresh,
+/// empty one) still turns it into a list item, keeping the rest of the paragraph's text — as in
+/// Word, confirmed in Word for Windows 2026-10-21.
+#[test]
+fn list_autoformat_triggers_in_front_of_existing_text() {
+    let mut s = s();
+    typ(&mut s, "On peut faire mieux");
+    run(&mut s, "caret.home", json!({}));
+    typ(&mut s, "- ");
+    assert_eq!(paras(&s), vec![para("On peut faire mieux", Some(0))]);
+    assert_eq!(label_at(&s, 0), "-");
+    // Undo right after takes only the AutoFormat back, as for a fresh paragraph.
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(paras(&s), vec![("- On peut faire mieux".to_string(), None, false)]);
+}
+
+/// #3352 follow-up: a heading numbered only through its style's linked Multilevel List
+/// (`props.numbering` itself unset) isn't papered over by a fresh bullet when "- " is typed at
+/// its start; the trigger stays as plain text and the heading's own number is kept.
+#[test]
+fn list_autoformat_does_not_override_a_style_linked_heading_number() {
+    let mut s = s();
+    typ(&mut s, "One");
+    run(&mut s, "para.heading1", json!({}));
+    run(&mut s, "list.multilevelPreset", json!({"preset": "headings"}));
+    typ(&mut s, "\nTwo");
+    run(&mut s, "para.heading2", json!({}));
+    assert_eq!(numbers(&mut s), [num(Some("1"), "Heading1"), num(Some("1.1"), "Heading2")]);
+    assert_eq!(s.doc.para_at(&Pos::body(1, 0)).unwrap().props.numbering, None, "numbered through the style, not directly");
+    run(&mut s, "caret.home", json!({}));
+    typ(&mut s, "- ");
+    assert_eq!(numbers(&mut s), [num(Some("1"), "Heading1"), num(Some("1.1"), "Heading2")], "the heading number survives");
+    assert_eq!(paras(&s)[1].0, "- Two", "the trigger stays as typed text, not stripped into a bullet");
+}
+
 #[test]
 fn typing_1_dot_starts_numbering_again() {
     let s = typed("1. a\nb\n\nmid\n1. c\nd");
