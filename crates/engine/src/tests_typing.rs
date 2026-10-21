@@ -1333,6 +1333,20 @@ fn typing_rtl_letters_into_an_empty_paragraph_makes_it_rtl() {
     assert!(x < 300.0, "left-to-right paragraph: caret at {x}");
 }
 
+/// A multi-paragraph paste splits on `\r` (clipboard text arrives normalised that way — see
+/// `cmd::paste`), in one `insert_text` call sharing one `props` across every paragraph it
+/// produces: a Russian paragraph followed by an English one must not leave the English paragraph
+/// tagged Russian too, just because it was inserted in the same call right after a Cyrillic run
+/// that `speech_language` had already tagged.
+#[test]
+fn each_paragraph_of_a_multi_paragraph_paste_gets_its_own_detected_language() {
+    let mut s = s();
+    run(&mut s, "edit.pasteText", json!({"text": "Привет\r\nHello world"}));
+    let lang = |i: usize| s.doc.para_at(&Pos::body(i, 0)).and_then(|p| p.props_of_char(0).lang.clone());
+    assert_eq!(lang(0), Some("ru".to_string()));
+    assert_eq!(lang(1), None, "Latin text right after a Cyrillic paragraph in the same paste isn't tagged Russian too");
+}
+
 /// #3353: "Detect language automatically" (on by default) assigns a run's proofing language from
 /// its own script as it's typed, the same way Read Aloud already picks a voice — so a document
 /// doesn't need a trip to Review › Language every time typing switches script.

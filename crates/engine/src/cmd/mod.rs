@@ -305,6 +305,12 @@ fn insert_text(s: &mut Session, text: &str, enter: bool) -> Result<(), CmdError>
         props.ins = None;
         props.del = None;
     }
+    // The language and complex-script tag the insertion point had before any of this text went
+    // in: detect_language below always starts from this fixed baseline, per paragraph, rather
+    // than from whatever the *previous* paragraph of a multi-paragraph paste was just tagged
+    // with — otherwise a Russian paragraph followed by an English one in the same paste would
+    // leave the English paragraph tagged Russian too, since Latin script never overrides a tag.
+    let (base_lang, base_lang_bidi) = (props.lang.clone(), props.lang_bidi.clone());
     let mut at = s.sel.focus.clone();
     let mut first = true;
     for part in text.split(['\r', '\u{2029}']) {
@@ -323,7 +329,7 @@ fn insert_text(s: &mut Session, text: &str, enter: bool) -> Result<(), CmdError>
             // default language. Latin-script text keeps whatever language it already had: the
             // script alone can't tell English from French from Polish.
             if s.prefs.detect_language {
-                props.lang = crate::speech::speech_language(&part, props.lang.as_deref(), props.lang_bidi.as_deref());
+                props.lang = crate::speech::speech_language(&part, base_lang.as_deref(), base_lang_bidi.as_deref());
             }
             let starts_para = direction_unset(s, &at);
             at = s.doc.insert_text(&at, &part, &props)?;
