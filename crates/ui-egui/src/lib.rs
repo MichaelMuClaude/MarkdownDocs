@@ -2464,7 +2464,9 @@ impl AutoSaveBlock {
             }
             AutoSaveBlock::Unsaved => tl!("Save the document to turn on AutoSave").to_string(),
             AutoSaveBlock::Format { name } => i18n::fmt(
-                tl!("AutoSave only keeps .docx, .odt and .rtf files; {name} can't keep all formatting. Save as .docx to turn on AutoSave."),
+                tl!(
+                    "AutoSave only keeps .docx, .odt, .rtf and .md files; {name} can't keep all formatting. Save as .docx or .md to turn on AutoSave."
+                ),
                 &[("name", name)],
             ),
             AutoSaveBlock::NotSavedHere => {
@@ -2482,9 +2484,14 @@ impl AutoSaveBlock {
 /// Whether saving to `name` keeps the whole document (the formats `file.save` treats as the
 /// document's own file, including macro-enabled documents and templates); anything else is a
 /// copy that leaves it unsaved. AutoSave writes only these formats.
+///
+/// Markdown is in this list (unlike upstream WordCraft, which treats it as a lossy export
+/// format): this product treats Markdown as a first-class, agent-native working format, on par
+/// with .docx, not a one-way export target. Genuinely lossy formats (plain text, HTML, PDF,
+/// images) still aren't.
 pub fn keeps_everything(name: &str) -> bool {
     let ext = std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json" | "xml")
+    matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json" | "xml" | "md")
 }
 
 /// The dialog a user-run command opens when it lacks the input it needs (scripts and agents get
@@ -5926,13 +5933,13 @@ mod tests {
     /// the prompt and the leave-page guard let it go.
     #[test]
     fn web_downloads_that_drop_content_leave_the_document_unsaved() {
-        for name in ["novel.png", "novel.txt", "novel.md"] {
+        for name in ["novel.png", "novel.txt"] {
             let mut a = typed();
             a.services.download = Some(Box::new(|_, _| Ok(())));
             a.execute("file.saveAs", json!({"path": name})).unwrap();
             assert!(a.session.dirty, "{name}");
         }
-        for name in ["novel.docx", "novel.docm", "novel.DOTX", "novel.dotm", "novel.odt", "novel.rtf"] {
+        for name in ["novel.docx", "novel.docm", "novel.DOTX", "novel.dotm", "novel.odt", "novel.rtf", "novel.md"] {
             let mut a = typed();
             a.services.download = Some(Box::new(|_, _| Ok(())));
             a.execute("file.saveAs", json!({"path": name})).unwrap();
@@ -6468,24 +6475,26 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// #196: a saved .md file showed AutoSave on, but AutoSave writes only formats that keep
-    /// everything, so edits stayed unsaved. The switch is now off and blocked with a reason, and
-    /// scripts turning it on get that reason as an error; a .docx saved here is covered.
+    /// #196: a saved file in a genuinely lossy format (plain text, here) showed AutoSave on, but
+    /// AutoSave writes only formats that keep everything, so edits stayed unsaved. The switch is
+    /// now off and blocked with a reason, and scripts turning it on get that reason as an error;
+    /// a .docx saved here is covered. (Markdown is *not* an example of a blocked format in this
+    /// product — see `autosave_covers_markdown`.)
     #[test]
     fn autosave_is_blocked_with_a_reason_for_files_it_cannot_keep() {
-        let dir = scratch("autosave-md");
-        let md = dir.join("notes.md");
-        std::fs::write(&md, "# Notes\n\nSome text\n").unwrap();
+        let dir = scratch("autosave-txt");
+        let txt = dir.join("notes.txt");
+        std::fs::write(&txt, "Notes\n\nSome text\n").unwrap();
         let mut a = app();
         assert_eq!(a.autosave_block(), Some(AutoSaveBlock::Unsaved), "a new document has no file yet");
-        a.run("file.open", json!({"path": md.to_string_lossy()})).unwrap();
+        a.run("file.open", json!({"path": txt.to_string_lossy()})).unwrap();
         a.run("text.insert", json!({"text": "Typed "})).unwrap();
         a.run("file.save", json!({})).unwrap();
         assert!(a.autosave, "the preference stays on");
-        assert_eq!(a.autosave_block(), Some(AutoSaveBlock::Format { name: "notes.md".into() }));
+        assert_eq!(a.autosave_block(), Some(AutoSaveBlock::Format { name: "notes.txt".into() }));
         assert!(!a.autosaves(), "the switch shows off");
         let why = a.autosave_block().map(|b| b.reason()).unwrap_or_default();
-        assert!(why.contains("notes.md") && why.contains(".docx"), "{why}");
+        assert!(why.contains("notes.txt") && why.contains(".docx"), "{why}");
         let err = a.run("file.autosave", json!({"value": true})).unwrap_err();
         assert_eq!(err, why, "scripts are told why");
         assert!(a.run("file.autosave", json!({"value": false})).is_ok(), "turning it off always works");
@@ -6501,6 +6510,36 @@ mod tests {
         assert!(!a.session.dirty, "AutoSave wrote the .docx");
         assert_eq!(a.run("file.autosave", json!({})).unwrap(), json!({"value": false}), "toggling turns it off");
         assert!(!a.autosaves());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Markdown is a first-class working format in this product (unlike upstream WordCraft,
+    /// where it's a lossy export format AutoSave refuses to write): a .md file saved in this
+    /// session is covered by AutoSave exactly like a .docx, and keeps being covered across
+    /// repeated writes, round-tripping the edits.
+    #[test]
+    fn autosave_covers_markdown() {
+        let dir = scratch("autosave-md");
+        let path = dir.join("notes.md");
+        let mut a = app();
+        a.run("text.insert", json!({"text": "Original "})).unwrap();
+        a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
+        assert_eq!(a.autosave_block(), None, "a .md file saved here is covered");
+        assert!(a.autosaves());
+        a.run("text.insert", json!({"text": "Typed "})).unwrap();
+        assert!(a.session.dirty);
+        a.autosave_tick(now_ms() + 10_000.0);
+        assert!(!a.session.dirty, "AutoSave wrote the .md file");
+        let saved = wordcraft_engine::io::open_path(&path).unwrap();
+        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Original Typed"));
+        // After an explicit save, later changes are saved automatically, same as a .docx.
+        a.run("file.save", json!({})).unwrap();
+        a.run("text.insert", json!({"text": "More "})).unwrap();
+        assert!(a.session.dirty);
+        a.autosave_tick(now_ms() + 20_000.0);
+        assert!(!a.session.dirty);
+        let saved = wordcraft_engine::io::open_path(&path).unwrap();
+        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Original Typed More"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 

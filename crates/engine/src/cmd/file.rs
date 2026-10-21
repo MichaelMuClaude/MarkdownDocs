@@ -303,7 +303,7 @@ fn save(s: &mut Session, v: &Value) -> CmdResult {
     let copy = super::insert::saved_copy(s);
     crate::io::save_path_with(&path, copy.as_ref().unwrap_or(&s.doc), password, &opts).map_err(CmdError::Failed)?;
     let encrypted = password.is_some() && crate::io::can_encrypt(&path.to_string_lossy());
-    if ["docx", "docm", "dotx", "dotm", "odt", "rtf", "json", "xml"].contains(&ext.as_str()) {
+    if ["docx", "docm", "dotx", "dotm", "odt", "rtf", "json", "xml", "md"].contains(&ext.as_str()) {
         s.path = Some(path.clone());
         s.dirty = false;
     }
