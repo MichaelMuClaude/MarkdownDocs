@@ -1681,7 +1681,7 @@ impl WordApp {
                 ));
             }
             "ui.discord" => {
-                self.canvas.open_url = Some("https://discord.gg/artcraft".into());
+                self.canvas.open_url = Some("https://github.com/MichaelMuClaude/MarkdownDocs/issues".into());
                 json!({})
             }
             "ui.caretAnimation" => {

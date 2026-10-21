@@ -1,0 +1,40 @@
+name: Bug report
+description: Something doesn't work the way it should
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal repro
+      description: >
+        The exact command, input file, or steps that trigger it. For a Markdown/DOCX fidelity
+        issue, a minimal input snippet and what it round-trips to is the single most useful thing
+        you can include.
+    validations:
+      required: false
+  - type: textarea
+    id: agent-context
+    attributes:
+      label: If this came up while driving it programmatically (CLI / MCP / control protocol)
+      description: Which tool/command you called, with what params, and what came back.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: OS and platform
+    validations:
+      required: false

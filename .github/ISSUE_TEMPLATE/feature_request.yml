@@ -1,0 +1,20 @@
+name: Feature request / gap
+description: Something is missing — a format fidelity gap, an agent-use rough edge, a feature
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What's missing, and why it matters
+    validations:
+      required: true
+  - type: textarea
+    id: agent-angle
+    attributes:
+      label: If this is about agent use specifically
+      description: >
+        A command that's awkward to drive programmatically, something the MCP server or control
+        protocol doesn't expose, a format round-trip gap — these are the reports this project
+        wants most.
+    validations:
+      required: false

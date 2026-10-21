@@ -1,23 +1,16 @@
-<p align="center">
-  <a href="https://getartcraft.com/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/artcraft-logo-white.svg">
-      <img alt="ArtCraft" src="docs/brand/artcraft-logo.svg" width="200">
-    </picture>
-  </a>
-</p>
-
-<h1 align="center">WordCraft</h1>
+<h1 align="center">MarkdownDocs</h1>
 
 <p align="center">
-  <b>Writing and document design; an open-source, modern word processor, built in pure Rust.</b>
+  <b>A document editor built for AI agents first: Markdown as the native working format, DOCX and
+  other formats as first-class citizens too.</b>
 </p>
 
 <p align="center">
-  A fast, open-source word processor with a familiar workflow: the ribbon, styles,
-  tables, track changes, references and mail merge. It reads and writes .docx, runs natively on
-  macOS, Windows, Linux and BSD, and in the browser via WebAssembly.<br>
-  <i>By the ArtCraft team.</i>
+  One tool for every document an agent (or a person) needs to read, edit or produce: Markdown
+  natively, .docx with real fidelity, plus .odt, .rtf, .html, .md, .tex, .txt. Scriptable end to
+  end — CLI, a JSON control protocol, an MCP server — runs natively on macOS, Windows, Linux and
+  BSD, and in the browser via WebAssembly.<br>
+  <i>A fork of <a href="https://github.com/storytold/wordcraft">WordCraft</a>.</i>
 </p>
 
 <p align="center">
@@ -25,43 +18,32 @@
   <img alt="Runs on macOS, Windows, Linux, BSD and the web" src="https://img.shields.io/badge/runs%20on-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux%20%C2%B7%20BSD%20%C2%B7%20Web-3b5bdb?style=flat-square">
   <img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-2b47b5?style=flat-square">
   <img alt="Agent-drivable over MCP" src="https://img.shields.io/badge/agents-MCP%20%C2%B7%20CLI-3b5bdb?style=flat-square">
-  <br>
-  <a href="https://sonarcloud.io/project/overview?id=storytold_wordcraft"><img alt="Scanned by SonarCloud" src="https://img.shields.io/badge/Scanned_by-SonarCloud-4b9fd5?style=flat-square&logo=sonarqubecloud&logoColor=white"></a>
-  <a href="https://coderabbit.ai"><img alt="Reviewed by CodeRabbit" src="https://img.shields.io/coderabbit/prs/github/storytold/wordcraft?style=flat-square&label=Reviewed%20by%20CodeRabbit&logo=coderabbit"></a>
-</p>
-
-<p align="center">
-  <a href="https://discord.gg/artcraft"><img alt="Join the ArtCraft community on Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
-</p>
-
-<p align="center">
-  <a href="https://getartcraft.com/apps/wordcraft"><b>WordCraft on getartcraft.com</b></a> ·
-  <a href="https://getartcraft.com/">ArtCraft</a> ·
-  <a href="https://getartcraft.com/apps">All Crafting Apps</a>
+  <img alt="Markdown-native" src="https://img.shields.io/badge/markdown-native%20format-2b47b5?style=flat-square">
 </p>
 
 <br>
 
 <p align="center">
-  <img src="docs/images/hero.png" alt="WordCraft with the Home tab of the ribbon open over a two-page document titled The Open Studio Handbook. The Navigation pane on the left lists the document's headings, the Styles gallery shows live previews of Normal, Heading 1, Title and Subtitle, and a word in the first paragraph is selected." width="100%">
-  <br><sub><b>The Open Studio Handbook</b>, WordCraft's built-in sample: the ribbon, live Styles gallery, rulers and the Navigation pane.</sub>
+  <img src="docs/images/hero.png" alt="The editor with the Home tab of the ribbon open over a two-page document titled The Open Studio Handbook. The Navigation pane on the left lists the document's headings, the Styles gallery shows live previews of Normal, Heading 1, Title and Subtitle, and a word in the first paragraph is selected." width="100%">
+  <br><sub>The ribbon, live Styles gallery, rulers and the Navigation pane — inherited from WordCraft, kept working while this fork's own priorities (Markdown-native, agent-first) build out.</sub>
 </p>
 
 > [!NOTE]
-> **ArtCraft is a community of artists from all walks of life.** Painters, photographers,
-> filmmakers, illustrators, designers, animators, hobbyists, and people who picked up a pencil
-> last week. If you make things, you're one of us. **[Come say hi on Discord](https://discord.gg/artcraft).**
+> **This is a fork, not the original project.** It diverges from
+> [storytold/wordcraft](https://github.com/storytold/wordcraft) in purpose — agents first, not a
+> human-facing Word replacement — and will diverge further in code over time. See
+> [AGENTS.md](AGENTS.md) for why, and the [License and credits](#license-and-credits) section below
+> for the full attribution.
 
 <p align="center">
   <a href="#a-tour">A tour</a> ·
-  <a href="#why-wordcraft">Why WordCraft</a> ·
+  <a href="#why-markdowndocs">Why MarkdownDocs</a> ·
   <a href="#what-works-today">What works today</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#for-agents-cli-and-mcp">For agents</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#roadmap">Roadmap</a> ·
-  <a href="#downloads">Downloads</a> ·
-  <a href="#the-crafting-apps">The Crafting Apps</a> ·
+  <a href="#contributing">Contributing</a> ·
   <a href="#license-and-credits">License and credits</a>
 </p>
 
@@ -87,20 +69,25 @@ Every screenshot below is WordCraft itself, rendered offscreen by its own UI tes
 </tr>
 </table>
 
-## Why WordCraft
+## Why MarkdownDocs
 
-- **Familiar.** Ribbon tabs, groups, shortcuts and behaviour: Enter continues a list,
-  Tab demotes it, Ctrl/⌘+B bolds the word under the caret, the Styles gallery previews styles live,
-  F4 repeats, F7 checks spelling, F8 extends the selection.
-- **Your files.** Opens and saves .docx (OOXML), and also .odt, .rtf, .html, .md, .tex (LaTeX), .txt; opens legacy 97-2003 .doc; exports PDF
-  with real, selectable text, links and bookmarks.
+- **Markdown-native.** Unlike most word processors (where Markdown, if supported at all, is a
+  lossy one-way export), Markdown here is treated as a format that keeps everything a document
+  needs for agent-driven editing — on par with .docx, not beneath it. AutoSave, round-trip fidelity
+  and ongoing work all treat `.md` as first-class.
+- **Built for agents, first.** Every action is a command with a stable id and JSON params. The same
+  commands drive the ribbon, keyboard shortcuts, the command search, a command-line tool, a JSON
+  control channel and an MCP server — an agent never has to screen-scrape a GUI to get work done.
+- **Your files, many formats.** Opens and saves .docx (OOXML), and also .odt, .rtf, .html, .md,
+  .tex (LaTeX), .txt; opens legacy 97-2003 .doc; exports PDF with real, selectable text, links and
+  bookmarks.
+- **Still familiar when a human's driving.** Ribbon tabs, groups, shortcuts and behaviour: Enter
+  continues a list, Tab demotes it, Ctrl/⌘+B bolds the word under the caret, F4 repeats, F7 checks
+  spelling — inherited from WordCraft's Word-parity work, kept working.
 - **Fast.** Paragraph layout is cached, so typing in a 188-page document re-lays it out in about
   1.4 ms; pages render on demand.
 - **Everywhere.** One Rust codebase for macOS, Windows, Linux, BSD and the web. No Electron, no
   Tauri: native [egui](https://github.com/emilk/egui) on the GPU.
-- **Built for agents.** Every action is a command with an id. The same 422 commands drive the
-  ribbon, keyboard shortcuts, the command search, a command-line tool, a JSON control channel and
-  an MCP server.
 - **Private.** Spelling, grammar and everything else work offline.
 - **Open.** MIT OR Apache-2.0. Clean-room: built from public specifications and observation, with
   every asset original or openly licensed.
@@ -130,11 +117,14 @@ The honest picture, area by area, is in [ROADMAP.md](ROADMAP.md), the
 ## Quick start
 
 ```sh
-git clone https://github.com/storytold/wordcraft
-cd wordcraft
+git clone https://github.com/MichaelMuClaude/MarkdownDocs
+cd MarkdownDocs
 cargo run --release -p wordcraft -- --sample        # the desktop app with the sample document
-cargo run --release -p wordcraft -- report.docx     # open a document
+cargo run --release -p wordcraft -- report.md       # open a document
 ```
+
+(The binaries are still named `wordcraft`/`wordcraft-cli`, inherited from the fork — not yet
+renamed.)
 
 Command line:
 
@@ -151,7 +141,8 @@ Web: `cd apps/wordcraft-web && trunk serve`, then open <http://127.0.0.1:8771/?s
 
 ## For agents: CLI and MCP
 
-WordCraft was designed to be driven by people *and* by AI agents.
+This is the primary way MarkdownDocs is meant to be used: driven by an AI agent, not just a person
+clicking a ribbon.
 
 ```sh
 claude mcp add wordcraft -- wordcraft-cli mcp                  # headless documents
@@ -203,170 +194,39 @@ check and the wasm build. Contributor and agent instructions: [AGENTS.md](AGENTS
 
 ## Roadmap
 
-WordCraft is in **alpha**. It has commands for 97% of the ribbon and menu features in its feature catalog
-([`docs/parity-checklist.md`](docs/parity-checklist.md)) today; counting
-depth, file fidelity, stability and the rest, we estimate it is about 60% ready for real work,
-about 55% for a typical professional's weekly work and about 63% for everyday essentials. Beta
-needs testing against real-world .docx files, keeping charts and SmartArt through a round trip,
-closer pagination fidelity, a stability sweep and native printing. Details and estimates:
-[ROADMAP.md](ROADMAP.md) and [where we fall short](docs/gaps.md).
+The inherited feature set (everything in the table above) is at WordCraft's own upstream
+maturity — commands for 97% of the ribbon/menu feature catalog
+([`docs/parity-checklist.md`](docs/parity-checklist.md)), roughly alpha-to-beta quality
+depending on the area; see [ROADMAP.md](ROADMAP.md) and [docs/gaps.md](docs/gaps.md) for the
+honest, inherited picture. This fork's *own* roadmap — Markdown fidelity closing the gap with
+.docx, a sharper MCP/agent surface, and whatever else makes this genuinely good for agent use — is
+still being written. Issues tagged for agent-use gaps are the best signal of current priorities.
 
-## Downloads
+## Building from source
 
-**Download WordCraft** from GitHub: the [latest release](https://github.com/storytold/wordcraft/releases/latest) has every build listed below, and [all releases](https://github.com/storytold/wordcraft/releases) has earlier versions and their notes. `<ver>` in the file names is the version number, and `SHA256SUMS.txt` lists a checksum for every file.
+No prebuilt downloads yet — build it yourself (see [Quick start](#quick-start) above for the
+clone/run commands). Needs a recent stable [Rust toolchain](https://rustup.rs/). Platform-specific
+build notes (Windows graphics backend overrides, Wayland, FreeBSD, etc.) are the same as upstream
+WordCraft's — see [storytold/wordcraft's README](https://github.com/storytold/wordcraft#downloads)
+if you hit a platform-specific snag; most of it applies unchanged here.
 
-### Windows
+## Contributing
 
-| Build | Installer | Portable |
-|---|---|---|
-| x64 (64-bit Intel/AMD) | `wordcraft-<ver>-windows-x64.msi` | `wordcraft-<ver>-windows-x64-portable.zip` |
-| arm64 (Snapdragon and other ARM PCs) | `wordcraft-<ver>-windows-arm64.msi` | `wordcraft-<ver>-windows-arm64-portable.zip` |
-| x86 (32-bit) | `wordcraft-<ver>-windows-x86.msi` | `wordcraft-<ver>-windows-x86-portable.zip` |
-
-Installers and executables are code-signed.
-
-**If the app doesn't open on Windows:** the desktop app initializes only DirectX 12 by default.
-Letting wgpu also create an OpenGL instance can crash some graphics drivers (AMD's
-`atio6axx.dll`) before the window appears, so the app would flash in Task Manager and quit.
-`WGPU_BACKEND` overrides the default for troubleshooting (for example `dx12` or `vulkan`). In
-PowerShell, from the folder containing the executable:
-
-```powershell
-$env:WGPU_BACKEND = "vulkan"
-& .\wordcraft.exe
-Remove-Item Env:WGPU_BACKEND                     # restore the default for later launches
-```
-
-An explicit `gl` override can bring the driver crash back on affected systems. The macOS, Linux
-and web backend defaults are unchanged.
-
-The **32-bit** build uses OpenGL even when a DirectX 12 graphics card is present. On 32-bit
-Windows, creating a DirectX 12 graphics pipeline fails immediately and the app exits before the
-window appears. `WGPU_BACKEND=vulkan` (or `dx12`) still overrides that.
-
-**If the app quits right after its window appears with "Parent device is lost" in the log:**
-WordCraft compiles DirectX 12 shaders with FXC, the compiler built into Windows, so it needs no
-`dxcompiler.dll`/`dxil.dll` and ignores any copy another program put on `PATH` (#603).
-`WGPU_DX12_COMPILER` (`fxc`, `dxc`, `auto`) overrides this; with `dxc`, a matching
-`dxcompiler.dll` *and* `dxil.dll` must sit next to `wordcraft.exe`. `WGPU_BACKEND = "vulkan"`
-also avoids DirectX 12 altogether.
-
-**If the app is slow on an older Windows PC:** when DirectX 12 finds no graphics card with a
-driver for it (for example Intel 4th-generation graphics on Windows 11), it only offers the built-in
-software renderer, which draws every frame on the processor. WordCraft normally uses OpenGL instead,
-without setting anything. If OpenGL has no usable adapter, it can use DirectX 12's WARP software
-adapter. The log file records the choice (lines starting with
-`graphics:`). `WGPU_BACKEND` still overrides it, e.g. `$env:WGPU_BACKEND = "gl"` or `"dx12"`.
-
-### macOS
-
-| Build | File | Notes |
-|---|---|---|
-| App, universal (Apple silicon + Intel) | `wordcraft-<ver>-macos-universal.dmg` | Signed and notarized |
-| Command-line tool, universal | `wordcraft-cli-<ver>-macos-universal.zip` | Signed and notarized |
-
-### Linux
-
-| Format | x86_64 | aarch64 (ARM64) | Notes |
-|---|---|---|---|
-| AppImage | `wordcraft-<ver>-linux-x86_64.AppImage` | `wordcraft-<ver>-linux-aarch64.AppImage` | Runs anywhere; updates itself with [AppImageUpdate](https://github.com/AppImageCommunity/AppImageUpdate) (`.zsync` files) |
-| Flatpak | `wordcraft-<ver>-linux-x86_64.flatpak` | `wordcraft-<ver>-linux-aarch64.flatpak` | Sandboxed; `flatpak install --user <file>` |
-| Debian/Ubuntu | `wordcraft-<ver>-linux-x86_64.deb` | `wordcraft-<ver>-linux-aarch64.deb` | |
-| Fedora/RHEL/openSUSE | `wordcraft-<ver>-linux-x86_64.rpm` | `wordcraft-<ver>-linux-aarch64.rpm` | |
-| Tarball | `wordcraft-<ver>-linux-x86_64.tar.gz` | `wordcraft-<ver>-linux-aarch64.tar.gz` | Unpack anywhere |
-
-RISC-V (riscv64): `wordcraft-<ver>-linux-riscv64.tar.gz`, a tarball cross-compiled for glibc 2.39+
-(Ubuntu 24.04, Debian 13 and newer).
-
-**Wayland:** on a Wayland desktop the app runs through XWayland when it is available, because
-winit (the windowing library) supports dragging files into the window only on X11. To use the
-native Wayland backend instead (for example for sharper text with fractional scaling, at the cost
-of file drag-and-drop), start it with `WORDCRAFT_WAYLAND=1`:
-
-```sh
-WORDCRAFT_WAYLAND=1 wordcraft
-```
-
-**Arch Linux (AUR).** Community members maintain three AUR packages; the project doesn't publish
-to the AUR itself. Install one of them:
-| Package | What it installs | Choose it when |
-|---|---|---|
-| [`wordcraft-bin`](https://aur.archlinux.org/packages/wordcraft-bin) | The release tarball above, prebuilt (x86_64, aarch64) | You want the latest release without compiling (quickest) |
-| [`wordcraft`](https://aur.archlinux.org/packages/wordcraft) | The latest release, built from source with `cargo` | You prefer to build releases yourself |
-| [`wordcraft-git`](https://aur.archlinux.org/packages/wordcraft-git) | The current `main` branch, built from source | You want unreleased changes and accept an occasional broken build |
-For example `yay -S wordcraft-bin` or `paru -S wordcraft-bin`.
-
-#### Community packages
-
-These packages are maintained by community members, not by the WordCraft team.
-
-On Gentoo, the [::snakebyte overlay](https://github.com/switch87/snakebyte-overlay) packages the
-Linux release as `app-office/wordcraft-bin` (prebuilt) and `app-office/wordcraft` (built from source):
-
-```sh
-eselect repository add snakebyte git https://github.com/switch87/snakebyte-overlay.git
-emaint sync -r snakebyte
-echo 'app-office/wordcraft-bin ~amd64' >> /etc/portage/package.accept_keywords/wordcraft
-emerge --ask app-office/wordcraft-bin
-```
-
-### FreeBSD
-
-| Build | File |
-|---|---|
-| x86_64 | `wordcraft-<ver>-freebsd-x86_64.tar.gz` |
-
-### Web (WebAssembly)
-
-| Build | File | Notes |
-|---|---|---|
-| Static site | `wordcraft-web-<ver>.zip` | Runs in a modern browser; host it on any static server |
-
-## The Crafting Apps
-
-WordCraft is one of the **Crafting Apps**: free, open-source creative tools from the
-[ArtCraft](https://getartcraft.com/) team, each written from scratch in Rust and each able to
-stand on its own.
-
-| | App | What it's for | Code | Learn more |
-|:-:|---|---|---|---|
-| <img src="https://raw.githubusercontent.com/storytold/photocraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.photocraft.png" alt="" width="32" height="32"> | **PhotoCraft** | Image editing: layers, masks, type and real PSD files | [GitHub](https://github.com/storytold/photocraft) | [Website](https://getartcraft.com/apps/photocraft) |
-| <img src="https://raw.githubusercontent.com/storytold/vectorcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.vectorcraft.png" alt="" width="32" height="32"> | **VectorCraft** | Vector illustration | [GitHub](https://github.com/storytold/vectorcraft) | [Website](https://getartcraft.com/apps/vectorcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/filmcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.filmcraft.png" alt="" width="32" height="32"> | **FilmCraft** | Video editing, color and sound | [GitHub](https://github.com/storytold/filmcraft) | [Website](https://getartcraft.com/apps/filmcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/lightcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.lightcraft.png" alt="" width="32" height="32"> | **LightCraft** | Photo library and raw development | [GitHub](https://github.com/storytold/lightcraft) | [Website](https://getartcraft.com/apps/lightcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/pdfcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.pdfcraft.png" alt="" width="32" height="32"> | **PdfCraft** | Reading, organizing and protecting PDFs | [GitHub](https://github.com/storytold/pdfcraft) | [Website](https://getartcraft.com/apps/pdfcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/effectcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.effectcraft.png" alt="" width="32" height="32"> | **EffectCraft** | Motion graphics and visual effects | [GitHub](https://github.com/storytold/effectcraft) | [Website](https://getartcraft.com/apps/effectcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/designcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.designcraft.png" alt="" width="32" height="32"> | **DesignCraft** | Page layout and publishing | [GitHub](https://github.com/storytold/designcraft) | [Website](https://getartcraft.com/apps/designcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/wordcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.wordcraft.png" alt="" width="32" height="32"> | **WordCraft** | **Writing and document design · you are here** | [GitHub](https://github.com/storytold/wordcraft) | [Website](https://getartcraft.com/apps/wordcraft) |
-
-And [**ArtCraft**](https://getartcraft.com/) itself, our AI image and video studio for artists who want real control.
-
-<br>
-
-<p align="center">
-  <a href="https://discord.gg/artcraft"><img alt="Join the ArtCraft community on Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
-</p>
-
-<h3 align="center">Come make things with us</h3>
-
-<p align="center">
-  Our Discord is where artists of every kind hang out: people who paint, shoot, draw, cut film,
-  set type, and people still figuring out what they like to make. Share what you're working on,
-  ask for help, tell us what's broken, or tell us what you wish these tools could do.
-  Whatever your medium and however long you've been at it, you're welcome here.
-</p>
-
-<p align="center">
-  <a href="https://discord.gg/artcraft"><b>discord.gg/artcraft</b></a> ·
-  <a href="https://getartcraft.com/">getartcraft.com</a> ·
-  <a href="https://getartcraft.com/apps">The Crafting Apps</a> ·
-  <a href="https://getartcraft.com/apps/wordcraft">WordCraft</a>
-</p>
+Issues and PRs are welcome — from people and from AI agents working on someone's behalf alike.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the mechanics, and [AGENTS.md](AGENTS.md) for the
+engineering standards this project holds itself to (never crash, clean-room formats, the layering
+rules). The most valuable reports right now are anything specific to agent use: a command that's
+awkward to drive programmatically, a Markdown round-trip that silently loses something, rough edges
+in the MCP server or control protocol.
 
 ## License and credits
 
-WordCraft is dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
-Copyright (c) 2026 ArtCraft Team and the WordCraft contributors. Required notices are in [NOTICE](NOTICE).
+MarkdownDocs is an independent fork of [storytold/wordcraft](https://github.com/storytold/wordcraft),
+not an official WordCraft or ArtCraft project, and isn't affiliated with, endorsed by or
+supported by the ArtCraft team. Dual-licensed under [MIT](LICENSE-MIT) or
+[Apache-2.0](LICENSE-APACHE), at your option, same as upstream. Copyright (c) 2026 ArtCraft Team
+and the WordCraft contributors for the inherited code, and the MarkdownDocs contributors for
+changes made here. Required notices are in [NOTICE](NOTICE).
 
 Bundled fonts, icons, images and other assets keep their own open licenses; each one is listed
 with its author, source and license in [ATTRIBUTION.md](ATTRIBUTION.md).
@@ -376,14 +236,11 @@ Hyphenator II word list. Polish spelling reads the Hunspell `pl_PL` dictionary i
 do Russian, Portuguese, Czech, Italian, Croatian and Turkish spelling (how to install them:
 [docs/spelling-dictionaries.md](docs/spelling-dictionaries.md)), and
 Polish hyphenation the TeX patterns by Hanna Kołodziejska, Bogusław Jackowski and Marek Ryćko (MIT
-option). The sample documents and templates are original text written for WordCraft.
+option). The sample documents and templates are original text inherited from WordCraft.
 
-The ArtCraft name, wordmark and logos in [`docs/brand/`](docs/brand/) are trademarks of the
-ArtCraft Team and are not covered by this license. They may be used only unmodified, and only as
-part of this repository and WordCraft, under [`docs/brand/LICENSE-brand.txt`](docs/brand/LICENSE-brand.txt).
-Forks and modified versions must remove them.
-
-<p align="center">
-  <a href="https://getartcraft.com/"><img alt="ArtCraft" src="docs/brand/artcraft-mark.svg" width="28"></a><br>
-  <sub>Made by the <a href="https://getartcraft.com/">ArtCraft</a> team and community.</sub>
-</p>
+The ArtCraft name, wordmark and logos were trademarks of the ArtCraft Team, not covered by this
+license, and have been removed from this fork per their terms
+([`docs/brand/LICENSE-brand.txt`](docs/brand/LICENSE-brand.txt) in the
+[upstream repository](https://github.com/storytold/wordcraft/blob/main/docs/brand/LICENSE-brand.txt),
+since this fork no longer carries that file). This project has its own name and identity and makes
+no claim to be ArtCraft or WordCraft.
