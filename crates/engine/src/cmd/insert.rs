@@ -854,6 +854,7 @@ pub fn format_date_parts(fmt: &str, y: i64, m: usize, d: u32, (hh, mm, ss): (u32
             ('d', 1) => out.push_str(&d.to_string()),
             ('H', 2..) => out.push_str(&format!("{hh:02}")),
             ('H', _) => out.push_str(&hh.to_string()),
+            ('h', 2..) => out.push_str(&format!("{:02}", if hh.is_multiple_of(12) { 12 } else { hh % 12 })),
             ('h', _) => out.push_str(&(if hh.is_multiple_of(12) { 12 } else { hh % 12 }).to_string()),
             ('m', 2..) => out.push_str(&format!("{mm:02}")),
             ('m', _) => out.push_str(&mm.to_string()),
@@ -966,6 +967,14 @@ fn cover_page(s: &mut Session, v: &Value) -> CmdResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `hh` is the zero-padded 12-hour clock, `h` the unpadded one; `hh` used to fall through to
+    /// the unpadded `h` arm since its repeat-count match was `_` instead of `2..`.
+    #[test]
+    fn date_picture_hh_is_zero_padded() {
+        assert_eq!(format_date_parts("hh:mm AM/PM", 2026, 10, 21, (9, 5, 0), 0), "09:05 AM");
+        assert_eq!(format_date_parts("h:mm", 2026, 10, 21, (9, 5, 0), 0), "9:05");
+    }
 
     /// #960: editing the header of a page that has none creates the one that page shows (first
     /// page, even page or default); typing goes into it, and closing an unwritten one takes it
