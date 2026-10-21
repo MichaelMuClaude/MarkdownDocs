@@ -47,7 +47,7 @@
 	<< Less	<< Manje
 	<< Remove	<< Ukloni
 	A file dialog is already open.	Dijaloški okvir za datoteke već je otvoren.
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Besplatan program za obradu teksta otvorenog koda, napisan od nule u Rustu.\nDio paketa Crafting Apps tima ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Besplatan program za obradu teksta otvorenog koda, napisan od nule u Rustu.
 	A mail merge field	Polje za spajanje pošte
 	A numbered sequence (figures, tables…)	Numerirani niz (slike, tablice…)
 	A password is required to open this document.	Za otvaranje ovog dokumenta potrebna je lozinka.
@@ -60,6 +60,7 @@
 	AaBbYyZz	AaBbYyZz
 	About	O programu
 	About WordCraft	O programu WordCraft
+	About MarkdownDocs	O programu MarkdownDocs
 	Above Chart	Iznad grafikona
 	Above the item	Iznad stavke
 	Absolute value cases	Slučajevi apsolutne vrijednosti
@@ -1147,7 +1148,6 @@
 	Italic	Kurziv
 	Japanese	Japanski
 	Join the ArtCraft community on Discord	Pridružite se ArtCraft zajednici na Discordu
-	Join us on Discord: discord.gg/artcraft	Pridružite nam se na Discordu: discord.gg/artcraft
 	Journal	Časopis
 	Justification	Obostrano poravnanje
 	Justification of a display equation	Poravnanje istaknute jednadžbe
@@ -2061,7 +2061,7 @@ template	Letter	Pismo
 	Sort	Sortiraj
 	Sort order:	Redoslijed sortiranja:
 	Source Manager	Upravitelj izvora
-	Source code: github.com/storytold/wordcraft	Izvorni kôd: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Izvorni kôd: github.com/MichaelMuClaude/MarkdownDocs
 	Source type:	Vrsta izvora:
 	Sources in this document:	Izvori u ovom dokumentu:
 	South	Jug
@@ -2455,6 +2455,7 @@ preview	Title	Naslov
 	WordArt	WordArt
 	WordArt Styles	WordArt stilovi
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	WordCraft is now the default app for Word documents.	WordCraft je sada zadana aplikacija za Word dokumente.
 	Words	Riječi
@@ -2481,7 +2482,6 @@ preview	Title	Naslov
 	can't split at the first row	nije moguće podijeliti na prvom retku
 	development build	razvojna verzija
 	from Unicode (hex)	iz Unicodea (heksadecimalno)
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	i, ii, iii, …	i, ii, iii, …
 	lowercase	mala slova
 	n×n Identity Matrix	Jedinična matrica n×n
@@ -2704,3 +2704,5 @@ preview	Title	Naslov
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Upišite veličinu u bilo kojoj jedinici, npr. 5 cm ili 300 px. Druga se strana prilagođava pa slika zadržava svoje proporcije.
 
 	Import…	Uvezi…
+	A fork of WordCraft, built for AI agents and Markdown first.	Fork projekta WordCraft, izrađen prvenstveno za AI agente i Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 doprinositelji projekta MarkdownDocs (vlastite promjene ovog forka).

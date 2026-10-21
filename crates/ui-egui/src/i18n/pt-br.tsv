@@ -14,9 +14,10 @@
 	(no style)	(sem estilo)
 	(no suggestions)	(sem sugestões)
 	1.5 Line Spacing	Espaçamento de 1,5 linha
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Um processador de texto gratuito e de código aberto, escrito do zero em Rust.\nFaz parte dos Crafting Apps da equipe ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Um processador de texto gratuito e de código aberto, escrito do zero em Rust.
 	About	Sobre
 	About WordCraft	Sobre o WordCraft
+	About MarkdownDocs	Sobre o MarkdownDocs
 	Accept	Aceitar
 	Accept All Changes	Aceitar todas as alterações
 	Accept This Change	Aceitar esta alteração
@@ -509,7 +510,6 @@
 	Interface language:	Idioma da interface:
 	Italic	Itálico
 	Join the ArtCraft community on Discord	Junte-se à comunidade ArtCraft no Discord
-	Join us on Discord: discord.gg/artcraft	Junte-se a nós no Discord: discord.gg/artcraft
 	Justify	Justificar
 	Keep Lines Together	Manter linhas juntas
 	Keep lines together	Manter linhas juntas
@@ -835,7 +835,7 @@
 	Small caps	Versaletes
 	SmartArt	SmartArt
 	Sort	Classificar
-	Source code: github.com/storytold/wordcraft	Código-fonte: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Código-fonte: github.com/MichaelMuClaude/MarkdownDocs
 	Space	Espaço
 	Space before/after:	Espaço antes/depois:
 	Spacing	Espaçamento
@@ -976,6 +976,7 @@
 	Word Right	Palavra à direita
 	WordArt	Texto artístico
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Palavras
 	Words only	Somente palavras
@@ -1237,7 +1238,6 @@
 	Insert a new equation (Alt+=)	Inserir uma nova equação (Alt+=)
 	Leave the equation (Esc)	Sair da equação (Esc)
 	Preview	Visualizar
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Draw Ink	Desenhar tinta
 	Erase Ink	Apagar tinta
 	Hide Ink	Ocultar tinta
@@ -2305,3 +2305,5 @@
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Digite um tamanho em qualquer unidade, como 5 cm ou 300 px. O outro lado acompanha, e a imagem mantém as proporções.
 
 	Import…	Importar…
+	A fork of WordCraft, built for AI agents and Markdown first.	Um fork do WordCraft, criado primeiro para agentes de IA e Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 os colaboradores do MarkdownDocs (as mudanças próprias deste fork).

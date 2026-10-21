@@ -14,9 +14,10 @@
 	(no style)	(без стилю)
 	(no suggestions)	(немає пропозицій)
 	1.5 Line Spacing	Міжрядковий інтервал 1,5
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Безкоштовний текстовий процесор із відкритим кодом, написаний з нуля мовою Rust.\nЧастина Crafting Apps від команди ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Безкоштовний текстовий процесор із відкритим кодом, написаний з нуля мовою Rust.
 	About	Про програму
 	About WordCraft	Про WordCraft
+	About MarkdownDocs	Про MarkdownDocs
 	Accept	Прийняти
 	Accept All Changes	Прийняти всі зміни
 	Accept This Change	Прийняти цю зміну
@@ -522,7 +523,6 @@
 	Interface language:	Мова інтерфейсу:
 	Italic	Курсив
 	Join the ArtCraft community on Discord	Приєднатися до спільноти ArtCraft у Discord
-	Join us on Discord: discord.gg/artcraft	Приєднуйтеся до нас у Discord: discord.gg/artcraft
 	Justify	За шириною
 	Keep Lines Together	Не розривати рядки абзацу
 	Keep lines together	Не розривати рядки абзацу
@@ -860,7 +860,7 @@
 	Small caps	Малі великі літери
 	SmartArt	SmartArt
 	Sort	Сортувати
-	Source code: github.com/storytold/wordcraft	Вихідний код: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Вихідний код: github.com/MichaelMuClaude/MarkdownDocs
 	Space	Пробіл
 	Space before/after:	Інтервал перед/після:
 	Spacing	Інтервал
@@ -1004,6 +1004,7 @@
 	Word Right	На слово праворуч
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Слова
 	Words only	Лише слова
@@ -1237,7 +1238,6 @@
 	Insert a new equation (Alt+=)	Вставити нове рівняння (Alt+=)
 	Leave the equation (Esc)	Вийти з рівняння (Esc)
 	Preview	Попередній перегляд
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Draw Ink	Малювати чорнилом
 	Erase Ink	Стерти чорнило
 	Hide Ink	Сховати чорнило
@@ -2305,3 +2305,5 @@
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Введіть розмір у будь-яких одиницях, наприклад 5 cm або 300 px. Інша сторона зміниться разом із нею, тож зображення збереже пропорції.
 
 	Import…	Імпортувати…
+	A fork of WordCraft, built for AI agents and Markdown first.	Форк WordCraft, створений насамперед для ШІ-агентів і Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Авторські права (c) 2026 учасників MarkdownDocs (власні зміни цього форку).

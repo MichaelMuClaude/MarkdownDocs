@@ -15,10 +15,11 @@
 
 	(no suggestions)	(нет вариантов)
 	1.5 Line Spacing	Полуторный интервал
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Бесплатный текстовый процессор с открытым исходным кодом, написанный с нуля на Rust.\nВходит в Crafting Apps от команды ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Бесплатный текстовый процессор с открытым исходным кодом, написанный с нуля на Rust.
 	AaBbCcDd	АаБбВвГг
 	About	О программе
 	About WordCraft	О WordCraft
+	About MarkdownDocs	О MarkdownDocs
 	Accept	Принять
 	Accept All Changes	Принять все изменения
 	Accept This Change	Принять это изменение
@@ -380,7 +381,6 @@
 	Interface language:	Язык интерфейса:
 	Italic	Курсив
 	Join the ArtCraft community on Discord	Присоединяйтесь к сообществу ArtCraft в Discord
-	Join us on Discord: discord.gg/artcraft	Присоединяйтесь к нам в Discord: discord.gg/artcraft
 	Justify	По ширине
 	Keep Lines Together	Не разрывать абзац
 	Keep lines together	Не разрывать абзац
@@ -697,7 +697,7 @@
 	Small caps	Малые прописные
 	SmartArt	SmartArt
 	Sort	Сортировка
-	Source code: github.com/storytold/wordcraft	Исходный код: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Исходный код: github.com/MichaelMuClaude/MarkdownDocs
 	Space before/after:	Интервал перед/после:
 	Spacing	Интервал
 	Spacing (pt):	Интервал (пт):
@@ -841,6 +841,7 @@ preview	Title	Пример
 	Word Right	На слово вправо
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Слова
 	Words only	Только слова
@@ -1111,7 +1112,6 @@ preview	Title	Пример
 	Insert a new equation (Alt+=)	Вставить новое уравнение (Alt+=)
 	Leave the equation (Esc)	Выйти из уравнения (Esc)
 	Preview	Предварительный просмотр
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Browse…	Обзор…
 
 # Equation gallery, themes, watermarks, paper sizes, table styles and other strings the
@@ -2702,3 +2702,5 @@ preview	Title	Пример
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Введите размер в любых единицах, например 5 cm или 300 px. Другая сторона изменится вместе с ней, и рисунок сохранит пропорции.
 
 	Import…	Импорт…
+	A fork of WordCraft, built for AI agents and Markdown first.	Форк WordCraft, созданный в первую очередь для ИИ-агентов и Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Авторские права (c) 2026 участники проекта MarkdownDocs (собственные изменения этого форка).

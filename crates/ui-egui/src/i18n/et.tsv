@@ -11,9 +11,10 @@
 
 	(no suggestions)	(soovitused puuduvad)
 	1.5 Line Spacing	Reavahe 1,5
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Tasuta avatud lähtekoodiga tekstitöötlusprogramm, mis on kirjutatud Rustis.\nArtCrafti meeskonna Crafting Appsi osa.
+	A free, open-source word processor written from scratch in Rust.	Tasuta avatud lähtekoodiga tekstitöötlusprogramm, mis on kirjutatud Rustis.
 	About	Teave
 	About WordCraft	WordCrafti teave
+	About MarkdownDocs	MarkdownDocsi teave
 	Accept	Nõustu
 	Accept All Changes	Nõustu kõigi muudatustega
 	Accept This Change	Nõustu selle muudatusega
@@ -392,7 +393,6 @@
 	Interface language:	Kasutajaliidese keel:
 	Italic	Kaldkiri
 	Join the ArtCraft community on Discord	Liitu ArtCrafti kogukonnaga Discordis
-	Join us on Discord: discord.gg/artcraft	Liitu meiega Discordis: discord.gg/artcraft
 	Justify	Rööpjoonda
 	Keep Lines Together	Hoia read koos
 	Keep Text Only	Säilita ainult tekst
@@ -748,7 +748,7 @@
 	Small caps	Kapiteelkiri
 	SmartArt	SmartArt
 	Sort	Sordi
-	Source code: github.com/storytold/wordcraft	Lähtekood: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Lähtekood: github.com/MichaelMuClaude/MarkdownDocs
 	Space before/after:	Vahe enne/pärast:
 	Spaces	Tühikud
 	Spacing	Vahe
@@ -900,6 +900,7 @@
 	Word 2003 XML Document (*.xml)	Word 2003 XML-dokument (*.xml)
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Sõnad
 	Words only	Ainult sõnad
@@ -1135,7 +1136,6 @@
 	Left Margin	Vasak veeris
 	Repeat as header row on each page	Korda päisereana igal lehel
 	Insert a new equation (Alt+=)	Lisa uus võrrand (Alt+=)
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Bottom Margin	Alumine veeris
 	Cell	Lahter
 	Specify height:	Määra kõrgus:
@@ -2327,3 +2327,5 @@
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Sisesta suurus mis tahes ühikus, näiteks 5 cm või 300 px. Teine külg muutub kaasa, nii et pilt säilitab oma proportsioonid.
 
 	Import…	Impordi…
+	A fork of WordCraft, built for AI agents and Markdown first.	WordCrafti hargnemine (fork), loodud esmajoones tehisintellekti agentidele ja Markdownile.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Autoriõigus (c) 2026 MarkdownDocsi kaasautorid (selle haru enda muudatused).

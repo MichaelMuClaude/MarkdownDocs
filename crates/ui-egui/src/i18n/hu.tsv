@@ -17,10 +17,11 @@
 
 	(no suggestions)	(nincs javaslat)
 	1.5 Line Spacing	1,5-es sorköz
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Ingyenes, nyílt forráskódú szövegszerkesztő, az alapoktól Rustban írva.\nA Crafting Apps családba tartozik, az ArtCraft csapatától.
+	A free, open-source word processor written from scratch in Rust.	Ingyenes, nyílt forráskódú szövegszerkesztő, az alapoktól Rustban írva.
 	AaBbCcDd	AaÁáBbCc
 	About	Névjegy
 	About WordCraft	A WordCraft névjegye
+	About MarkdownDocs	A MarkdownDocs névjegye
 	Accept	Elfogadás
 	Accept All Changes	Összes módosítás elfogadása
 	Accept This Change	E módosítás elfogadása
@@ -378,7 +379,6 @@
 	Interface language:	Felület nyelve:
 	Italic	Dőlt
 	Join the ArtCraft community on Discord	Csatlakozz az ArtCraft közösséghez a Discordon
-	Join us on Discord: discord.gg/artcraft	Csatlakozz hozzánk a Discordon: discord.gg/artcraft
 	Justify	Sorkizárás
 	Keep Lines Together	Sorok együtt tartása
 	Keep lines together	Sorok együtt tartása
@@ -696,7 +696,7 @@
 	Small caps	Kiskapitális
 	SmartArt	SmartArt
 	Sort	Rendezés
-	Source code: github.com/storytold/wordcraft	Forráskód: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Forráskód: github.com/MichaelMuClaude/MarkdownDocs
 	Space before/after:	Térköz előtte/utána:
 	Spacing	Térköz
 	Spacing (pt):	Térköz (pt):
@@ -834,6 +834,7 @@
 	Word Right	Szó jobbra
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Szavak
 	Words only	Csak szavak
@@ -1101,7 +1102,6 @@
 	Insert a new equation (Alt+=)	Új egyenlet beszúrása (Alt+=)
 	Leave the equation (Esc)	Kilépés az egyenletből (Esc)
 	Preview	Előnézet
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Browse…	Tallózás…
 	AaBbYyZz	AaBbYyZz ŐőŰű
 	Align Top Left	Igazítás balra fel
@@ -2700,3 +2700,5 @@
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Írj be egy méretet bármilyen mértékegységben, például 5 cm vagy 300 px. A másik oldal követi, így a kép megtartja az arányait.
 
 	Import…	Importálás…
+	A fork of WordCraft, built for AI agents and Markdown first.	A WordCraft forkja, elsősorban AI-ügynökök és a Markdown számára készült.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 a MarkdownDocs közreműködői (ennek a forknak a saját módosításai).

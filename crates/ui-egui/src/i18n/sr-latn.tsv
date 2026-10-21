@@ -15,10 +15,11 @@
 	(no suggestions)	(nema predloga)
 	(picture or object)	(slika ili objekat)
 	1.5 Line Spacing	Proređenost 1,5
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Besplatan, otvoreni obrađivač teksta napisan od nule u Rust-u.\nDeo Crafting Apps paketa tima ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Besplatan, otvoreni obrađivač teksta napisan od nule u Rust-u.
 	A password is required to open this document.	Za otvaranje ovog dokumenta potrebna je lozinka.
 	About	O programu
 	About WordCraft	O WordCraft-u
+	About MarkdownDocs	O MarkdownDocs-u
 	Accept	Prihvati
 	Accept All Changes	Prihvati sve izmene
 	Accept This Change	Prihvati ovu izmenu
@@ -556,7 +557,6 @@
 	Interface language:	Jezik interfejsa:
 	Italic	Kurziv
 	Join the ArtCraft community on Discord	Pridružite se ArtCraft zajednici na Discord-u
-	Join us on Discord: discord.gg/artcraft	Pridružite nam se na Discord-u: discord.gg/artcraft
 	Justify	Obostrano poravnanje
 	Keep Lines Together	Zadrži redove zajedno
 	Keep lines together	Zadrži redove zajedno
@@ -886,7 +886,7 @@
 	Soft Edges	Meke ivice
 	Sort	Sortiraj
 	Sort order:	Redosled sortiranja:
-	Source code: github.com/storytold/wordcraft	Izvorni kod: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Izvorni kod: github.com/MichaelMuClaude/MarkdownDocs
 	Space	Razmak
 	Space after: {pt} pt	Razmak posle: {pt} pt
 	Space before/after:	Razmak pre/posle:
@@ -1036,6 +1036,7 @@
 	Word Right	Reč desno
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Reči
 	Words only	Samo reči
@@ -1290,7 +1291,6 @@
 	Reset Crop	Poništi isecanje
 	Insert a new equation (Alt+=)	Umetni novu jednačinu (Alt+=)
 	Leave the equation (Esc)	Napusti jednačinu (Esc)
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Draw Ink	Crtaj mastilom
 	Erase Ink	Obriši mastilo
 	Hide Ink	Sakrij mastilo
@@ -2303,3 +2303,5 @@
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Unesite veličinu u bilo kojoj jedinici, na primer 5 cm ili 300 px. Druga strana se prilagođava, pa slika zadržava svoje proporcije.
 
 	Import…	Uvezi…
+	A fork of WordCraft, built for AI agents and Markdown first.	Fork projekta WordCraft, napravljen prvenstveno za AI agente i Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Autorska prava (c) 2026 saradnici na MarkdownDocs-u (sopstvene izmene ovog forka).

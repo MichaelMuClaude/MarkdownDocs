@@ -4,9 +4,10 @@
 	(no style)	（無樣式）
 	(no suggestions)	（無建議）
 	1.5 Line Spacing	1.5 倍行距
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	一款以 Rust 從零開始撰寫的免費開源文書處理軟體。\n屬於 ArtCraft 團隊的 Crafting Apps 系列。
+	A free, open-source word processor written from scratch in Rust.	一款以 Rust 從零開始撰寫的免費開源文書處理軟體。
 	About	關於
 	About WordCraft	關於 WordCraft
+	About MarkdownDocs	關於 MarkdownDocs
 	Accept	接受
 	Accept All Changes	接受所有修訂
 	Accept This Change	接受此修訂
@@ -509,7 +510,6 @@
 	Interface language:	介面語言：
 	Italic	斜體
 	Join the ArtCraft community on Discord	加入 Discord 上的 ArtCraft 社群
-	Join us on Discord: discord.gg/artcraft	在 Discord 上加入我們：discord.gg/artcraft
 	Justify	左右對齊
 	Keep Lines Together	段落中不分頁
 	Keep lines together	段落中不分頁
@@ -835,7 +835,7 @@
 	Small caps	小型大寫字
 	SmartArt	SmartArt
 	Sort	排序
-	Source code: github.com/storytold/wordcraft	原始碼：github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	原始碼：github.com/MichaelMuClaude/MarkdownDocs
 	Space	空格
 	Space before/after:	段落前/後間距：
 	Spacing	間距
@@ -977,6 +977,7 @@
 	Word Right	右移一個單字
 	WordArt	文字藝術師
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	字數
 	Words only	僅文字
@@ -1226,7 +1227,6 @@
 	Insert a new equation (Alt+=)	插入新方程式 (Alt+=)
 	Leave the equation (Esc)	離開方程式 (Esc)
 	Preview	預覽
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Draw Ink	繪製筆跡
 	Erase Ink	擦除筆跡
 	Hide Ink	隱藏筆跡
@@ -2294,3 +2294,5 @@
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	可用任何單位輸入大小，例如 5 cm 或 300 px。另一邊隨之調整，圖片保持原有比例。
 
 	Import…	匯入…
+	A fork of WordCraft, built for AI agents and Markdown first.	WordCraft 的一個分支(fork),首先為 AI 代理和 Markdown 而打造。
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	著作權所有 (c) 2026 MarkdownDocs 貢獻者(此分支自身的修改)。

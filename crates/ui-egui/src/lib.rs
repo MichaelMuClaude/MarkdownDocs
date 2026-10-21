@@ -271,7 +271,8 @@ pub struct UiState {
     /// View › Navigation Pane: open or closed as the person left it, kept between runs (#2526).
     /// The session owns it while running (see [`WordApp::prefs`]).
     pub nav_pane: bool,
-    pub show_discord: bool,
+    /// Title bar: show the GitHub button (File › Options).
+    pub show_github: bool,
     /// User name (File › Options) for comments and tracked changes; empty keeps the default.
     pub author: String,
     /// Desktop: the main window's size and position, restored at the next launch.
@@ -373,7 +374,7 @@ impl Default for UiState {
             legacy_dark: None,
             nav_tab: "headings".into(),
             nav_pane: false,
-            show_discord: true,
+            show_github: true,
             author: String::new(),
             window: None,
             language: i18n::AUTO.into(),

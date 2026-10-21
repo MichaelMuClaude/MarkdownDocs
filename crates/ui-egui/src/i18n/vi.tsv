@@ -19,9 +19,10 @@
 	(no style)	(không có kiểu)
 	(no suggestions)	(không có gợi ý)
 	1.5 Line Spacing	Giãn dòng 1,5
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Trình xử lý văn bản miễn phí, mã nguồn mở được viết từ đầu bằng Rust.\nMột phần trong bộ ứng dụng Crafting Apps của đội ngũ ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Trình xử lý văn bản miễn phí, mã nguồn mở được viết từ đầu bằng Rust.
 	About	Giới thiệu
 	About WordCraft	Giới thiệu về WordCraft
+	About MarkdownDocs	Giới thiệu về MarkdownDocs
 	Accept	Chấp nhận
 	Accept All Changes	Chấp nhận tất cả thay đổi
 	Accept This Change	Chấp nhận thay đổi này
@@ -446,7 +447,6 @@
 	Interface language:	Ngôn ngữ giao diện:
 	Italic	In nghiêng
 	Join the ArtCraft community on Discord	Tham gia cộng đồng ArtCraft trên Discord
-	Join us on Discord: discord.gg/artcraft	Tham gia cùng chúng tôi trên Discord: discord.gg/artcraft
 	Justify	Căn đều
 	Keep Lines Together	Giữ các dòng cùng nhau
 	Keep Text Only	Chỉ giữ văn bản
@@ -787,7 +787,7 @@
 	Small caps	Chữ hoa nhỏ
 	SmartArt	SmartArt
 	Sort	Sắp xếp
-	Source code: github.com/storytold/wordcraft	Mã nguồn: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Mã nguồn: github.com/MichaelMuClaude/MarkdownDocs
 	Space	Dấu cách
 	Space before/after:	Khoảng cách trước/sau:
 	Spacing	Khoảng cách
@@ -925,6 +925,7 @@
 	Word document (*.docx)	Tài liệu Word (*.docx)
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Từ
 	Words only	Chỉ gạch chân từ
@@ -1161,7 +1162,6 @@
 	Insert a new equation (Alt+=)	Chèn phương trình mới (Alt+=)
 	Leave the equation (Esc)	Rời khỏi phương trình (Esc)
 	Preview	Xem thử
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Draw Ink	Vẽ mực
 	Erase Ink	Xóa mực
 	Hide Ink	Ẩn mực
@@ -2744,3 +2744,5 @@ template	Letter	Thư
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Nhập kích thước theo đơn vị bất kỳ, ví dụ 5 cm hoặc 300 px. Cạnh còn lại thay đổi theo, nên ảnh giữ nguyên tỷ lệ.
 
 	Import…	Nhập…
+	A fork of WordCraft, built for AI agents and Markdown first.	Một fork của WordCraft, được xây dựng trước tiên cho các AI agent và Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Bản quyền (c) 2026 các cộng tác viên MarkdownDocs (các thay đổi riêng của fork này).

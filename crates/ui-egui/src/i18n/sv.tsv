@@ -17,9 +17,10 @@
 	(no style)	(ingen stil)
 	(no suggestions)	(inga förslag)
 	1.5 Line Spacing	Radavstånd 1,5
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	En gratis ordbehandlare med öppen källkod, skriven från grunden i Rust.\nEn del av Crafting Apps från ArtCraft-teamet.
+	A free, open-source word processor written from scratch in Rust.	En gratis ordbehandlare med öppen källkod, skriven från grunden i Rust.
 	About	Om
 	About WordCraft	Om WordCraft
+	About MarkdownDocs	Om MarkdownDocs
 	Accept	Acceptera
 	Accept All Changes	Acceptera alla ändringar
 	Accept This Change	Acceptera den här ändringen
@@ -511,7 +512,6 @@
 	Interface language:	Gränssnittsspråk:
 	Italic	Kursiv
 	Join the ArtCraft community on Discord	Gå med i ArtCrafts community på Discord
-	Join us on Discord: discord.gg/artcraft	Gå med i ArtCrafts community på Discord: discord.gg/artcraft
 	Justify	Marginaljustera
 	Keep Lines Together	Håll ihop raderna
 	Keep Text Only	Behåll bara texten
@@ -862,7 +862,7 @@
 	Small caps	Kapitäler
 	SmartArt	SmartArt
 	Sort	Sortera
-	Source code: github.com/storytold/wordcraft	Källkod: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Källkod: github.com/MichaelMuClaude/MarkdownDocs
 	Space	Blanksteg
 	Space before/after:	Avstånd före/efter:
 	Spacing	Avstånd
@@ -1013,6 +1013,7 @@
 	Word XML Document (*.xml)	Word XML-dokument (*.xml)
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	WordCraft is now the default app for Word documents.	WordCraft är nu standardprogram för Word-dokument.
 	Words	Ord
@@ -1253,7 +1254,6 @@
 	Insert a new equation (Alt+=)	Infoga en ny ekvation (Alt+=)
 	Leave the equation (Esc)	Lämna ekvationen (Esc)
 	Preview	Förhandsvisning
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Draw Ink	Rita med bläck
 	Erase Ink	Sudda bläck
 	Hide Ink	Dölj bläck
@@ -2719,3 +2719,5 @@ preview	Title	Titel
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Skriv en storlek i valfri enhet, till exempel 5 cm eller 300 px. Den andra sidan följer med, så att bilden behåller sina proportioner.
 
 	Import…	Importera…
+	A fork of WordCraft, built for AI agents and Markdown first.	En fork av WordCraft, byggd i första hand för AI-agenter och Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 MarkdownDocs bidragsgivare (den här forkens egna ändringar).

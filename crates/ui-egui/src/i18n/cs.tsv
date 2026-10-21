@@ -24,7 +24,7 @@
 	1/4 Em Space	Čtvrtčtverčíková mezera
 	3-D	3D
 	A file dialog is already open.	Dialogové okno souboru je již otevřené.
-	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Bezplatný textový procesor s otevřeným zdrojovým kódem napsaný od základu v jazyce Rust.\nSoučást sady Crafting Apps od týmu ArtCraft.
+	A free, open-source word processor written from scratch in Rust.	Bezplatný textový procesor s otevřeným zdrojovým kódem napsaný od základu v jazyce Rust.
 	AaBbCcDd	AaÁáBbCc
 	A mail merge field	Pole hromadné korespondence
 	A numbered sequence (figures, tables…)	Číslovaná posloupnost (obrázky, tabulky…)
@@ -32,6 +32,7 @@
 	A table of contents	Obsah
 	About	O aplikaci
 	About WordCraft	O aplikaci WordCraft
+	About MarkdownDocs	O aplikaci MarkdownDocs
 	Accent	Diakritika
 	Accept	Přijmout
 	Accept All Changes	Přijmout všechny změny
@@ -490,7 +491,6 @@
 	✓ None	✓ Žádné
 	Function	Funkce
 	General	Obecné
-	getartcraft.com/apps/wordcraft	getartcraft.com/apps/wordcraft
 	Glow	Záře
 	Glow Colors	Barvy záře
 	Go To	Přejít na
@@ -608,7 +608,6 @@
 	Interface\nTheme	Motiv\nrozhraní
 	Italic	Kurzíva
 	Join the ArtCraft community on Discord	Připojte se ke komunitě ArtCraft na Discordu
-	Join us on Discord: discord.gg/artcraft	Připojte se k nám na Discordu: discord.gg/artcraft
 	Justification	Zarovnání
 	Justified	Do bloku
 	Justify	Do bloku
@@ -1132,7 +1131,7 @@
 	Soft Edges	Měkké okraje
 	Sort	Seřadit
 	Sort order:	Pořadí řazení:
-	Source code: github.com/storytold/wordcraft	Zdrojový kód: github.com/storytold/wordcraft
+	Source code: github.com/MichaelMuClaude/MarkdownDocs	Zdrojový kód: github.com/MichaelMuClaude/MarkdownDocs
 	Space	Mezera
 	Space after	Mezera za
 	Space after: {pt} pt	Mezera za: {pt} b.
@@ -1340,6 +1339,7 @@
 	Word Right	O slovo vpravo
 	WordArt	WordArt
 	WordCraft	WordCraft
+	MarkdownDocs	MarkdownDocs
 	GitHub	GitHub
 	Words	Slova
 	Words only	Pouze slova
@@ -2696,3 +2696,5 @@ preview	Title	Ukázka
 	Type a size in any unit, such as 5 cm or 300 px. The other side follows, so the picture keeps its proportions.	Zadejte velikost v libovolné jednotce, například 5 cm nebo 300 px. Druhá strana se přizpůsobí, takže obrázek zachová své proporce.
 
 	Import…	Importovat…
+	A fork of WordCraft, built for AI agents and Markdown first.	Fork projektu WordCraft, vytvořený především pro AI agenty a Markdown.
+	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 přispěvatelé projektu MarkdownDocs (vlastní změny tohoto forku).
