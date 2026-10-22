@@ -74,7 +74,14 @@ pub struct Img {
     pub w: f32,
     pub h: f32,
     pub alt: String,
+    /// The picture's name: the document's media key coming out of a document, and a Markdown
+    /// image's own destination (prefixed [`MD_SRC`]) coming out of Markdown, so saving the
+    /// Markdown again writes the same `![alt](path)` instead of losing it. `None`: unnamed.
+    pub name: Option<String>,
 }
+
+/// Prefix of a media key that is a Markdown image's destination, as written in the source.
+pub const MD_SRC: &str = "md-src:";
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Inline {
@@ -551,7 +558,15 @@ impl<'a> Builder<'a> {
                     append(&mut out, &t, &cp, None);
                 }
                 Inline::Image(img) => {
-                    let key = self.doc.add_media(img.data.to_vec(), &img.ext);
+                    // A named picture keeps its name as the key (a Markdown image's destination:
+                    // two paths with the same bytes stay two keys); anything else is deduplicated.
+                    let key = match img.name.as_ref().filter(|n| !n.is_empty()) {
+                        Some(n) if self.doc.media.get(n).is_none_or(|d| d.as_slice() == img.data.as_slice()) => {
+                            self.doc.media.insert(n.clone(), img.data.clone());
+                            n.clone()
+                        }
+                        _ => self.doc.add_media(img.data.to_vec(), &img.ext),
+                    };
                     let (w, h) = (finite_or(img.w, 72.0).clamp(1.0, 1584.0), finite_or(img.h, 72.0).clamp(1.0, 1584.0));
                     let obj = InlineObject::Image { media: key, w, h, alt: img.alt.clone(), float: Default::default(), crop: [0.0; 4], ole: None };
                     append(&mut out, "", &CharProps::default(), Some(obj));
@@ -964,9 +979,14 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
                         out.push_text(&std::mem::take(&mut buf), &f);
                     }
                     match doc.media.get(media) {
-                        Some(data) => {
-                            out.inlines.push(Inline::Image(Img { data: data.clone(), ext: media_ext(media, data), w: *w, h: *h, alt: alt.clone() }))
-                        }
+                        Some(data) => out.inlines.push(Inline::Image(Img {
+                            data: data.clone(),
+                            ext: media_ext(media, data),
+                            w: *w,
+                            h: *h,
+                            alt: alt.clone(),
+                            name: Some(media.clone()),
+                        })),
                         None if !alt.is_empty() => buf.push_str(alt),
                         None => {}
                     }
@@ -1151,7 +1171,7 @@ pub fn make_img(data: impl Into<Arc<Vec<u8>>>, w: Option<f32>, h: Option<f32>, a
         h *= 468.0 / w;
         w = 468.0;
     }
-    Some(Img { data, ext: ext.to_string(), w: w.clamp(1.0, 1584.0), h: h.clamp(1.0, 1584.0), alt: alt.to_string() })
+    Some(Img { data, ext: ext.to_string(), w: w.clamp(1.0, 1584.0), h: h.clamp(1.0, 1584.0), alt: alt.to_string(), name: None })
 }
 
 const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

@@ -7,7 +7,13 @@
 //! inline links, autolinks, images (`data:` URIs become pictures, others their alt text),
 //! backslash escapes, entities, `<br>` and `<a id>` anchors.
 //!
-//! Export writes the same constructs; pictures become `![alt](media-name)` placeholders.
+//! Export writes the same constructs. A picture read from Markdown keeps its destination and is
+//! written back as the same `![alt](path)`; any other picture (pasted, from a .docx) is embedded
+//! as a `data:` URI, so a Markdown save never points at a file that doesn't exist.
+//!
+//! Import keeps every image reference: a local file next to the document is loaded when the
+//! caller supplies a loader ([`import_on_with`]); otherwise (a URL, a missing file, no loader) the
+//! picture is a grey placeholder that still remembers its destination.
 
 use std::collections::HashMap;
 
@@ -30,6 +36,53 @@ pub fn import(text: &str) -> Document {
 /// [`import`] onto `page`: Markdown gives no page size (#1381).
 pub fn import_on(text: &str, page: &wordcraft_doc::SectionProps) -> Document {
     model::to_doc_in(&parse(text), page.clone())
+}
+
+/// [`import_on`], loading each image's file through `images` (relative to the document; the caller
+/// decides what may be read). Images it can't load stay grey placeholders that keep their path.
+pub fn import_on_with(text: &str, images: crate::html::ImageLoader, page: &wordcraft_doc::SectionProps) -> Document {
+    let mut flow = parse(text);
+    load_images(&mut flow.blocks, images, 0);
+    model::to_doc_in(&flow, page.clone())
+}
+
+/// Replace placeholder pictures whose destination `images` can load with the real picture.
+fn load_images(blocks: &mut [FBlock], images: crate::html::ImageLoader, depth: usize) {
+    if depth > MAX_NEST {
+        return;
+    }
+    for b in blocks {
+        match b {
+            FBlock::Para(p) => {
+                for x in &mut p.inlines {
+                    if let Inline::Image(img) = x
+                        && let Some(src) = img.name.as_deref().and_then(|n| n.strip_prefix(model::MD_SRC))
+                        && let Some(data) = images(src)
+                        && let Some(mut real) = make_img(data, None, None, &img.alt)
+                    {
+                        real.name = img.name.take();
+                        *img = real;
+                    }
+                }
+            }
+            FBlock::Table(t) => t.rows.iter_mut().flatten().for_each(|c| load_images(&mut c.blocks, images, depth + 1)),
+        }
+    }
+}
+
+/// The grey picture shown for an image whose file isn't loaded (made once).
+fn placeholder_png() -> std::sync::Arc<Vec<u8>> {
+    static PNG: std::sync::OnceLock<std::sync::Arc<Vec<u8>>> = std::sync::OnceLock::new();
+    PNG.get_or_init(|| {
+        let (w, h) = (160u32, 120u32);
+        let img = image::RgbaImage::from_fn(w, h, |x, y| {
+            if x < 2 || y < 2 || x >= w - 2 || y >= h - 2 { image::Rgba([0xA0, 0xA0, 0xA0, 0xFF]) } else { image::Rgba([0xE8, 0xE8, 0xE8, 0xFF]) }
+        });
+        let mut out = Vec::new();
+        let _ = image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png);
+        std::sync::Arc::new(out)
+    })
+    .clone()
 }
 
 /// Parse Markdown text into the flow model.
@@ -828,7 +881,19 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
                             .iter()
                             .filter_map(|x| if let Inline::Text(t, _) = x { Some(t.as_str()) } else { None })
                             .collect();
-                        match model::data_uri(&dest).and_then(|d| make_img(d, None, None, &alt)) {
+                        let embedded = model::data_uri(&dest).and_then(|d| make_img(d, None, None, &alt));
+                        // Any other destination is kept as a placeholder that remembers it, so the
+                        // reference survives the next save (an empty one is just its alt text).
+                        let referenced = || {
+                            let dest = dest.trim();
+                            (!dest.is_empty() && !dest.starts_with("data:")).then(|| make_img(placeholder_png(), None, None, &alt)).flatten().map(
+                                |mut im| {
+                                    im.name = Some(format!("{}{dest}", model::MD_SRC));
+                                    im
+                                },
+                            )
+                        };
+                        match embedded.or_else(referenced) {
                             Some(im) => nodes.push(Node::Inl(Inline::Image(im))),
                             None => push_text(&mut nodes, &alt, base),
                         }
@@ -1167,8 +1232,14 @@ fn inlines_md_impl(inlines: &[Inline], in_table: bool) -> String {
                 }
             }
             Inline::Image(img) => {
-                let name = format!("image.{}", img.ext);
-                pieces.push((String::new(), Fmt::default(), Some(format!("![{}]({})", escape(&img.alt), name))));
+                let dest = match img.name.as_deref().and_then(|n| n.strip_prefix(model::MD_SRC)) {
+                    Some(src) => link_destination(src),
+                    None => {
+                        let mime = if img.ext == "jpg" { "jpeg" } else { img.ext.as_str() };
+                        format!("data:image/{mime};base64,{}", model::base64_encode(&img.data))
+                    }
+                };
+                pieces.push((String::new(), Fmt::default(), Some(format!("![{}]({dest})", escape(&img.alt)))));
             }
             Inline::Anchor(a) => {
                 let safe: String = a.chars().filter(|c| c.is_alphanumeric() || matches!(c, '_' | '-' | '.' | ':')).collect();
@@ -1406,6 +1477,16 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
             }
         }
         i += 1;
+    }
+}
+
+/// A link destination as Markdown writes it: in `<…>` when it holds spaces, parentheses or angle
+/// brackets (CommonMark §6.3), which can't stand bare.
+fn link_destination(dest: &str) -> String {
+    if dest.chars().any(|c| c.is_whitespace() || matches!(c, '(' | ')' | '<' | '>')) {
+        format!("<{}>", dest.replace('<', "%3C").replace('>', "%3E"))
+    } else {
+        dest.to_string()
     }
 }
 
@@ -1704,6 +1785,59 @@ mod tests {
         let FBlock::Table(back_table2) = &back_flow2.blocks[0] else { panic!() };
         assert_eq!(back_table2.rows[1][0].text(), "a`b|c");
         assert_eq!(back_table2.rows[1][1].text(), "CRITICAL_DISTINCTIVE_INFO");
+    }
+
+    /// A Markdown image is kept on a round trip: its path comes back as written (it used to be
+    /// read as its alt text alone, and every picture was written as a made-up `image.png`), two
+    /// paths stay two pictures even with the same placeholder, and a path that needs `<…>` keeps
+    /// it.
+    #[test]
+    fn image_references_survive_a_round_trip() {
+        let round = |md: &str| export(&import(md));
+        assert_eq!(round("Text ![alt text](pic.png) more.").trim_end(), "Text ![alt text](pic.png) more.");
+        assert_eq!(round("![a](<my pic.png>)").trim_end(), "![a](<my pic.png>)");
+        assert_eq!(round("![remote](https://example.com/x.png)").trim_end(), "![remote](https://example.com/x.png)");
+        let two = round("![one](a.png) ![two](b.png)");
+        assert!(two.contains("![one](a.png)") && two.contains("![two](b.png)"), "{two}");
+        // An empty destination stays what it was: just the alt text.
+        assert_eq!(round("![only alt]()").trim_end(), "only alt");
+    }
+
+    /// A file the loader can read becomes the real picture (shown in the editor), still written
+    /// back by its path; a picture with no Markdown path (pasted, from a .docx) is embedded as a
+    /// `data:` URI that reads back as the same picture.
+    #[test]
+    fn loaded_images_keep_their_path_and_others_embed() {
+        let png = {
+            let img = image::RgbaImage::from_pixel(4, 3, image::Rgba([10, 20, 30, 255]));
+            let mut out = Vec::new();
+            image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).unwrap();
+            out
+        };
+        let data = std::sync::Arc::new(png.clone());
+        let loader = |src: &str| (src == "pics/dot.png").then(|| data.clone());
+        let doc = import_on_with("![dot](pics/dot.png)", &loader, &Default::default());
+        assert!(doc.media.values().any(|d| d.as_slice() == png.as_slice()), "the file's own picture is in the document");
+        assert_eq!(export(&doc).trim_end(), "![dot](pics/dot.png)");
+
+        let mut doc = import(&format!("![dot](data:image/png;base64,{})", model::base64_encode(&png)));
+        // Pasted/DOCX pictures carry an ordinary media key, not a Markdown path.
+        let key = doc.media.keys().next().cloned().unwrap();
+        let bytes = doc.media.remove(&key).unwrap();
+        doc.media.insert("image1.png".into(), bytes);
+        for b in &mut doc.body {
+            if let wordcraft_doc::Block::Para(p) = std::sync::Arc::make_mut(b) {
+                for o in &mut p.objects {
+                    if let wordcraft_doc::InlineObject::Image { media, .. } = o {
+                        *media = "image1.png".into();
+                    }
+                }
+            }
+        }
+        let md = export(&doc);
+        assert!(md.starts_with("![dot](data:image/png;base64,"), "{md}");
+        let back = import(&md);
+        assert!(back.media.values().any(|d| d.as_slice() == png.as_slice()), "the embedded picture reads back unchanged");
     }
 
     #[test]

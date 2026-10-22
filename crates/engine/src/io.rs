@@ -414,6 +414,15 @@ pub fn open_path_in(path: &std::path::Path, password: Option<&str>, region: &wor
         opened(&mut doc);
         return Ok((doc, false));
     }
+    if matches!(ext_of(&name).as_str(), "md" | "markdown") {
+        // So are a Markdown file's `![alt](path)` images; the path is kept either way, so saving
+        // writes the same reference back (see `wordcraft_formats::markdown`).
+        let images = LocalImages::new(path.parent().unwrap_or(std::path::Path::new("")));
+        let text = wordcraft_formats::txt::decode(&bytes);
+        let mut doc = wordcraft_formats::markdown::import_on_with(&text, &|src| images.load(src), &region_page(region));
+        opened(&mut doc);
+        return Ok((doc, false));
+    }
     open_bytes_in(&name, &bytes, password, region)
 }
 
