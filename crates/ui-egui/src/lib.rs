@@ -411,7 +411,8 @@ impl Default for UiState {
             alt_key_down: false,
             alt_modifier_seen: false,
             dark_page: false,
-            check_spelling: true,
+            // Off until turned on (File › Options › Proofing), as the desktop app starts (`main`).
+            check_spelling: false,
             caret_animation: true,
             keyboard: wordcraft_engine::KeyMap::default(),
             ribbon: wordcraft_engine::RibbonLayout::default(),
@@ -7809,16 +7810,22 @@ mod tests {
     fn check_spelling_survives_restart() {
         // #1792: unchecking Check spelling as you type was forgotten on restart.
         let mut first = app();
-        assert!(first.session.view.proofing);
         first.run("file.options", json!({"checkSpelling": false})).unwrap();
         let saved = serde_json::to_vec(&first.prefs()).unwrap();
 
         let mut second = app();
         second.apply_prefs(serde_json::from_slice(&saved).unwrap());
         assert!(!second.session.view.proofing);
-        // Settings saved before #1792 have no key: spelling stays on.
-        second.apply_prefs(serde_json::from_str("{}").unwrap());
-        assert!(second.session.view.proofing);
+        // Turned on, it stays on.
+        second.run("file.options", json!({"checkSpelling": true})).unwrap();
+        let saved = serde_json::to_vec(&second.prefs()).unwrap();
+        let mut third = app();
+        third.apply_prefs(serde_json::from_slice(&saved).unwrap());
+        assert!(third.session.view.proofing);
+        // Settings without the key: off, this fork's default (an agent writes most of the text,
+        // so red underlines are mostly noise).
+        third.apply_prefs(serde_json::from_str("{}").unwrap());
+        assert!(!third.session.view.proofing);
     }
 
     #[test]

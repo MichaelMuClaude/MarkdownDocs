@@ -292,6 +292,8 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
         })),
         "app.quit" => {
             app.quit_requested = true;
+            // The window closes on its next frame: ask for it now, not at the next idle repaint.
+            ctx.request_repaint();
             ok(json!({}))
         }
         other => {

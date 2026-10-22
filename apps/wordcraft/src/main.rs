@@ -507,6 +507,11 @@ fn main() -> eframe::Result {
             let mut session = Session::new(doc);
             session.system_region = region;
             let mut app = WordApp::new(session, services(file_dialog, &cc.egui_ctx));
+            // Check spelling as you type starts off in a window (an agent writes most of the text
+            // here, so red underlines are mostly noise); File › Options › Proofing turns it on, and
+            // a saved preference wins (`load_prefs`).
+            app.session.view.proofing = false;
+            app.session.prefs.check_spelling = false;
             load_prefs(&mut app);
             load_user_dictionary(&mut app);
             // A region chosen in File › Options replaces the system's for the first blank
