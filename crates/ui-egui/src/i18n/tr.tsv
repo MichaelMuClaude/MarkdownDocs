@@ -2712,6 +2712,17 @@ preview	Title	Örnek
 	Import…	İçe aktar…
 	A fork of WordCraft, built for AI agents and Markdown first.	WordCraft'ın bir fork'u, öncelikle yapay zeka ajanları ve Markdown için oluşturuldu.
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Telif hakkı (c) 2026 MarkdownDocs'a katkıda bulunanlar (bu fork'un kendi değişiklikleri).
+
+# Personal templates (#2852)
+	Personal	Kişisel
+	Personal Templates	Kişisel şablonlar
+	Templates you save in your templates folder show up here.	Şablon klasörünüze kaydettiğiniz şablonlar burada görünür.
+	Save as Word Template…	Word şablonu olarak kaydet…
+	Saves a .dotx template in your templates folder. It shows up in File › New under Personal.	Şablon klasörünüze bir .dotx şablonu kaydeder. Dosya › Yeni altında Kişisel bölümünde görünür.
+	File locations	Dosya konumları
+	User templates:	Kullanıcı şablonları:
+	Not set	Ayarlanmadı
+	File › New lists the .dotx and .dotm templates here under Personal; Save as Word Template starts here.	Dosya › Yeni, buradaki .dotx ve .dotm şablonlarını Kişisel altında listeler; Word şablonu olarak kaydet buradan başlar.
 	Format Shape Pane	Şekli Biçimlendir bölmesi
 	Format Shape	Şekli Biçimlendir
 	Format Shape…	Şekli Biçimlendir…

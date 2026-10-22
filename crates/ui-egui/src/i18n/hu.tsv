@@ -2711,6 +2711,17 @@
 	Import…	Importálás…
 	A fork of WordCraft, built for AI agents and Markdown first.	A WordCraft forkja, elsősorban AI-ügynökök és a Markdown számára készült.
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 a MarkdownDocs közreműködői (ennek a forknak a saját módosításai).
+
+# Personal templates (#2852)
+	Personal	Saját
+	Personal Templates	Saját sablonok
+	Templates you save in your templates folder show up here.	A sablonmappájába mentett sablonok itt jelennek meg.
+	Save as Word Template…	Mentés Word-sablonként…
+	Saves a .dotx template in your templates folder. It shows up in File › New under Personal.	Egy .dotx sablont ment a sablonmappájába. A Fájl › Új lapon, a Saját csoportban jelenik meg.
+	File locations	Fájlok helye
+	User templates:	Felhasználói sablonok:
+	Not set	Nincs megadva
+	File › New lists the .dotx and .dotm templates here under Personal; Save as Word Template starts here.	A Fájl › Új a Saját csoportban sorolja fel az itteni .dotx és .dotm sablonokat; a Mentés Word-sablonként innen indul.
 	Format Shape Pane	Alakzat formázása munkaablak
 	Format Shape	Alakzat formázása
 	Format Shape…	Alakzat formázása…

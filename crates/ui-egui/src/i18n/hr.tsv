@@ -2715,6 +2715,17 @@ preview	Title	Naslov
 	Import…	Uvezi…
 	A fork of WordCraft, built for AI agents and Markdown first.	Fork projekta WordCraft, izrađen prvenstveno za AI agente i Markdown.
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 doprinositelji projekta MarkdownDocs (vlastite promjene ovog forka).
+
+# Personal templates (#2852)
+	Personal	Osobno
+	Personal Templates	Osobni predlošci
+	Templates you save in your templates folder show up here.	Ovdje se prikazuju predlošci koje spremite u mapu predložaka.
+	Save as Word Template…	Spremi kao Wordov predložak…
+	Saves a .dotx template in your templates folder. It shows up in File › New under Personal.	Sprema predložak .dotx u vašu mapu predložaka. Prikazuje se u Datoteka › Novo pod Osobno.
+	File locations	Mjesta datoteka
+	User templates:	Korisnički predlošci:
+	Not set	Nije postavljeno
+	File › New lists the .dotx and .dotm templates here under Personal; Save as Word Template starts here.	Datoteka › Novo prikazuje predloške .dotx i .dotm odavde pod Osobno; Spremi kao Wordov predložak počinje ovdje.
 	Format Shape Pane	Okno Oblikovanje oblika
 	Format Shape	Oblikovanje oblika
 	Format Shape…	Oblikuj oblik…

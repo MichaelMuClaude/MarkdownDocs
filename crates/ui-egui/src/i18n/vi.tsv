@@ -2755,6 +2755,17 @@ template	Letter	Thư
 	Import…	Nhập…
 	A fork of WordCraft, built for AI agents and Markdown first.	Một fork của WordCraft, được xây dựng trước tiên cho các AI agent và Markdown.
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Bản quyền (c) 2026 các cộng tác viên MarkdownDocs (các thay đổi riêng của fork này).
+
+# Personal templates (#2852)
+	Personal	Cá nhân
+	Personal Templates	Mẫu cá nhân
+	Templates you save in your templates folder show up here.	Các mẫu bạn lưu vào thư mục mẫu sẽ xuất hiện ở đây.
+	Save as Word Template…	Lưu dưới dạng mẫu Word…
+	Saves a .dotx template in your templates folder. It shows up in File › New under Personal.	Lưu một mẫu .dotx vào thư mục mẫu của bạn. Mẫu xuất hiện trong Tệp › Mới, mục Cá nhân.
+	File locations	Vị trí tệp
+	User templates:	Mẫu người dùng:
+	Not set	Chưa đặt
+	File › New lists the .dotx and .dotm templates here under Personal; Save as Word Template starts here.	Tệp › Mới liệt kê các mẫu .dotx và .dotm ở đây trong mục Cá nhân; Lưu dưới dạng mẫu Word bắt đầu từ đây.
 	Format Shape Pane	Ngăn Định dạng hình
 	Format Shape	Định dạng hình
 	Format Shape…	Định dạng hình…

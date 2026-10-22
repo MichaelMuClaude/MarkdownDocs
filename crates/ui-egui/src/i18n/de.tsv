@@ -2303,6 +2303,17 @@
 	Import…	Importieren…
 	A fork of WordCraft, built for AI agents and Markdown first.	Ein Fork von WordCraft, in erster Linie für KI-Agenten und Markdown entwickelt.
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 die MarkdownDocs-Mitwirkenden (die eigenen Änderungen dieses Forks).
+
+# Personal templates (#2852)
+	Personal	Persönlich
+	Personal Templates	Persönliche Vorlagen
+	Templates you save in your templates folder show up here.	Vorlagen, die Sie in Ihrem Vorlagenordner speichern, werden hier angezeigt.
+	Save as Word Template…	Als Word-Vorlage speichern…
+	Saves a .dotx template in your templates folder. It shows up in File › New under Personal.	Speichert eine .dotx-Vorlage in Ihrem Vorlagenordner. Sie erscheint unter Datei › Neu bei Persönlich.
+	File locations	Dateispeicherorte
+	User templates:	Benutzervorlagen:
+	Not set	Nicht festgelegt
+	File › New lists the .dotx and .dotm templates here under Personal; Save as Word Template starts here.	Datei › Neu zeigt die .dotx- und .dotm-Vorlagen von hier unter Persönlich; Als Word-Vorlage speichern beginnt hier.
 	Format Shape Pane	Bereich „Form formatieren“
 	Format Shape	Form formatieren
 	Format Shape…	Form formatieren…

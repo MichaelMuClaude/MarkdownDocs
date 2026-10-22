@@ -2707,6 +2707,17 @@ preview	Title	Ukázka
 	Import…	Importovat…
 	A fork of WordCraft, built for AI agents and Markdown first.	Fork projektu WordCraft, vytvořený především pro AI agenty a Markdown.
 	Copyright (c) 2026 the MarkdownDocs contributors (this fork's own changes).	Copyright (c) 2026 přispěvatelé projektu MarkdownDocs (vlastní změny tohoto forku).
+
+# Personal templates (#2852)
+	Personal	Osobní
+	Personal Templates	Osobní šablony
+	Templates you save in your templates folder show up here.	Zde se zobrazí šablony, které uložíte do složky šablon.
+	Save as Word Template…	Uložit jako šablonu Wordu…
+	Saves a .dotx template in your templates folder. It shows up in File › New under Personal.	Uloží šablonu .dotx do vaší složky šablon. Zobrazí se v nabídce Soubor › Nový v části Osobní.
+	File locations	Umístění souborů
+	User templates:	Uživatelské šablony:
+	Not set	Nenastaveno
+	File › New lists the .dotx and .dotm templates here under Personal; Save as Word Template starts here.	Soubor › Nový zobrazuje šablony .dotx a .dotm odsud v části Osobní; Uložit jako šablonu Wordu začíná zde.
 	Format Shape Pane	Podokno Formát obrazce
 	Format Shape	Formát obrazce
 	Format Shape…	Formátovat obrazec…
