@@ -55,6 +55,27 @@ fn tool(name: &str, title: &str, desc: &str, schema: Value, ro: bool) -> Value {
 pub fn tool_definitions() -> Value {
     json!([
         tool(
+            "list_windows",
+            "List open windows",
+            "The open MarkdownDocs windows (every window opens a control channel): port, file, title, unsaved changes, and which one these tools drive. Use use_window to switch.",
+            obj(json!({}), &[]),
+            true
+        ),
+        tool(
+            "use_window",
+            "Drive an open window",
+            "Make the other tools act on one open window: by `port`, or by `file` (its full path, or part of its file name matching exactly one window), e.g. {file:\"notes.md\"}. Then save it, screenshot it, or close it (close_window).",
+            obj(json!({"port": n("The window's control port (list_windows)"), "file": s("Full path, or part of the file name")}), &[]),
+            false
+        ),
+        tool(
+            "close_window",
+            "Close the window",
+            "Close the driven window (use_window picks it), as its close button does. Refused while it has unsaved changes, unless `force` discards them; save first to keep them.",
+            obj(json!({"force": {"type": "boolean", "description": "Discard unsaved changes"}}), &[]),
+            false
+        ),
+        tool(
             "list_commands",
             "List commands",
             "Every WordCraft command: id, label, ribbon location, shortcut and params. Filter with `query`.",
@@ -168,6 +189,28 @@ fn wrap(r: Result<Value, String>) -> ToolResult {
 pub fn call_tool(b: &mut dyn Backend, name: &str, a: &Value) -> ToolResult {
     let st = |k: &str| a.get(k).and_then(Value::as_str);
     match name {
+        "close_window" => {
+            if !b.has_ui() {
+                return ToolResult::error(
+                    "there is no window to close: these tools drive a headless session (list_windows / use_window pick a window)",
+                );
+            }
+            let dirty = match b.call("app.info", json!({})) {
+                Ok(info) => info.get("dirty").and_then(Value::as_bool).unwrap_or(false),
+                Err(e) => return ToolResult::error(e),
+            };
+            let force = a.get("force").and_then(Value::as_bool) == Some(true);
+            if dirty && !force {
+                return ToolResult::error(
+                    "the document has unsaved changes: save it first (save_document), or pass {\"force\": true} to discard them",
+                );
+            }
+            // Discarded first, so the window's own Save changes? prompt doesn't come up.
+            if dirty && let Err(e) = exec(b, "file.close", json!({"force": true})) {
+                return ToolResult::error(e);
+            }
+            wrap(b.call("app.quit", json!({})).map(|_| json!({"closed": true})))
+        }
         "list_commands" => {
             let q = st("query").unwrap_or("").to_lowercase();
             match b.call("engine.commands", json!({})) {

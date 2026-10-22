@@ -320,6 +320,16 @@ fn services(file_dialog: file_dialogs::Hook, ctx: &egui::Context) -> Services {
     }
 }
 
+/// Whether a window started without `--control` opens its control channel anyway (on a free
+/// port): yes, unless `MARKDOWNDOCS_CONTROL` is `off`, `0`, `false` or `no`.
+fn auto_control() -> bool {
+    auto_control_from(std::env::var("MARKDOWNDOCS_CONTROL").ok().as_deref())
+}
+
+fn auto_control_from(v: Option<&str>) -> bool {
+    !v.map(str::trim).is_some_and(|v| matches!(v.to_ascii_lowercase().as_str(), "off" | "0" | "false" | "no"))
+}
+
 /// The app's reverse-DNS ID: the window's app ID (Wayland, X11 class), its desktop entry and
 /// icon names, and the package IDs. Its own, so it never stands in for an installed WordCraft.
 pub const APP_ID: &str = "io.github.michaelmuclaude.markdowndocs";
@@ -522,11 +532,18 @@ fn main() -> eframe::Result {
                 app.mac_titlebar = bar;
             }
             let mut key_file = None;
-            if let Some(port) = control_port
-                && let Some((rx, file)) = control_server::start(port, cc.egui_ctx.clone(), wordcraft_control_key::settings_dir().as_deref())
+            // Every window has a control channel, so an agent can find and drive the one the user
+            // opened (MCP `list_windows` / `use_window`): `--control PORT` picks the port, otherwise
+            // the system picks a free one. `MARKDOWNDOCS_CONTROL=off` turns it off.
+            let port = control_port.or_else(|| auto_control().then_some(0));
+            if let Some(port) = port
+                && let Some((rx, file, bound)) = control_server::start(port, cc.egui_ctx.clone(), wordcraft_control_key::settings_dir().as_deref())
             {
                 app = app.with_control(rx);
                 key_file = file;
+                if control_port.is_none() {
+                    log::info!("control channel on 127.0.0.1:{bound} (automatic)");
+                }
             }
             // Nothing to open (no files, no sample, no control channel driving the editor): start
             // on File › Home, as Word does (#766), unless the Start screen option is off. Files
@@ -559,6 +576,17 @@ fn main() -> eframe::Result {
 #[cfg(all(test, unix, not(target_os = "macos")))]
 mod tests {
     use super::*;
+
+    /// Every window opens its control channel unless told not to.
+    #[test]
+    fn the_control_channel_is_on_unless_turned_off() {
+        for on in [None, Some(""), Some("1"), Some("on")] {
+            assert!(auto_control_from(on), "{on:?}");
+        }
+        for off in ["off", "OFF", "0", "false", "no", " off "] {
+            assert!(!auto_control_from(Some(off)), "{off}");
+        }
+    }
 
     /// The first run with this fork's own settings folder carries preferences, the dictionary,
     /// fonts and templates over from WordCraft's, once, never over what is already there; recovery

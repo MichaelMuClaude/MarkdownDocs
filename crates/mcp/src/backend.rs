@@ -184,6 +184,67 @@ impl Remote {
     }
 }
 
+/// The ports of the windows that may be open: one `control-key.local-<port>` file per window in
+/// the settings folder (each window writes its own and removes it when it closes; a crashed
+/// window's file stays behind until a window takes that port again).
+pub fn window_ports(settings: &Path) -> Vec<u16> {
+    let mut ports: Vec<u16> = std::fs::read_dir(settings)
+        .map(|entries| {
+            entries
+                .flatten()
+                .filter_map(|e| e.file_name().to_str()?.strip_prefix("control-key.local-")?.parse::<u16>().ok())
+                .filter(|p| *p != 0)
+                .collect()
+        })
+        .unwrap_or_default();
+    ports.sort_unstable();
+    ports
+}
+
+/// An open window: its control port and what it says about itself (`app.info`: file, title,
+/// unsaved changes).
+#[derive(Clone, Debug)]
+pub struct Window {
+    pub port: u16,
+    pub info: Value,
+}
+
+impl Window {
+    pub fn addr(&self) -> String {
+        format!("127.0.0.1:{}", self.port)
+    }
+    pub fn path(&self) -> Option<&str> {
+        self.info.get("path").and_then(Value::as_str)
+    }
+    pub fn to_json(&self, current: bool) -> Value {
+        json!({"port": self.port, "path": self.info.get("path"), "title": self.info.get("title"), "dirty": self.info.get("dirty"), "hasDocument": self.info.get("hasDocument"), "current": current})
+    }
+}
+
+/// The open windows: every port from [`window_ports`] that answers `app.info` within a moment.
+/// Stale key files (nothing listening) are skipped.
+pub fn list_windows() -> Vec<Window> {
+    let Some(settings) = wordcraft_control_key::settings_dir() else { return Vec::new() };
+    window_ports(&settings)
+        .into_iter()
+        .filter_map(|port| {
+            let mut r = Remote::connect(&format!("127.0.0.1:{port}")).ok()?;
+            r.set_read_timeout(Duration::from_secs(3));
+            let info = r.call("app.info", json!({})).ok()?;
+            Some(Window { port, info })
+        })
+        .collect()
+}
+
+impl Remote {
+    /// How long a reply may take on this connection (a quick probe needs less than the default).
+    pub fn set_read_timeout(&mut self, d: Duration) {
+        if let Some((_, w)) = &self.conn {
+            w.set_read_timeout(Some(d)).ok();
+        }
+    }
+}
+
 impl Backend for Remote {
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String> {
         let id = self.next_id;
@@ -381,5 +442,22 @@ mod tests {
         let e = r.call("document.inspect", json!({})).unwrap_err();
         assert!(e.contains("not a loopback address") && e.contains("not sent"), "{e}");
         assert!(seen.recv_timeout(WAIT).unwrap().get("key").is_none());
+    }
+
+    /// Each open window leaves `control-key.local-<port>` in the settings folder: those are the
+    /// ports to try, and nothing else there counts.
+    #[test]
+    fn window_ports_come_from_the_key_files() {
+        let dir = std::env::temp_dir().join(format!("markdowndocs-window-ports-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for name in
+            ["control-key.local-40123", "control-key.local-7981", "control-key.local-0", "control-key.local-x", "ui.json", "control-key.app-1"]
+        {
+            std::fs::write(dir.join(name), "k").unwrap();
+        }
+        assert_eq!(window_ports(&dir), [7981, 40123]);
+        assert!(window_ports(&dir.join("missing")).is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

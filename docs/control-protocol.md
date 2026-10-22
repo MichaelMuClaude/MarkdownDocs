@@ -1,6 +1,9 @@
 # Control protocol
 
-Start the app with a control port: `wordcraft --control 7981` (or `WORDCRAFT_CONTROL_PORT=7981`).
+Every window has a control channel. Start the app with a control port to choose it:
+`wordcraft --control 7981` (or `WORDCRAFT_CONTROL_PORT=7981`); without one, the window takes a
+free port the system picks (named in its key file, see [Keys](#keys)), unless
+`MARKDOWNDOCS_CONTROL=off`.
 A missing or invalid port after `--control` (not 1–65535) prints an error and exits with status 2.
 It listens on `127.0.0.1` only. Send one JSON object per line, with the window's key (see
 [Keys](#keys)); each gets one reply line:
@@ -67,6 +70,7 @@ and set `WORDCRAFT_CONTROL_KEY` to that app's key.
 | `ui.render` | `path?`, `page?` (1-based), `scale?` | PNG of a page, rendered by the engine: written to `path`, or without one returned as base64 `png` in the reply (never a fixed name in the shared temporary folder) |
 | `ui.parity` | — | feature-catalog parity |
 | `ui.resize` / `ui.focus` / `app.quit` | | window control |
+| `app.info` | | which window this is: `pid`, `path`, `title`, `dirty`, `hasDocument` (cheap; the MCP bridge's `list_windows` asks it) |
 
 Any other method name is treated as a command id: `{"method": "format.bold"}` works.
 

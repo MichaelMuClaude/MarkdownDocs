@@ -279,6 +279,17 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
             app.canvas.want_focus = true;
             ok(json!({}))
         }
+        // Which window this is, cheaply: what an agent picking among open windows needs (MCP
+        // `list_windows`), without the layout `ui.inspect` measures.
+        "app.info" => ok(json!({
+            "app": "MarkdownDocs",
+            "version": env!("CARGO_PKG_VERSION"),
+            "pid": std::process::id(),
+            "path": app.session.path.as_ref().map(|p| p.to_string_lossy().to_string()),
+            "title": app.title_stem(),
+            "dirty": app.session.dirty,
+            "hasDocument": app.has_document(),
+        })),
         "app.quit" => {
             app.quit_requested = true;
             ok(json!({}))

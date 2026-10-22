@@ -5,7 +5,7 @@ use std::io::{BufRead, Write};
 use serde_json::{Value, json};
 
 use crate::backend::Backend;
-use crate::tools::{call_tool, tool_definitions};
+use crate::tools::{ToolResult, call_tool, tool_definitions};
 
 /// The MCP revision we implement.
 pub const PROTOCOL_VERSION: &str = "2025-06-18";
@@ -117,6 +117,49 @@ impl Server {
         })
     }
 
+    /// `list_windows`: the open MarkdownDocs windows (each opens a control channel), with the
+    /// file each one shows and which one this server is driving.
+    fn list_windows(&self) -> ToolResult {
+        let current = self.backend.describe();
+        let windows: Vec<Value> = crate::backend::list_windows().iter().map(|w| w.to_json(current.ends_with(&w.addr()))).collect();
+        ToolResult::json(&json!({"windows": windows, "driving": current}))
+    }
+
+    /// `use_window`: drive the window given by `port`, or by `file` (its full path, or a part of
+    /// its file name when that matches exactly one window). Tools then act on that window.
+    fn use_window(&mut self, args: &Value) -> ToolResult {
+        let windows = crate::backend::list_windows();
+        let chosen: Vec<&crate::backend::Window> = if let Some(port) = args.get("port").and_then(Value::as_u64) {
+            windows.iter().filter(|w| u64::from(w.port) == port).collect()
+        } else if let Some(file) = args.get("file").and_then(Value::as_str).map(str::trim).filter(|f| !f.is_empty()) {
+            let exact: Vec<_> = windows.iter().filter(|w| w.path() == Some(file)).collect();
+            if exact.is_empty() {
+                let f = file.to_lowercase();
+                let name = |w: &&crate::backend::Window| {
+                    w.path().and_then(|p| std::path::Path::new(p).file_name()).map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default()
+                };
+                windows.iter().filter(|w| name(w).contains(&f)).collect()
+            } else {
+                exact
+            }
+        } else {
+            return ToolResult::error("give `port` or `file` (see list_windows)");
+        };
+        let listed = || serde_json::to_string(&windows.iter().map(|w| w.to_json(false)).collect::<Vec<_>>()).unwrap_or_default();
+        let w = match chosen.as_slice() {
+            [w] => *w,
+            [] => return ToolResult::error(format!("no open window matches; open windows: {}", listed())),
+            _ => return ToolResult::error(format!("more than one window matches; pick one by `port`: {}", listed())),
+        };
+        match crate::backend::Remote::connect(&w.addr()) {
+            Ok(r) => {
+                self.backend = Box::new(r);
+                ToolResult::json(&json!({"driving": w.to_json(true)}))
+            }
+            Err(e) => ToolResult::error(format!("{} is no longer reachable: {e}", w.addr())),
+        }
+    }
+
     fn notification(&mut self, method: &str) {
         match method {
             "notifications/initialized" => self.initialized = true,
@@ -145,7 +188,12 @@ impl Server {
             "tools/call" => {
                 let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
-                Ok(call_tool(self.backend.as_mut(), name, &args).to_value())
+                Ok(match name {
+                    // Picking the window is the server's job: it swaps the backend.
+                    "list_windows" => self.list_windows().to_value(),
+                    "use_window" => self.use_window(&args).to_value(),
+                    _ => call_tool(self.backend.as_mut(), name, &args).to_value(),
+                })
             }
             "resources/list" => Ok(json!({"resources": [
                 {"uri": DOC_URI, "name": "document", "title": "Active document", "description": "Blocks, text, formatting, sections, parts and selection of the document (document.inspect)", "mimeType": "application/json"},

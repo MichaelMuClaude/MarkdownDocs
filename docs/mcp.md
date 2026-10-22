@@ -11,6 +11,25 @@ wordcraft-cli mcp --connect 127.0.0.1:7981 # …including clicks, keys and scree
 
 Claude Code: `claude mcp add wordcraft -- wordcraft-cli mcp`.
 
+## The windows the user opened
+
+Every MarkdownDocs window opens a control channel, on a free port when it was started without
+`--control` (a double-clicked file, say), so an agent can reach the document the user is looking
+at. `list_windows` lists the open windows (port, file, title, unsaved changes); `use_window`
+switches the other tools to one of them, by `port` or by `file` (full path, or part of the file
+name matching one window):
+
+```text
+list_windows                       → {"windows": [{"port": 40123, "path": "/home/me/notes.md", "dirty": false, …}]}
+use_window {"file": "notes.md"}    → the tools now drive that window
+close_window                       → closes the window (refused with unsaved changes unless {"force": true})
+```
+
+The bridge finds the windows by their key files (`control-key.local-<port>` in the settings
+folder, see [Keys](control-protocol.md#keys)) and asks each one `app.info`. Inside Flatpak the key
+file is named after the instance, so windows there are not listed. `MARKDOWNDOCS_CONTROL=off`
+starts a window without the automatic channel.
+
 With `--connect`, the bridge sends the app's control key, which it reads from
 `WORDCRAFT_CONTROL_KEY` or from the key file the app writes at start. It sends the key only to
 loopback addresses; see [Keys](control-protocol.md#keys).
@@ -103,6 +122,9 @@ files it was given rather than guarding against other software on the computer.
 
 | Tool | What it does |
 |---|---|
+| `list_windows` | the open MarkdownDocs windows: port, file, title, unsaved changes, which one is driven |
+| `use_window` | drive one open window, by `port` or `file` (see [above](#the-windows-the-user-opened)) |
+| `close_window` | close the driven window; refused with unsaved changes unless `force` |
 | `list_commands` | every command (filter with `query`) — over 270 of them |
 | `execute` | run one command: `{command: "insert.table", params: {rows: 3, cols: 4}}` |
 | `batch` | run several commands in order |
