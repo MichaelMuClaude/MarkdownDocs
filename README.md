@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/app-icon/hicolor/256x256/apps/io.github.michaelmuclaude.markdowndocs.png" width="128" height="128" alt="MarkdownDocs icon: a page with a Markdown-style M and down arrow, and a spark, on a teal tile">
+</p>
+
 <h1 align="center">MarkdownDocs</h1>
 
 <p align="center">
