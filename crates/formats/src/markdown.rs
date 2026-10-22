@@ -89,12 +89,123 @@ fn placeholder_png() -> std::sync::Arc<Vec<u8>> {
 pub fn parse(text: &str) -> model::Flow {
     let text = text.strip_prefix('\u{FEFF}').unwrap_or(text);
     let lines: Vec<String> = text.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
+    // GFM footnotes: definitions (`[^label]: text`, continued by indented lines) anywhere in the
+    // document are taken out first, so a reference before its definition finds it.
+    let (lines, defs) = footnote_definitions(lines);
+    let order: Vec<String> = defs.iter().map(|(l, _)| l.clone()).collect();
+    let parsed: HashMap<String, Vec<FBlock>> = defs.into_iter().map(|(label, body)| (label, parse_blocks(&body, 1, 0))).collect();
+    FOOTNOTES.with_borrow_mut(|f| *f = parsed);
+    USED_FOOTNOTES.with_borrow_mut(std::collections::HashSet::clear);
     let mut blocks = parse_blocks(&lines, 0, 0);
+    // A definition nothing refers to keeps its text, as the literal line it was.
+    let defs = FOOTNOTES.with_borrow_mut(std::mem::take);
+    let used = USED_FOOTNOTES.with_borrow_mut(std::mem::take);
+    for label in order.iter().filter(|l| !used.contains(*l)) {
+        let mut body = defs.get(label).cloned().unwrap_or_default();
+        let mut first = Para::default();
+        first.push_text(&format!("[^{label}]: "), &Fmt::default());
+        if let Some(FBlock::Para(p)) = body.first()
+            && p.list.is_none()
+            && p.kind == Kind::Normal
+            && let FBlock::Para(p) = body.remove(0)
+        {
+            first.inlines.extend(p.inlines);
+        }
+        blocks.push(FBlock::Para(first));
+        blocks.extend(body);
+    }
     // A leading "Title" from front matter isn't supported; a first-level heading stays a heading.
     if blocks.is_empty() {
         blocks.push(FBlock::Para(Para::default()));
     }
     model::Flow { blocks, meta: Default::default() }
+}
+
+thread_local! {
+    /// The footnote definitions of the document being parsed, by label.
+    static FOOTNOTES: std::cell::RefCell<HashMap<String, Vec<FBlock>>> = std::cell::RefCell::new(HashMap::new());
+    /// The labels referred to so far.
+    static USED_FOOTNOTES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(Default::default());
+    /// The notes of the document being written, in reference order (`[^1]` is the first).
+    static NOTES_OUT: std::cell::RefCell<Vec<Vec<FBlock>>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Longest footnote label taken.
+const MAX_LABEL: usize = 100;
+
+/// A footnote label: 1–100 characters, no spaces or brackets.
+fn footnote_label(s: &str) -> Option<&str> {
+    (!s.is_empty() && s.len() <= MAX_LABEL && !s.chars().any(|c| c.is_whitespace() || c == '[' || c == ']')).then_some(s)
+}
+
+/// Take the footnote definitions out of `lines`: (the other lines, (label, definition lines) in
+/// order). A definition is `[^label]: text` at less than four spaces' indent outside code, with
+/// following lines indented four spaces (or blank, between them) continuing it.
+fn footnote_definitions(lines: Vec<String>) -> (Vec<String>, Vec<(String, Vec<String>)>) {
+    let mut rest = Vec::with_capacity(lines.len());
+    let mut defs: Vec<(String, Vec<String>)> = Vec::new();
+    let mut fenced: Option<(char, usize)> = None;
+    let mut i = 0;
+    while let Some(line) = lines.get(i) {
+        let t = line.trim_start_matches([' ', '\t']);
+        if let Some((fc, fl)) = fenced {
+            if indent(line) < 4 && fence(t).is_some_and(|(c, n)| c == fc && n >= fl) && t.trim_start_matches(fc).trim().is_empty() {
+                fenced = None;
+            }
+            rest.push(line.clone());
+            i += 1;
+            continue;
+        }
+        if indent(line) < 4
+            && let Some(f) = fence(t)
+        {
+            fenced = Some(f);
+            rest.push(line.clone());
+            i += 1;
+            continue;
+        }
+        let def = (indent(line) < 4)
+            .then(|| t.strip_prefix("[^"))
+            .flatten()
+            .and_then(|r| r.split_once("]:"))
+            .and_then(|(label, body)| footnote_label(label).map(|l| (l.to_string(), body.trim_start().to_string())));
+        let Some((label, first)) = def.filter(|(l, _)| !defs.iter().any(|(d, _)| d == l)) else {
+            rest.push(line.clone());
+            i += 1;
+            continue;
+        };
+        let mut body = vec![first];
+        i += 1;
+        while let Some(l) = lines.get(i) {
+            if is_blank(l) {
+                // A blank line continues the note only if an indented line follows it.
+                if lines.get(i + 1).is_some_and(|n| !is_blank(n) && indent(n) >= 4) {
+                    body.push(String::new());
+                    i += 1;
+                    continue;
+                }
+                break;
+            }
+            if indent(l) >= 4 {
+                body.push(strip_indent(l, 4).to_string());
+                i += 1;
+                continue;
+            }
+            break;
+        }
+        defs.push((label, body));
+    }
+    (rest, defs)
+}
+
+/// The footnote a `[^label]` at byte `i` of `s` refers to, and the byte after it.
+fn footnote_ref(s: &str, i: usize) -> Option<(Vec<FBlock>, usize)> {
+    let r = s.get(i..)?.strip_prefix("[^")?;
+    let end = r.get(..r.len().min(MAX_LABEL + 1))?.find(']')?;
+    let label = footnote_label(r.get(..end)?)?;
+    let blocks = FOOTNOTES.with_borrow(|f| f.get(label).cloned())?;
+    USED_FOOTNOTES.with_borrow_mut(|u| u.insert(label.to_string()));
+    Some((blocks, i + 2 + end + 1))
 }
 
 /// Leading tabs → spaces (tab stops of 4); the rest of the line is kept.
@@ -573,6 +684,18 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         while item.len() > 1 && item.last().is_some_and(|x| x.is_empty()) {
             item.pop();
         }
+        // GFM task-list item: `[ ]` or `[x]` and a space (or nothing) start its content.
+        let task = item.first().and_then(|f| {
+            let (state, rest) = match f.strip_prefix("[ ]") {
+                Some(r) => (false, r),
+                None => (true, f.strip_prefix("[x]").or_else(|| f.strip_prefix("[X]"))?),
+            };
+            (rest.is_empty() || rest.starts_with([' ', '\t'])).then(|| (state, rest.trim_start().to_string()))
+        });
+        if let (Some((_, rest)), Some(f)) = (&task, item.first_mut()) {
+            *f = rest.clone();
+        }
+        let task = task.map(|(state, _)| state);
         let li = ListInfo { ordered: first.ordered, level: level.min(8), start: first.start };
         let inner = if depth >= MAX_NEST {
             let mut p = Para::default();
@@ -583,7 +706,7 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         };
         let mut placed = false;
         if inner.is_empty() {
-            out.push(FBlock::Para(Para { list: Some(li), ..Default::default() }));
+            out.push(FBlock::Para(Para { list: Some(li), task, ..Default::default() }));
             placed = true;
         }
         for b in inner {
@@ -591,6 +714,7 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
                 FBlock::Para(mut p) if p.list.is_none() => {
                     if !placed {
                         p.list = Some(li);
+                        p.task = task;
                         placed = true;
                         out.push(FBlock::Para(p));
                     } else if let Some(FBlock::Para(prev)) = out.last_mut()
@@ -855,6 +979,14 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
     }
     while let Some(&c) = b.get(i) {
         match c {
+            b'[' if b.get(i + 1) == Some(&b'^')
+                && let Some((note, end)) = footnote_ref(s, i) =>
+            {
+                flush!();
+                nodes.push(Node::Inl(Inline::Note(note)));
+                i = end;
+                text_start = i;
+            }
             b'\\' => {
                 flush!();
                 match s.get(i + 1..).and_then(|r| r.chars().next()) {
@@ -1308,6 +1440,13 @@ fn inlines_md_impl(inlines: &[Inline], in_table: bool) -> String {
                 pieces.push((String::new(), Fmt::default(), Some(format!("<a id=\"{safe}\"></a>"))));
             }
             Inline::Figure(alt) => pieces.push((String::new(), Fmt::default(), Some(format!("![{}]()", escape(alt))))),
+            Inline::Note(blocks) => {
+                let n = NOTES_OUT.with_borrow_mut(|v| {
+                    v.push(blocks.clone());
+                    v.len()
+                });
+                pieces.push((String::new(), Fmt::default(), Some(format!("[^{n}]"))));
+            }
             Inline::Equation { .. } => {}
         }
     }
@@ -1435,7 +1574,27 @@ fn table_md(t: &FTable, out: &mut Vec<String>) {
 pub fn export(doc: &Document) -> String {
     let flow = model::from_doc(doc);
     let mut out: Vec<String> = Vec::new();
+    NOTES_OUT.with_borrow_mut(Vec::clear);
     write_blocks(&flow.blocks, &mut out);
+    // Footnotes, numbered in reference order, after the text: `[^1]: first line`, further lines
+    // and paragraphs indented four spaces. A note's own notes join the end of the list.
+    let mut n = 0;
+    while let Some(blocks) = NOTES_OUT.with_borrow(|v| v.get(n).cloned()) {
+        n += 1;
+        let mut lines = Vec::new();
+        write_blocks(&blocks, &mut lines);
+        while lines.last().is_some_and(String::is_empty) {
+            lines.pop();
+        }
+        while out.last().is_some_and(String::is_empty) {
+            out.pop();
+        }
+        out.push(String::new());
+        let mut it = lines.into_iter();
+        out.push(format!("[^{n}]: {}", it.next().unwrap_or_default()).trim_end().to_string());
+        out.extend(it.map(|l| if l.is_empty() { l } else { format!("    {l}") }));
+    }
+    NOTES_OUT.with_borrow_mut(Vec::clear);
     let mut s = out.join("\n");
     while s.ends_with("\n\n") {
         s.pop();
@@ -1485,7 +1644,8 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                 continue;
             }
             FBlock::Para(p) => {
-                let body = inlines_md(&p.inlines);
+                // A task item's box is written as `[ ]`/`[x]` below, not as its ☐/☒ glyph.
+                let body = if p.task.is_some() { inlines_md(&without_task_glyph(&p.inlines)) } else { inlines_md(&p.inlines) };
                 match p.list {
                     Some(li) => {
                         let lv = li.level.min(8) as usize;
@@ -1515,7 +1675,12 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                             // The bullet marker can turn a short run of hyphens into a rule.
                             if thematic_break(&format!("{marker} {body}")) { format!("\\{body}") } else { body }
                         };
-                        out.push(format!("{pad}{marker} {body}").trim_end().to_string());
+                        let task = match p.task {
+                            Some(true) => "[x] ",
+                            Some(false) => "[ ] ",
+                            None => "",
+                        };
+                        out.push(format!("{pad}{marker} {task}{body}").trim_end().to_string());
                         prev_list = true;
                         let next_is_list = matches!(blocks.get(i + 1), Some(FBlock::Para(q)) if q.list.is_some());
                         if !next_is_list {
@@ -1548,6 +1713,27 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
         }
         i += 1;
     }
+}
+
+/// A task item's inlines without the check box glyph (☐/☒) and the space after it, which may be
+/// one run or two.
+fn without_task_glyph(inlines: &[Inline]) -> Vec<Inline> {
+    let mut out = inlines.to_vec();
+    let mut glyph = true;
+    while let Some(Inline::Text(t, _)) = out.first_mut() {
+        let rest = if glyph { t.trim_start_matches(['\u{2610}', '\u{2611}', '\u{2612}']) } else { t.as_str() };
+        let had_space = rest.starts_with(' ');
+        *t = rest.strip_prefix(' ').unwrap_or(rest).to_string();
+        glyph = false;
+        let empty = t.is_empty();
+        if empty {
+            out.remove(0);
+        }
+        if !empty || had_space {
+            break;
+        }
+    }
+    out
 }
 
 /// A link destination as Markdown writes it: in `<…>` when it holds spaces, parentheses or angle
@@ -1928,6 +2114,50 @@ mod tests {
         let once = round("```rust\na\n```\n\n```\nb\n```\n");
         assert_eq!(round(&once), once);
         assert_eq!(code_info(&code_mark("objective-c")).as_deref(), Some("objective-c"));
+    }
+
+    /// GFM task lists: `- [ ]` / `- [x]` items are list items with a check-box content control
+    /// (Word's own, so they toggle in the editor and survive a .docx), and are written back as
+    /// written. They used to come back as escaped literal text, `- \\[ \\]`.
+    #[test]
+    fn task_list_items_round_trip_as_check_boxes() {
+        let md = "- [ ] todo\n- [x] done\n- [X] shouted\n- plain\n";
+        let doc = import(md);
+        let boxes: Vec<bool> = doc
+            .body
+            .iter()
+            .filter_map(|b| b.as_para())
+            .filter_map(|p| match p.objects.first() {
+                Some(wordcraft_doc::InlineObject::ControlStart { control }) => match control.kind {
+                    wordcraft_doc::ControlKind::CheckBox { checked, .. } => Some(checked),
+                    _ => None,
+                },
+                _ => None,
+            })
+            .collect();
+        assert_eq!(boxes, [false, true, true], "each task item starts with a real check box");
+        assert_eq!(export(&doc), "- [ ] todo\n- [x] done\n- [x] shouted\n- plain\n");
+        // Formats without task lists show the box itself, as before.
+        assert_eq!(String::from_utf8_lossy(&crate::txt::export(&doc)).lines().next(), Some("•\t\u{2610} todo"));
+        // `[ ]` that isn't followed by a space is ordinary text.
+        assert_eq!(export(&import("- [ ]x\n")).trim_end(), "- \\[ \\]x");
+    }
+
+    /// GFM footnotes: a `[^label]` with a definition anywhere in the document is a real footnote
+    /// (its formatting and paragraphs kept), written back numbered in reference order. An undefined
+    /// label, or one inside code, stays literal; a definition nothing refers to keeps its text.
+    #[test]
+    fn footnotes_round_trip_as_real_notes() {
+        let md = "One[^a] two[^b].\n\n[^a]: First *note*.\n[^b]: Second.\n\n    More of it.\n";
+        let doc = import(md);
+        let notes = doc.parts.values().filter(|p| p.kind == wordcraft_doc::PartKind::Footnote).count();
+        assert_eq!(notes, 2, "two real footnotes");
+        assert_eq!(export(&doc), "One[^1] two[^2].\n\n[^1]: First *note*.\n\n[^2]: Second.\n\n    More of it.\n");
+        assert_eq!(export(&import(&export(&doc))), export(&doc), "stable on a second save");
+        assert_eq!(export(&import("No [^such] note.\n")).trim_end(), "No \\[^such\\] note.");
+        assert!(export(&import("```\n[^a]: code\n```\n")).contains("[^a]: code"), "inside code it's code");
+        let orphan = export(&import("Text.\n\n[^z]: Nobody points here.\n"));
+        assert!(orphan.contains("Nobody points here."), "{orphan}");
     }
 
     #[test]

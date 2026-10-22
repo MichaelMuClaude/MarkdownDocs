@@ -265,7 +265,7 @@ impl Writer {
                     o.push_str(&format!("\\textit{{[{}]}}", escape_text(&alt)));
                 }
                 Inline::Anchor(name) => o.push_str(&format!("\\hypertarget{{{}}}{{}}", escape_url(name))),
-                Inline::Figure(_) => {}
+                Inline::Figure(_) | Inline::Note(_) => {}
                 Inline::Equation { linear, display } => {
                     self.uses.math = true;
                     let src = linear_to_latex(linear);
@@ -3039,7 +3039,8 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
     fn leading_brackets_stay_text() {
         // `\item [x]` and `\\ [1]` would read the bracket as an optional argument.
         assert_eq!(escape_text("[x] a\n [1] b [c]"), "{[}x] a\\\\\n {[}1] b [c]");
-        let doc = crate::markdown::import("- [x] done");
+        // Escaped in the Markdown, so literal brackets (`- [x] done` is a task-list item).
+        let doc = crate::markdown::import("- \\[x\\] done");
         let back = import(export(&doc).as_bytes());
         assert_eq!(back.plain_text(Default::default()), "[x] done");
     }

@@ -98,6 +98,9 @@ pub enum Inline {
         linear: String,
         display: bool,
     },
+    /// A footnote: the reference mark here, and the note's own content (a document's footnote
+    /// or endnote; a Markdown `[^label]` and its definition).
+    Note(Vec<FBlock>),
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -140,6 +143,9 @@ pub struct Spacing {
 pub struct Para {
     pub kind: Kind,
     pub list: Option<ListInfo>,
+    /// A task-list item's check box (`Some(checked)`): a GFM `- [ ]` / `- [x]` item, a document
+    /// list paragraph that starts with a check-box content control.
+    pub task: Option<bool>,
     pub align: Option<Align>,
     pub page_break: bool,
     /// Keep the paragraph on the same page as the next one (ODT `fo:keep-with-next`).
@@ -183,7 +189,7 @@ impl Para {
         for i in &self.inlines {
             match i {
                 Inline::Text(t, _) | Inline::Equation { linear: t, .. } => s.push_str(t),
-                Inline::Image(_) | Inline::Anchor(_) | Inline::Figure(_) => {}
+                Inline::Image(_) | Inline::Anchor(_) | Inline::Figure(_) | Inline::Note(_) => {}
             }
         }
         s
@@ -199,7 +205,7 @@ impl Para {
                     _ => s.push_str(t),
                 },
                 Inline::Equation { linear: t, .. } => s.push_str(t),
-                Inline::Image(_) | Inline::Anchor(_) | Inline::Figure(_) => {}
+                Inline::Image(_) | Inline::Anchor(_) | Inline::Figure(_) | Inline::Note(_) => {}
             }
         }
         s
@@ -513,6 +519,37 @@ impl<'a> Builder<'a> {
         i
     }
 
+    /// A footnote holding `blocks`, as References › Insert Footnote makes one: its paragraphs in
+    /// Footnote Text, the first starting with the note's own reference mark. Returns the reference
+    /// to place in the text (`None` if the document has no room for another part).
+    fn footnote(&mut self, blocks: &[FBlock]) -> Option<InlineObject> {
+        use wordcraft_doc::para::NoteKind;
+        let id = self.doc.try_add_part(wordcraft_doc::PartKind::Footnote, Vec::new()).ok()?;
+        let mut content = self.blocks(blocks, 1);
+        if !content.iter().any(|b| matches!(&**b, Block::Para(_))) {
+            content.insert(0, para_block(Paragraph::new()));
+        }
+        let mut first = true;
+        for b in &mut content {
+            if let Block::Para(para) = Arc::make_mut(b) {
+                if para.props.style.is_none() {
+                    para.props.style = Some("FootnoteText".into());
+                }
+                if first {
+                    first = false;
+                    let mark = CharProps { style: Some("FootnoteReference".into()), ..Default::default() };
+                    let _ = para.insert_text(0, " ", &CharProps::default());
+                    let _ = para.insert_object(0, InlineObject::NoteRef { kind: NoteKind::Footnote, id, custom: String::new() }, &mark);
+                }
+                para.touch();
+            }
+        }
+        if let Some(part) = self.doc.parts.get_mut(&id) {
+            part.blocks = content;
+        }
+        Some(InlineObject::NoteRef { kind: NoteKind::Footnote, id, custom: String::new() })
+    }
+
     fn para(&mut self, p: &Para, list_num: Option<u32>) -> Paragraph {
         let mut out = Paragraph::new();
         out.props = para_props(p, list_num);
@@ -532,6 +569,23 @@ impl<'a> Builder<'a> {
             out.props.keep_next = Some(true);
         }
         out.section.clone_from(&p.section);
+        // A task-list item starts with a check-box content control (as Developer › Check Box
+        // makes, so it toggles in the editor and is Word's own control in a .docx), then a space.
+        if let Some(checked) = p.task {
+            let mut kind = wordcraft_doc::ControlKind::check_box();
+            let mark = match &mut kind {
+                wordcraft_doc::ControlKind::CheckBox { checked: c, checked_char, unchecked_char, .. } => {
+                    *c = checked;
+                    if checked { *checked_char } else { *unchecked_char }
+                }
+                _ => '\u{2610}',
+            };
+            let control = Box::new(wordcraft_doc::ContentControl::new(kind));
+            append(&mut out, "", &CharProps::default(), Some(InlineObject::ControlStart { control }));
+            append(&mut out, &mark.to_string(), &CharProps::default(), None);
+            append(&mut out, "", &CharProps::default(), Some(InlineObject::ControlEnd));
+            append(&mut out, " ", &CharProps::default(), None);
+        }
         // Inlines are appended in order, so build the runs directly: inserting each one through
         // `Paragraph::insert_text` rescans every earlier run and is quadratic in their number.
         for i in &p.inlines {
@@ -576,6 +630,11 @@ impl<'a> Builder<'a> {
                     append(&mut out, "", &CharProps::default(), Some(InlineObject::BookmarkEnd { name: name.clone() }));
                 }
                 Inline::Figure(_) => {}
+                Inline::Note(blocks) => {
+                    if let Some(obj) = self.footnote(blocks) {
+                        append(&mut out, "", &CharProps { style: Some("FootnoteReference".into()), ..Default::default() }, Some(obj));
+                    }
+                }
                 Inline::Equation { linear, display } => {
                     let linear = clean_text(linear);
                     if !linear.is_empty() {
@@ -902,6 +961,25 @@ pub fn flow_paras(doc: &Document, p: &Paragraph) -> Vec<Para> {
     flow_paras_in(doc, p, false)
 }
 
+thread_local! {
+    /// Converting a note's own content (its reference mark there is not another note).
+    static IN_NOTE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// The state of the check box a paragraph starts with (a check-box content control at offset 0).
+fn leading_check_box(p: &Paragraph) -> Option<bool> {
+    if !p.text.starts_with(OBJ) {
+        return None;
+    }
+    match p.objects.first()? {
+        InlineObject::ControlStart { control } => match control.kind {
+            wordcraft_doc::ControlKind::CheckBox { checked, .. } => Some(checked),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 /// [`flow_paras`]; `tracked` keeps tracked changes: deleted text stays, and text carries its
 /// insertion and deletion marks.
 fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
@@ -911,6 +989,7 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
     let mut out = Para {
         kind,
         list,
+        task: None,
         align: p.props.align,
         page_break: p.props.page_break_before.unwrap_or(false),
         keep_next: p.props.keep_next.unwrap_or(false),
@@ -942,6 +1021,7 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
                     let next = Para {
                         kind,
                         list: None,
+                        task: None,
                         align: p.props.align,
                         page_break: true,
                         keep_next: p.props.keep_next.unwrap_or(false),
@@ -1014,6 +1094,27 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
                     }
                     out.inlines.push(Inline::Anchor(name.clone()));
                 }
+                // A footnote or endnote reference carries the note's content. Inside a note, its
+                // own reference mark is just the mark: left out.
+                Some(InlineObject::NoteRef { id, .. }) if !IN_NOTE.get() => {
+                    if !buf.is_empty() {
+                        out.push_text(&std::mem::take(&mut buf), &f);
+                    }
+                    let mut blocks = doc.parts.get(id).map_or_else(Vec::new, |part| {
+                        IN_NOTE.set(true);
+                        let b = flow_blocks(doc, &part.blocks, 0, tracked);
+                        IN_NOTE.set(false);
+                        b
+                    });
+                    // The space Insert Footnote puts after the note's mark.
+                    if let Some(FBlock::Para(first)) = blocks.first_mut()
+                        && let Some(Inline::Text(t, _)) = first.inlines.first_mut()
+                    {
+                        *t = t.trim_start().to_string();
+                    }
+                    out.inlines.push(Inline::Note(blocks));
+                }
+                Some(InlineObject::NoteRef { .. }) => {}
                 Some(o) => buf.push_str(o.plain_text()),
                 None => {}
             }
@@ -1036,6 +1137,14 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
     // The paragraph that ends a section carries its properties (the last piece of it does).
     out.section.clone_from(&p.section);
     done.push(out);
+    // A list item that starts with a check box is a task-list item. Its glyph stays in the text
+    // (formats without task lists show ☐/☒); Markdown writes `[ ]`/`[x]` in its place.
+    if let Some(checked) = leading_check_box(p)
+        && let Some(first) = done.first_mut()
+        && first.list.is_some()
+    {
+        first.task = Some(checked);
+    }
     done
 }
 
