@@ -2408,3 +2408,10 @@
 	More tabs	Veel vahekaarte
 # #3013: Insert Table of Figures
 	Include label and number	Lisa silt ja number
+	{name} was changed by another program.	Faili {name} muutis teine programm.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Teil on salvestamata muudatusi. Kas laadida fail uuesti ja need kaotada või jätta enda omad ja salvestada need selle peale?
+	Reload	Laadi uuesti
+	Keep Mine	Jäta minu omad
+	{name} was changed by another program and has been reloaded.	Faili {name} muutis teine programm ja see laaditi uuesti.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Automaatsalvestus on peatatud: teine programm muutis faili. Salvestage, et jätta oma versioon, või laadige see kettalt uuesti.
+	Reload from Disk	Laadi kettalt uuesti

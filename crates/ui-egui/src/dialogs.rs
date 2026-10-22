@@ -415,6 +415,13 @@ pub enum Dialog {
         #[serde(default)]
         message: String,
     },
+    /// The document's file was changed by another program (an agent editing the Markdown, say)
+    /// while the document has unsaved changes: reload it and lose them, or keep them and save them
+    /// over it (`ui.fileChanged`). AutoSave waits until this is answered, so neither side is
+    /// overwritten without asking.
+    FileChanged {
+        name: String,
+    },
     /// Mailings › Select Recipients / Edit Recipient List: a table of recipients to type or
     /// edit (field names on top), or a file to load instead (#240).
     RecipientList {
@@ -983,6 +990,7 @@ impl Dialog {
             Dialog::PasteSpecial { .. } => "pasteSpecial",
             Dialog::About { .. } => "about",
             Dialog::SaveChanges { .. } => "saveChanges",
+            Dialog::FileChanged { .. } => "fileChanged",
             Dialog::DiscardRecovery { .. } => "discardRecovery",
             Dialog::RecipientList { .. } => "recipientList",
             Dialog::SelectTable { .. } => "selectTable",
@@ -1441,6 +1449,7 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::PasteSpecial { .. } => "Paste Special",
         Dialog::About { .. } => "About MarkdownDocs",
         Dialog::SaveChanges { .. } => "MarkdownDocs",
+        Dialog::FileChanged { .. } => "MarkdownDocs",
         Dialog::DiscardRecovery { .. } => "Discard recovery copy",
         Dialog::RecipientList { .. } => "Recipient List",
         Dialog::SelectTable { .. } => "Select Table",
@@ -2776,6 +2785,34 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             // `ui.saveChanges` reads the prompt from `app.dialog`, which `show` has taken out.
             app.dialog = Some(d.clone());
             let _ = app.run("ui.saveChanges", json!({"answer": answer}));
+            true
+        }
+        Dialog::FileChanged { name } => {
+            ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{name} was changed by another program."), &[("name", name)])).font(semibold(15.0)));
+            ui.label(tl!("You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?"));
+            ui.add_space(8.0);
+            let buttons = ui
+                .horizontal(|ui| {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let reload = ui.button(tl!("Reload"));
+                        let keep = ui.add(crate::widgets::primary_button(ui, tl!("Keep Mine")));
+                        [(reload, "reload"), (keep, "keep")]
+                    })
+                    .inner
+                })
+                .inner;
+            if !buttons.iter().any(|(b, _)| b.has_focus())
+                && let Some((keep, _)) = buttons.get(1)
+            {
+                keep.request_focus();
+            }
+            // Escape leaves the question open: AutoSave keeps waiting, and Save or Reload from
+            // Disk answers it later.
+            if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                return true;
+            }
+            let Some(answer) = buttons.iter().find(|(b, _)| b.clicked()).map(|(_, a)| *a) else { return false };
+            let _ = app.run("ui.fileChanged", json!({"answer": answer}));
             true
         }
         Dialog::RecipientList { fields, rows, message, filter } => recipient_list(app, ui, fields, rows, message, filter),

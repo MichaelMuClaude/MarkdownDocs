@@ -2676,3 +2676,10 @@ preview	Title	Titel
 	Heading 6	Kop 6
 	MarkdownDocs	MarkdownDocs
 	Source code: github.com/MichaelMuClaude/MarkdownDocs	Broncode: github.com/MichaelMuClaude/MarkdownDocs
+	{name} was changed by another program.	{name} is gewijzigd door een ander programma.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	U hebt niet-opgeslagen wijzigingen. Het bestand opnieuw laden en ze kwijtraken, of de uwe behouden en eroverheen opslaan?
+	Reload	Opnieuw laden
+	Keep Mine	Mijne behouden
+	{name} was changed by another program and has been reloaded.	{name} is gewijzigd door een ander programma en opnieuw geladen.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Automatisch opslaan is gepauzeerd: een ander programma heeft het bestand gewijzigd. Sla op om uw versie te behouden, of laad het opnieuw van schijf.
+	Reload from Disk	Opnieuw laden van schijf

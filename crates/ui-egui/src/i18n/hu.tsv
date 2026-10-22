@@ -2777,3 +2777,10 @@
 	More tabs	További lapok
 # #3013: Insert Table of Figures
 	Include label and number	Címkével és számmal
+	{name} was changed by another program.	A(z) {name} fájlt egy másik program módosította.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Nem mentett módosításai vannak. Újra betölti a fájlt, és elveti őket, vagy megtartja a sajátjait, és a fájlra menti őket?
+	Reload	Újratöltés
+	Keep Mine	Saját megtartása
+	{name} was changed by another program and has been reloaded.	A(z) {name} fájlt egy másik program módosította, ezért újra lett töltve.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Az automatikus mentés szünetel: egy másik program módosította a fájlt. Mentsen a saját verziója megtartásához, vagy töltse be újra a lemezről.
+	Reload from Disk	Újratöltés lemezről

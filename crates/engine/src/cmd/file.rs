@@ -79,9 +79,14 @@ pub fn specs() -> Vec<CommandSpec> {
             .key("Mod+O / Mod+F12 / Mod+Alt+F2")
             .params(r#"{"path": string, "data"?: base64 (the file's bytes; `path` then only names it), "password"?: string (for a password-protected Word document)}"#)
             .pure(),
+        // Pure: replacing the document with its file is one undo step it records itself, and
+        // leaves the document saved (it matches the file), not changed.
+        CommandSpec::new("file.reload", "Reload from Disk", "File", reload)
+            .params(r#"{"force"?: bool (discard unsaved changes; without it a changed document is refused)}"#)
+            .pure(),
         CommandSpec::new("file.save", "Save", "File", save)
             .key("Mod+S / Shift+F12 / Alt+Shift+F2")
-            .params(r#"{"path"?: string, "password"?: string (encrypt this and later saves with it, as file.encrypt does), "markup"?: bool (Print Markup for a PDF, PNG, HTML, Markdown or text copy: comments shown; default file.printMarkup), "format"?: "wordml2003" (an .xml file as a Word 2003 XML Document) | "flatopc" (as a Word XML Document, the default; saving over a Word 2003 XML file keeps that format)}"#)
+            .params(r#"{"path"?: string, "ifUnchanged"?: bool (refuse to write over the document's own file if another program has changed it since it was opened or saved; AutoSave uses it), "password"?: string (encrypt this and later saves with it, as file.encrypt does), "markup"?: bool (Print Markup for a PDF, PNG, HTML, Markdown or text copy: comments shown; default file.printMarkup), "format"?: "wordml2003" (an .xml file as a Word 2003 XML Document) | "flatopc" (as a Word XML Document, the default; saving over a Word 2003 XML file keeps that format)}"#)
             .pure(),
         CommandSpec::new("file.saveAs", "Save As", "File", save_as).key(super::mac_or("F12 / Mod+Shift+S", "F12 / Alt+F2")).params(r#"{"path": string, "password"?: string, "markup"?: bool, "format"?: string (as file.save)}"#).pure(),
         // Pure: the password must not land in Repeat or a recorded macro, and it isn't an edit
@@ -249,11 +254,47 @@ fn open(s: &mut Session, v: &Value) -> CmdResult {
         super::view::restore_zoom(s, z);
     }
     s.path = Some(path.into());
+    // Bytes handed over (`data`) aren't the file: nothing on disk to follow.
+    s.disk = if v.get("data").is_some() { None } else { crate::DiskStamp::of(std::path::Path::new(path)) };
     // Like Word, a document opened with a password is saved with it again.
     if encrypted {
         s.password = password.map(crate::io::Password::new);
     }
     Ok(json!({"path": path, "paragraphs": s.doc.paragraph_count(), "words": s.doc.word_count(), "encrypted": encrypted}))
+}
+
+/// Reload from Disk: the document's file as it is now, after another program (an agent editing
+/// the Markdown, say) wrote it. One undo step brings back the version before; the caret stays
+/// where it was as far as the new text allows, and AutoSave keeps covering the file. A document
+/// with unsaved changes is refused unless `force` says to discard them.
+fn reload(s: &mut Session, v: &Value) -> CmdResult {
+    let Some(path) = s.path.clone() else {
+        return Err(CmdError::Disabled("file.reload: the document has no file to reload".into()));
+    };
+    if s.dirty && p::bool(v, "force") != Some(true) {
+        return Err(CmdError::Disabled("file.reload: the document has unsaved changes (pass \"force\": true to discard them)".into()));
+    }
+    let region = s.region();
+    let password = s.password.as_ref().map(crate::io::Password::as_str);
+    let (mut doc, _) = crate::io::open_path_in(&path, password, &region).map_err(CmdError::Failed)?;
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    if let Some(lang) = s.prefs.default_language.as_ref().or(s.editing_lang.as_ref())
+        && matches!(ext.as_str(), "txt" | "text" | "md" | "markdown")
+    {
+        doc.styles.default_chr.lang = Some(lang.clone());
+    }
+    s.checkpoint("Reload from Disk");
+    s.math = None;
+    s.pending = None;
+    s.also_selected.clear();
+    s.doc = doc;
+    s.doc.ensure_nonempty();
+    s.clamp_selection();
+    s.disk = crate::DiskStamp::of(&path);
+    s.touch();
+    s.dirty = false;
+    s.relayout();
+    Ok(json!({"reloaded": true, "path": path.to_string_lossy(), "paragraphs": s.doc.paragraph_count()}))
 }
 
 /// File › Info › Protect Document › Encrypt with Password: the password Word documents are saved
@@ -277,6 +318,9 @@ fn encrypt(s: &mut Session, v: &Value) -> CmdResult {
     }
     Ok(json!({"encrypted": s.password.is_some()}))
 }
+
+/// Why `file.save` with `ifUnchanged` refused: the file holds another program's newer version.
+pub const CHANGED_ON_DISK: &str = "file.save: the file was changed by another program since it was opened or saved";
 
 fn save(s: &mut Session, v: &Value) -> CmdResult {
     let path = match p::str(v, "path").map(std::path::PathBuf::from).or_else(|| s.path.clone()) {
@@ -315,6 +359,12 @@ fn save(s: &mut Session, v: &Value) -> CmdResult {
     let before_stamp =
         (s.doc.settings.zoom, s.doc.core.last_modified_by.clone(), s.doc.core.created.clone(), s.doc.core.modified.clone(), s.doc.core.revision);
     s.stamp_save();
+    // AutoSave (`ifUnchanged`) never writes over a version another program saved since: checked
+    // as late as possible, right before the write.
+    if p::bool(v, "ifUnchanged") == Some(true) && s.path.as_deref() == Some(path.as_path()) && s.disk_changed() {
+        (s.doc.settings.zoom, s.doc.core.last_modified_by, s.doc.core.created, s.doc.core.modified, s.doc.core.revision) = before_stamp;
+        return Err(CmdError::Disabled(CHANGED_ON_DISK.into()));
+    }
     let password = s.password.as_ref().map(crate::io::Password::as_str);
     // A header/footer just made and left empty isn't saved (#960).
     let copy = super::insert::saved_copy(s);
@@ -329,6 +379,7 @@ fn save(s: &mut Session, v: &Value) -> CmdResult {
     if own_file || ["docx", "docm", "dotx", "dotm", "odt", "rtf", "json", "xml", "md"].contains(&ext.as_str()) {
         s.path = Some(path.clone());
         s.dirty = false;
+        s.disk = crate::DiskStamp::of(&path);
         s.relayout();
     }
     Ok(json!({"saved": true, "path": path.to_string_lossy(), "encrypted": encrypted}))

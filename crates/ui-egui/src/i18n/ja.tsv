@@ -2374,3 +2374,10 @@
 	More tabs	その他のタブ
 # #3013: Insert Table of Figures
 	Include label and number	ラベルと番号を含める
+	{name} was changed by another program.	{name} は別のプログラムによって変更されました。
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	保存されていない変更があります。ファイルを再読み込みして変更を破棄しますか、それとも自分の変更を残してファイルに上書き保存しますか?
+	Reload	再読み込み
+	Keep Mine	自分の変更を残す
+	{name} was changed by another program and has been reloaded.	{name} は別のプログラムによって変更されたため、再読み込みしました。
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	自動保存は一時停止中です: 別のプログラムがファイルを変更しました。自分の版を残すには保存し、そうでなければディスクから再読み込みしてください。
+	Reload from Disk	ディスクから再読み込み

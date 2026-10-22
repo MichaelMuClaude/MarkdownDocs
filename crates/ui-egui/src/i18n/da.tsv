@@ -2606,3 +2606,10 @@ preview	Title	Titel
 	Heading 6	Overskrift 6
 	MarkdownDocs	MarkdownDocs
 	Source code: github.com/MichaelMuClaude/MarkdownDocs	Kildekode: github.com/MichaelMuClaude/MarkdownDocs
+	{name} was changed by another program.	{name} er blevet ændret af et andet program.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Du har ændringer, der ikke er gemt. Vil du genindlæse filen og miste dem, eller beholde dine og gemme dem oven i den?
+	Reload	Genindlæs
+	Keep Mine	Behold mine
+	{name} was changed by another program and has been reloaded.	{name} er blevet ændret af et andet program og er genindlæst.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Automatisk lagring er sat på pause: et andet program har ændret filen. Gem for at beholde din version, eller genindlæs den fra disken.
+	Reload from Disk	Genindlæs fra disk

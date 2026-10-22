@@ -2375,3 +2375,10 @@
 	More tabs	更多索引標籤
 # #3013: Insert Table of Figures
 	Include label and number	包含標籤和編號
+	{name} was changed by another program.	{name} 已被其他程式修改。
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	你有未儲存的變更。要重新載入檔案並放棄這些變更，還是保留你的版本並覆寫儲存到檔案？
+	Reload	重新載入
+	Keep Mine	保留我的
+	{name} was changed by another program and has been reloaded.	{name} 已被其他程式修改，已重新載入。
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	自動儲存已暫停：其他程式修改了檔案。儲存以保留你的版本，或從磁碟重新載入。
+	Reload from Disk	從磁碟重新載入

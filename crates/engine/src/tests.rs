@@ -3915,6 +3915,64 @@ fn saving_a_text_file_over_itself_saves_the_document() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// An agent (or any program) rewriting the open Markdown file is noticed and reloaded: the
+/// document shows the new text, stays saved, keeps its file, and one Undo brings the version
+/// before back. The session's own saves, and a rewrite with the same bytes, are not changes.
+/// Unsaved edits are never thrown away unless asked.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn a_file_changed_on_disk_is_noticed_and_reloaded() {
+    let dir = std::env::temp_dir().join(format!("wordcraft-engine-reload-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("notes.md");
+    std::fs::write(&path, "# Notes\n\nFirst draft.\n").unwrap();
+    let mut s = s();
+    run(&mut s, "file.open", json!({"path": path.to_string_lossy()}));
+    assert!(!s.disk_changed(), "just opened");
+
+    // The session's own save is not someone else's change.
+    run(&mut s, "caret.docEnd", json!({}));
+    run(&mut s, "text.insert", json!({"text": " More."}));
+    run(&mut s, "file.save", json!({}));
+    assert!(!s.disk_changed(), "our own save");
+
+    // The same bytes written again (an editor saving without changes) are no change.
+    let same = std::fs::read(&path).unwrap();
+    std::fs::write(&path, &same).unwrap();
+    assert!(!s.disk_changed(), "same bytes");
+
+    // Another program's edit is.
+    std::fs::write(&path, "# Notes\n\nRewritten by an agent.\n\n- [ ] follow up\n").unwrap();
+    assert!(s.disk_changed());
+    let r = run(&mut s, "file.reload", json!({}));
+    assert_eq!(r["reloaded"], true);
+    let body = s.doc.plain_text(StoryRef::Body);
+    assert!(body.contains("Rewritten by an agent.") && !body.contains("First draft."), "{body:?}");
+    assert!(!s.dirty, "the document matches its file");
+    assert_eq!(s.path.as_deref(), Some(path.as_path()));
+    assert!(!s.disk_changed(), "caught up with the file");
+    // One Undo is the version before the reload.
+    run(&mut s, "edit.undo", json!({}));
+    assert!(s.doc.plain_text(StoryRef::Body).contains("First draft. More."));
+    run(&mut s, "edit.redo", json!({}));
+
+    // Unsaved edits aren't thrown away unless asked.
+    run(&mut s, "text.insert", json!({"text": "Mine."}));
+    std::fs::write(&path, "# Notes\n\nTheirs.\n").unwrap();
+    assert!(s.disk_changed());
+    assert!(s.run("file.reload", &json!({})).is_err(), "unsaved changes are refused");
+    assert!(s.doc.plain_text(StoryRef::Body).contains("Mine."));
+    run(&mut s, "file.reload", json!({"force": true}));
+    assert!(s.doc.plain_text(StoryRef::Body).contains("Theirs."));
+    assert!(!s.dirty);
+
+    // A file that has gone away isn't a change to load.
+    std::fs::remove_file(&path).unwrap();
+    assert!(!s.disk_changed());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// A save that fails to write (no permission, disk full, a bad path) leaves the document's own
 /// save stamps untouched: `stamp_save` runs before the fallible write, so a prior version of this
 /// left `modified`/`created`/`last_modified_by`/`revision`/`zoom` changed for a save that never

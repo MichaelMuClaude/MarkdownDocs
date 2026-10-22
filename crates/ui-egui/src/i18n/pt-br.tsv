@@ -2386,3 +2386,10 @@
 	More tabs	Mais guias
 # #3013: Insert Table of Figures
 	Include label and number	Incluir rótulo e número
+	{name} was changed by another program.	{name} foi alterado por outro programa.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Você tem alterações não salvas. Recarregar o arquivo e perdê-las, ou manter as suas e salvá-las por cima dele?
+	Reload	Recarregar
+	Keep Mine	Manter as minhas
+	{name} was changed by another program and has been reloaded.	{name} foi alterado por outro programa e foi recarregado.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	O salvamento automático está pausado: outro programa alterou o arquivo. Salve para manter sua versão ou recarregue-o do disco.
+	Reload from Disk	Recarregar do disco

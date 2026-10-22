@@ -2771,3 +2771,10 @@
 	More tabs	Още раздели
 # #3013: Insert Table of Figures
 	Include label and number	Включване на етикета и номера
+	{name} was changed by another program.	{name} е променен от друга програма.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Имате незапазени промени. Да презаредите ли файла и да ги загубите, или да запазите своите и да ги запишете върху него?
+	Reload	Презареждане
+	Keep Mine	Запазване на моите
+	{name} was changed by another program and has been reloaded.	{name} е променен от друга програма и е презареден.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Автоматичното записване е на пауза: друга програма промени файла. Запишете, за да запазите своята версия, или го презаредете от диска.
+	Reload from Disk	Презареждане от диска

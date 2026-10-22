@@ -2821,3 +2821,10 @@ template	Letter	Thư
 	More tabs	Các tab khác
 # #3013: Insert Table of Figures
 	Include label and number	Bao gồm nhãn và số
+	{name} was changed by another program.	{name} đã bị một chương trình khác thay đổi.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Bạn có thay đổi chưa lưu. Tải lại tệp và mất chúng, hay giữ của bạn và lưu đè lên tệp?
+	Reload	Tải lại
+	Keep Mine	Giữ của tôi
+	{name} was changed by another program and has been reloaded.	{name} đã bị một chương trình khác thay đổi và đã được tải lại.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Tự động lưu đang tạm dừng: một chương trình khác đã thay đổi tệp. Hãy lưu để giữ phiên bản của bạn, hoặc tải lại từ đĩa.
+	Reload from Disk	Tải lại từ đĩa

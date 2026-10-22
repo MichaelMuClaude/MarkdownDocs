@@ -2782,3 +2782,10 @@ template	Letter	Lettre
 	More tabs	Plus d'onglets
 # #3013: Insert Table of Figures
 	Include label and number	Inclure l’étiquette et le numéro
+	{name} was changed by another program.	{name} a été modifié par un autre programme.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Vous avez des modifications non enregistrées. Recharger le fichier et les perdre, ou garder les vôtres et les enregistrer par-dessus ?
+	Reload	Recharger
+	Keep Mine	Garder les miennes
+	{name} was changed by another program and has been reloaded.	{name} a été modifié par un autre programme et a été rechargé.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	L’enregistrement automatique est en pause : un autre programme a modifié le fichier. Enregistrez pour garder votre version, ou rechargez-le depuis le disque.
+	Reload from Disk	Recharger depuis le disque

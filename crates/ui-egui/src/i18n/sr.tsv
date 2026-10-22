@@ -2388,3 +2388,10 @@
 	More tabs	Још картица
 # #3013: Insert Table of Figures
 	Include label and number	Укључи ознаку и број
+	{name} was changed by another program.	Датотеку {name} је променио други програм.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Имате несачуване измене. Поново учитати датотеку и изгубити их, или задржати своје и сачувати их преко ње?
+	Reload	Поново учитај
+	Keep Mine	Задржи моје
+	{name} was changed by another program and has been reloaded.	Датотеку {name} је променио други програм и поново је учитана.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Аутоматско чување је паузирано: други програм је променио датотеку. Сачувајте да бисте задржали своју верзију или је поново учитајте са диска.
+	Reload from Disk	Поново учитај са диска

@@ -359,6 +359,37 @@ impl EditSnapshot {
     }
 }
 
+/// A file's contents as the session last saw them (size, modified time and a hash of the bytes),
+/// to tell whether something else has written it since.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DiskStamp {
+    path: std::path::PathBuf,
+    len: u64,
+    modified: Option<std::time::SystemTime>,
+    hash: u64,
+}
+
+/// A hash of a file's bytes: equal bytes, equal hash.
+fn bytes_hash(bytes: &[u8]) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    bytes.hash(&mut h);
+    h.finish()
+}
+
+impl DiskStamp {
+    /// What `path` holds now, or `None` if it can't be read.
+    pub fn of(path: &std::path::Path) -> Option<DiskStamp> {
+        let name = path.to_string_lossy();
+        let bytes = crate::io::read_file(&name).ok()?;
+        let (_, modified) = crate::io::file_meta(&name)?;
+        Some(Self::of_bytes(path, &bytes, modified))
+    }
+    fn of_bytes(path: &std::path::Path, bytes: &[u8], modified: Option<std::time::SystemTime>) -> DiskStamp {
+        DiskStamp { path: path.to_path_buf(), len: bytes.len() as u64, modified, hash: bytes_hash(bytes) }
+    }
+}
+
 /// An editing session.
 pub struct Session {
     pub doc: Document,
@@ -367,6 +398,9 @@ pub struct Session {
     /// Formatting picked with a collapsed caret, applied to the next typed text.
     pub pending: Option<CharProps>,
     pub path: Option<std::path::PathBuf>,
+    /// What the document's file held when it was last opened from or saved to, to notice another
+    /// program (an agent editing the Markdown, say) writing it: [`Session::disk_changed`].
+    pub disk: Option<DiskStamp>,
     /// Name given to a document not saved yet (File › Info › Rename): what Save suggests. A file
     /// name, not document metadata, so it is not part of the document or its undo history.
     pub file_name: Option<String>,
@@ -669,6 +703,7 @@ impl Session {
             file_name: None,
             user_dict_path: None,
             dirty: false,
+            disk: None,
             clipboard: None,
             pending_move: None,
             clipboard_text: String::new(),
@@ -801,6 +836,26 @@ impl Session {
     pub fn touch(&mut self) {
         self.rev = self.rev.wrapping_add(1);
         self.dirty = true;
+    }
+
+    /// Whether the document's file now holds something other than what it was opened from or
+    /// last saved as: another program, or an agent editing the Markdown, wrote it. Cheap while
+    /// nothing changed (size and modified time first); a file touched but holding the same bytes
+    /// is not a change. A missing or unreadable file is not one either: there is nothing to load.
+    pub fn disk_changed(&mut self) -> bool {
+        let Some(path) = self.path.clone() else { return false };
+        let Some(stamp) = self.disk.as_mut().filter(|d| d.path == path) else { return false };
+        let name = path.to_string_lossy();
+        let Some((len, modified)) = crate::io::file_meta(&name) else { return false };
+        if len == stamp.len && modified == stamp.modified {
+            return false;
+        }
+        let Ok(bytes) = crate::io::read_file(&name) else { return false };
+        if bytes.len() as u64 == stamp.len && bytes_hash(&bytes) == stamp.hash {
+            stamp.modified = modified;
+            return false;
+        }
+        true
     }
 
     /// Reading Highlight ranges for the current document (searched again after edits); empty when it's off.
@@ -1244,6 +1299,8 @@ impl Session {
             view: _,
             pending: _,
             path: _,
+            // What the file held when last opened or saved: file tracking, like the path.
+            disk: _,
             file_name: _,
             // The custom dictionary file, like the file path: host wiring, not an edit.
             user_dict_path: _,

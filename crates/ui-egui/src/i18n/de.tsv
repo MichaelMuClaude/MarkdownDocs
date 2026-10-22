@@ -2373,3 +2373,10 @@
 	More tabs	Weitere Registerkarten
 # #3013: Insert Table of Figures
 	Include label and number	Bezeichnung und Nummer einbeziehen
+	{name} was changed by another program.	{name} wurde von einem anderen Programm geändert.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Sie haben ungespeicherte Änderungen. Datei neu laden und sie verlieren, oder Ihre behalten und über die Datei speichern?
+	Reload	Neu laden
+	Keep Mine	Meine behalten
+	{name} was changed by another program and has been reloaded.	{name} wurde von einem anderen Programm geändert und neu geladen.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	AutoSpeichern ist angehalten: Ein anderes Programm hat die Datei geändert. Speichern Sie, um Ihre Version zu behalten, oder laden Sie sie neu vom Datenträger.
+	Reload from Disk	Vom Datenträger neu laden

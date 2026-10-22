@@ -2806,3 +2806,10 @@ template	Letter	Lettera
 	More tabs	Altre schede
 # #3013: Insert Table of Figures
 	Include label and number	Includi etichetta e numero
+	{name} was changed by another program.	{name} è stato modificato da un altro programma.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Hai modifiche non salvate. Ricaricare il file e perderle, o mantenere le tue e salvarle sopra di esso?
+	Reload	Ricarica
+	Keep Mine	Mantieni le mie
+	{name} was changed by another program and has been reloaded.	{name} è stato modificato da un altro programma ed è stato ricaricato.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Il salvataggio automatico è in pausa: un altro programma ha modificato il file. Salva per mantenere la tua versione o ricaricalo dal disco.
+	Reload from Disk	Ricarica dal disco

@@ -2809,3 +2809,10 @@ template	Letter	Brev
 	More tabs	Fler flikar
 # #3013: Insert Table of Figures
 	Include label and number	Ta med etikett och nummer
+	{name} was changed by another program.	{name} har ändrats av ett annat program.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Du har ändringar som inte har sparats. Vill du läsa in filen igen och förlora dem, eller behålla dina och spara dem över den?
+	Reload	Läs in igen
+	Keep Mine	Behåll mina
+	{name} was changed by another program and has been reloaded.	{name} har ändrats av ett annat program och har lästs in igen.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Spara automatiskt är pausat: ett annat program har ändrat filen. Spara för att behålla din version, eller läs in den igen från disken.
+	Reload from Disk	Läs in igen från disk

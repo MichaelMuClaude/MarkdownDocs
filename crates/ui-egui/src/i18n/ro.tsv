@@ -2769,3 +2769,10 @@ template	Letter	Scrisoare
 	Heading 6	Titlu 6
 	MarkdownDocs	MarkdownDocs
 	Source code: github.com/MichaelMuClaude/MarkdownDocs	Cod sursă: github.com/MichaelMuClaude/MarkdownDocs
+	{name} was changed by another program.	{name} a fost modificat de alt program.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Aveți modificări nesalvate. Reîncărcați fișierul și le pierdeți, sau le păstrați pe ale dvs. și le salvați peste el?
+	Reload	Reîncarcă
+	Keep Mine	Păstrează-le pe ale mele
+	{name} was changed by another program and has been reloaded.	{name} a fost modificat de alt program și a fost reîncărcat.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Salvarea automată este întreruptă: alt program a modificat fișierul. Salvați pentru a vă păstra versiunea sau reîncărcați-l de pe disc.
+	Reload from Disk	Reîncarcă de pe disc

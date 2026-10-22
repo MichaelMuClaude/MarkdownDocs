@@ -2802,3 +2802,10 @@ preview	Title	Tytuł
 	This document has no bookmarks.	This document has no bookmarks.
 	Type a page number, or +2 / -1.	Type a page number, or +2 / -1.
 	Wait for the print job to finish submitting before closing.	Wait for the print job to finish submitting before closing.
+	{name} was changed by another program.	Plik {name} został zmieniony przez inny program.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Masz niezapisane zmiany. Wczytać plik ponownie i je utracić, czy zachować swoje i zapisać je na nim?
+	Reload	Wczytaj ponownie
+	Keep Mine	Zachowaj moje
+	{name} was changed by another program and has been reloaded.	Plik {name} został zmieniony przez inny program i wczytany ponownie.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Autozapis jest wstrzymany: inny program zmienił plik. Zapisz, aby zachować swoją wersję, lub wczytaj go ponownie z dysku.
+	Reload from Disk	Wczytaj ponownie z dysku

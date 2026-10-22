@@ -2780,3 +2780,10 @@ preview	Title	Пример
 	More tabs	Другие вкладки
 # #3013: Insert Table of Figures
 	Include label and number	Включить подпись и номер
+	{name} was changed by another program.	Файл {name} был изменён другой программой.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	У вас есть несохранённые изменения. Перезагрузить файл и потерять их или сохранить свои поверх него?
+	Reload	Перезагрузить
+	Keep Mine	Оставить мои
+	{name} was changed by another program and has been reloaded.	Файл {name} был изменён другой программой и перезагружен.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Автосохранение приостановлено: другая программа изменила файл. Сохраните, чтобы оставить свою версию, или перезагрузите его с диска.
+	Reload from Disk	Перезагрузить с диска

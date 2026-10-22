@@ -564,6 +564,20 @@ pub fn read_file(path: &str) -> Result<Vec<u8>, String> {
     read_file_capped(path, MAX_READ_FILE, "file")
 }
 
+/// A file's size and modified time, looked up without reading it (`None` if it can't be), for
+/// noticing that another program wrote it. Under the same access checks as [`read_file`].
+#[cfg(not(target_arch = "wasm32"))]
+pub fn file_meta(path: &str) -> Option<(u64, Option<std::time::SystemTime>)> {
+    crate::file_access::check_read(path).ok()?;
+    let meta = std::fs::metadata(path).ok()?;
+    Some((meta.len(), meta.modified().ok()))
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn file_meta(_path: &str) -> Option<(u64, Option<std::time::SystemTime>)> {
+    None
+}
+
 #[cfg(target_arch = "wasm32")]
 pub fn read_file(path: &str) -> Result<Vec<u8>, String> {
     Err(format!("{path}: files are opened through the browser on the web"))

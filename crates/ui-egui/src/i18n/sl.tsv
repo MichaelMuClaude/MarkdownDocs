@@ -2770,3 +2770,10 @@ preview	Title	Naslov
 	Heading 6	Naslov 6
 	MarkdownDocs	MarkdownDocs
 	Source code: github.com/MichaelMuClaude/MarkdownDocs	Izvorna koda: github.com/MichaelMuClaude/MarkdownDocs
+	{name} was changed by another program.	Datoteko {name} je spremenil drug program.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Imate neshranjene spremembe. Ali želite datoteko znova naložiti in jih izgubiti ali obdržati svoje in jih shraniti čeznjo?
+	Reload	Znova naloži
+	Keep Mine	Obdrži moje
+	{name} was changed by another program and has been reloaded.	Datoteko {name} je spremenil drug program, zato je bila znova naložena.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Samodejno shranjevanje je začasno ustavljeno: drug program je spremenil datoteko. Shranite, da obdržite svojo različico, ali jo znova naložite z diska.
+	Reload from Disk	Znova naloži z diska

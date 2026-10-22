@@ -2779,3 +2779,10 @@ preview	Title	Örnek
 	More tabs	Diğer sekmeler
 # #3013: Insert Table of Figures
 	Include label and number	Etiketi ve numarayı ekle
+	{name} was changed by another program.	{name} başka bir program tarafından değiştirildi.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Kaydedilmemiş değişiklikleriniz var. Dosyayı yeniden yükleyip bunları kaybetmek mi, yoksa kendinizinkini tutup dosyanın üzerine kaydetmek mi istersiniz?
+	Reload	Yeniden yükle
+	Keep Mine	Benimkini tut
+	{name} was changed by another program and has been reloaded.	{name} başka bir program tarafından değiştirildi ve yeniden yüklendi.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Otomatik kaydetme duraklatıldı: başka bir program dosyayı değiştirdi. Kendi sürümünüzü tutmak için kaydedin veya diskten yeniden yükleyin.
+	Reload from Disk	Diskten yeniden yükle

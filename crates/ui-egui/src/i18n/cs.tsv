@@ -2773,3 +2773,10 @@ preview	Title	Ukázka
 	More tabs	Další karty
 # #3013: Insert Table of Figures
 	Include label and number	Zahrnout popisek a číslo
+	{name} was changed by another program.	Soubor {name} byl změněn jiným programem.
+	You have unsaved changes. Reload the file and lose them, or keep yours and save them over it?	Máte neuložené změny. Chcete soubor znovu načíst a změny ztratit, nebo ponechat své a uložit je přes něj?
+	Reload	Znovu načíst
+	Keep Mine	Ponechat moje
+	{name} was changed by another program and has been reloaded.	Soubor {name} byl změněn jiným programem a byl znovu načten.
+	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Automatické ukládání je pozastaveno: soubor změnil jiný program. Uložte, chcete-li ponechat svou verzi, nebo jej znovu načtěte z disku.
+	Reload from Disk	Znovu načíst z disku

@@ -641,6 +641,11 @@ pub struct WordApp {
     /// there. A file that was merely opened isn't rewritten until the user saves it: saving drops
     /// whatever WordCraft can't represent (content controls, charts, macros…).
     autosave_path: Option<std::path::PathBuf>,
+    /// The document's file changed on disk while it had unsaved changes, and the user hasn't said
+    /// which version wins yet ([`dialogs::Dialog::FileChanged`]): AutoSave waits.
+    disk_conflict: bool,
+    /// When the document's file was last checked for another program's changes (ms).
+    last_disk_check: f64,
     /// Web: saves the browser's picker hasn't finished yet ([`async_saves`], #1315).
     saves_in_flight: Vec<SaveInFlight>,
     /// Web: the command a Save Changes prompt held back until its picker save ends (#1315).
@@ -751,6 +756,8 @@ impl WordApp {
             read_aloud_at: None,
             read_aloud_error: None,
             autosave_path: None,
+            disk_conflict: false,
+            last_disk_check: 0.0,
             saves_in_flight: Vec::new(),
             awaiting_save: None,
             change_picture_target: None,
@@ -1080,6 +1087,15 @@ impl WordApp {
                 self.dialog = None;
             }
             crate::table_pen::stop(self);
+        }
+        // Saving (this version wins) or reloading (the file's wins) answers a pending conflict, and
+        // so does replacing the document.
+        if self.disk_conflict && (self.session.document_id() != document || (r.is_ok() && matches!(id, "file.save" | "file.saveAs" | "file.reload")))
+        {
+            self.disk_conflict = false;
+            if matches!(self.dialog, Some(dialogs::Dialog::FileChanged { .. })) {
+                self.dialog = None;
+            }
         }
         // An explicit save to the document's own file lets AutoSave keep writing there.
         if let Ok(v) = &r
@@ -1739,6 +1755,19 @@ impl WordApp {
                     json!({"pending": "discardRecovery"})
                 }
             }
+            "ui.fileChanged" => {
+                let Some(answer) = s("answer").filter(|a| matches!(*a, "reload" | "keep")) else {
+                    return Some(Err("`answer` must be reload or keep".into()));
+                };
+                if self.dialog.as_ref().is_some_and(|d| matches!(d, dialogs::Dialog::FileChanged { .. })) {
+                    self.dialog = None;
+                }
+                self.disk_conflict = false;
+                // Reload: the file's version, the unsaved changes discarded. Keep Mine: this
+                // version, saved over the file now.
+                let r = if answer == "reload" { self.run("file.reload", json!({"force": true})) } else { self.run("file.save", json!({})) };
+                return Some(r);
+            }
             "ui.saveChanges" => {
                 let Some(choice) = s("answer").and_then(SaveChoice::parse) else {
                     return Some(Err("`answer` must be save, dontSave or cancel".into()));
@@ -2263,6 +2292,10 @@ impl WordApp {
         if self.autosaves() && self.session.dirty {
             ctx.request_repaint_after(std::time::Duration::from_millis(1000));
         }
+        self.disk_tick(now_ms());
+        if self.session.disk.is_some() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(DISK_CHECK_MS as u64));
+        }
         self.collect_screenshots(ctx);
         self.issue_screenshots(ctx);
         if !self.synthetic.is_empty() {
@@ -2343,6 +2376,9 @@ impl WordApp {
         if self.services.download.is_some() {
             return Some(AutoSaveBlock::Browser);
         }
+        if self.disk_conflict {
+            return Some(AutoSaveBlock::ChangedOnDisk);
+        }
         let Some(path) = &self.session.path else { return Some(AutoSaveBlock::Unsaved) };
         if !keeps_everything(&path.to_string_lossy()) {
             let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
@@ -2372,12 +2408,45 @@ impl WordApp {
         Ok(json!({"value": on}))
     }
 
+    /// Follow the document's file: when another program (an agent editing the Markdown, say)
+    /// has written it, a document without unsaved changes reloads to show it; one with unsaved
+    /// changes asks which version wins ([`dialogs::Dialog::FileChanged`]) and AutoSave waits.
+    fn disk_tick(&mut self, now: f64) {
+        if self.disk_conflict || now - self.last_disk_check < DISK_CHECK_MS {
+            return;
+        }
+        self.last_disk_check = now;
+        if !self.session.disk_changed() {
+            return;
+        }
+        let name = self.title_stem();
+        if self.session.dirty {
+            self.disk_conflict = true;
+            if self.dialog.is_none() {
+                self.dialog = Some(dialogs::Dialog::FileChanged { name });
+            }
+            return;
+        }
+        match self.run("file.reload", json!({})) {
+            Ok(_) => self.status(i18n::fmt(tl!("{name} was changed by another program and has been reloaded."), &[("name", &name)])),
+            Err(e) => log::warn!("Reload from Disk failed: {e}"),
+        }
+    }
+
     /// AutoSave: write a saved document a couple of seconds after the last change. A failure is
     /// shown in the status bar and turns AutoSave off for the file until the user saves it again.
     fn autosave_tick(&mut self, now: f64) {
         if self.autosaves() && self.session.dirty && now - self.last_autosave > 2500.0 && now - self.canvas.caret_visible_since > 1500.0 {
             self.last_autosave = now;
-            if let Err(e) = self.session.run("file.save", &json!({})) {
+            // Never over a version another program wrote since (checked right before the write):
+            // that asks first (`disk_tick`).
+            let r = self.session.run("file.save", &json!({"ifUnchanged": true}));
+            if matches!(&r, Err(wordcraft_engine::CmdError::Disabled(m)) if m.as_str() == wordcraft_engine::cmd::file::CHANGED_ON_DISK) {
+                self.last_disk_check = f64::MIN;
+                self.disk_tick(now);
+                return;
+            }
+            if let Err(e) = r {
                 log::warn!("AutoSave failed: {e}");
                 self.autosave_path = None;
                 self.status(i18n::fmt(tl!("AutoSave failed: {error}. Save the document to turn AutoSave back on."), &[("error", &e.to_string())]));
@@ -2689,12 +2758,18 @@ impl WordApp {
     }
 }
 
+/// How often the document's file is checked for another program's changes (ms).
+const DISK_CHECK_MS: f64 = 1000.0;
+
 /// Why AutoSave can't cover the document ([`WordApp::autosave_block`]); the switch is greyed out
 /// and its tooltip gives [`AutoSaveBlock::reason`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AutoSaveBlock {
     /// The web app: saving is a download, there is no file to keep writing to.
     Browser,
+    /// Another program changed the file while the document had unsaved changes, and the user
+    /// hasn't chosen which version to keep ([`dialogs::Dialog::FileChanged`]).
+    ChangedOnDisk,
     /// A new document that has never been saved.
     Unsaved,
     /// A file in a format that can't keep everything (Markdown, plain text, HTML…), by file name.
@@ -2709,6 +2784,9 @@ impl AutoSaveBlock {
         match self {
             AutoSaveBlock::Browser => {
                 tl!("AutoSave isn't available in the browser: it can't write to your files. Save downloads a copy.").to_string()
+            }
+            AutoSaveBlock::ChangedOnDisk => {
+                tl!("AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.").to_string()
             }
             AutoSaveBlock::Unsaved => tl!("Save the document to turn on AutoSave").to_string(),
             AutoSaveBlock::Format { name } => i18n::fmt(
@@ -7463,6 +7541,64 @@ mod tests {
         assert!(!a.session.dirty);
         let saved = wordcraft_engine::io::open_path(&path).unwrap();
         assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Original Typed More"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// An agent (or any program) rewriting the open Markdown file: without unsaved changes the
+    /// window reloads to show it; with some, it asks which version wins and AutoSave waits, so
+    /// neither side is overwritten silently — not even by an AutoSave due in the same second.
+    #[test]
+    fn a_markdown_file_changed_by_another_program_reloads_or_asks() {
+        let dir = scratch("disk-changed");
+        let path = dir.join("notes.md");
+        std::fs::write(&path, "Original notes\n").unwrap();
+        let mut a = app();
+        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        let body = |a: &WordApp| a.session.doc.plain_text(wordcraft_doc::StoryRef::Body);
+        let on_disk = || std::fs::read_to_string(&path).unwrap();
+        let mut t = now_ms() + 10_000.0;
+        let tick = |a: &mut WordApp, t: &mut f64| {
+            *t += 5_000.0;
+            a.disk_tick(*t);
+        };
+
+        // Nothing unsaved: the agent's version shows, and the document stays saved.
+        std::fs::write(&path, "Agent rewrote this\n").unwrap();
+        tick(&mut a, &mut t);
+        assert!(body(&a).contains("Agent rewrote this"), "{:?}", body(&a));
+        assert!(!a.session.dirty);
+        assert!(a.autosaves(), "AutoSave keeps covering the file");
+        assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("reloaded")));
+
+        // Unsaved changes: asked, AutoSave paused, nothing overwritten.
+        a.run("caret.docEnd", json!({})).unwrap();
+        a.run("text.insert", json!({"text": " Mine"})).unwrap();
+        std::fs::write(&path, "Agent again\n").unwrap();
+        tick(&mut a, &mut t);
+        assert!(matches!(a.dialog, Some(dialogs::Dialog::FileChanged { .. })));
+        assert_eq!(a.autosave_block(), Some(AutoSaveBlock::ChangedOnDisk));
+        a.autosave_tick(t + 60_000.0);
+        assert_eq!(on_disk(), "Agent again\n", "AutoSave waits for the answer");
+        assert!(body(&a).contains("Mine"));
+        // Keep Mine: this version is saved over the file.
+        a.run("ui.fileChanged", json!({"answer": "keep"})).unwrap();
+        assert!(on_disk().contains("Mine") && !a.session.dirty && a.dialog.is_none());
+        assert!(a.autosaves());
+
+        // Reload: the file's version, the unsaved changes dropped.
+        a.run("text.insert", json!({"text": " Draft"})).unwrap();
+        std::fs::write(&path, "Agent wins\n").unwrap();
+        tick(&mut a, &mut t);
+        a.run("ui.fileChanged", json!({"answer": "reload"})).unwrap();
+        assert!(body(&a).contains("Agent wins") && !body(&a).contains("Draft"));
+        assert!(!a.session.dirty && a.autosaves());
+
+        // An AutoSave due before the check noticed the change asks instead of writing.
+        a.run("text.insert", json!({"text": " Late"})).unwrap();
+        std::fs::write(&path, "Agent last\n").unwrap();
+        a.autosave_tick(t + 120_000.0);
+        assert_eq!(on_disk(), "Agent last\n");
+        assert!(matches!(a.dialog, Some(dialogs::Dialog::FileChanged { .. })));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
