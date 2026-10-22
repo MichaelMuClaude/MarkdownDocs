@@ -2415,3 +2415,17 @@
 	{name} was changed by another program and has been reloaded.	Faili {name} muutis teine programm ja see laaditi uuesti.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Automaatsalvestus on peatatud: teine programm muutis faili. Salvestage, et jätta oma versioon, või laadige see kettalt uuesti.
 	Reload from Disk	Laadi kettalt uuesti
+	AutoSave documents you have saved in MarkdownDocs	Salvesta MarkdownDocsis salvestatud dokumendid automaatselt
+	Browse in MarkdownDocs…	Sirvi MarkdownDocsis…
+	Couldn't make MarkdownDocs the default: {error}	MarkdownDocsi ei õnnestunud vaikerakenduseks määrata: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	Vali jaotises „Vaikerakendused“ MarkdownDocs nende dokumenditüüpide jaoks, mida see peaks avama.
+	Make MarkdownDocs the default for Word documents…	Määra MarkdownDocs Wordi dokumentide vaikerakenduseks…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	Keele {language} õigekirjasõnastikku pole paigaldatud, seega seda ei kontrollita. MarkdownDocs otsib Hunspelli sõnastikku {name} kaustast WORDCRAFT_DICTIONARIES ja tavalistest süsteemikohtadest.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Ava fail MarkdownDocsi enda failisirvijaga, kui süsteemi failidialoog ei ilmu.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	Edaspidi avatakse .md, .docx-, .doc-, .rtf- ja .odt-failid ning Wordi mallid MarkdownDocsiga.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Avab Sätted › Vaikerakendused, kus saad valida MarkdownDocsi .docx-i ja teiste dokumenditüüpide jaoks.
+	Show the Start screen when MarkdownDocs starts	Näita MarkdownDocsi käivitamisel avakuva
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Wordi dokumentide vaikimisi avamiseks MarkdownDocsiga vali Finderis üks dokument, vali Fail › Hangi teave, vali jaotises „Ava rakendusega“ MarkdownDocs ja klõpsa „Muuda kõiki“.
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs on nüüd Wordi dokumentide vaikerakendus.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Sees: MarkdownDocs avaneb vaates Fail › Avaleht, kus on tühi dokument, mallid ja hiljutised dokumendid. Väljas: avaneb tühi dokument.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Süsteemi failidialoog pole saadaval, seega näitab MarkdownDocs enda oma. Süsteemi dialoogi saamiseks paigalda failivalija portaal (näiteks xdg-desktop-portal-gtk) või zenity.

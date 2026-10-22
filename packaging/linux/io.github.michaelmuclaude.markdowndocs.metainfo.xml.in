@@ -2,31 +2,31 @@
 <!-- AppStream metadata (software centres, Flathub). Template: package.sh and the Flatpak
      manifest substitute @VERSION@ and @DATE@ from Cargo.toml and the build date. -->
 <component type="desktop-application">
-  <id>ai.storyteller.wordcraft</id>
+  <id>io.github.michaelmuclaude.markdowndocs</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT OR Apache-2.0</project_license>
-  <name>WordCraft</name>
-  <summary>Write and design documents; open and save Word files</summary>
-  <developer id="ai.storyteller">
-    <name>Learning Machines LLC</name>
+  <name>MarkdownDocs</name>
+  <summary>Markdown-first document editor for working with AI agents</summary>
+  <developer id="io.github.michaelmuclaude">
+    <name>MarkdownDocs contributors</name>
   </developer>
   <description>
     <p>
-      WordCraft is a fast, open-source word processor with a familiar ribbon: styles, tables, track changes, references, mail merge, and .docx, PDF, ODT, RTF, HTML and Markdown files. It can be driven by AI agents over MCP.
+      MarkdownDocs is an open-source document editor built for AI agents first, with Markdown as its native format: an agent edits the .md file directly and the open window follows it, while people read and edit the laid-out page. It reads and writes .md and .docx, opens ODT, RTF and HTML, exports PDF, and can be driven over MCP. It is a fork of WordCraft.
     </p>
   </description>
-  <launchable type="desktop-id">ai.storyteller.wordcraft.desktop</launchable>
-  <icon type="stock">ai.storyteller.wordcraft</icon>
+  <launchable type="desktop-id">io.github.michaelmuclaude.markdowndocs.desktop</launchable>
+  <icon type="stock">io.github.michaelmuclaude.markdowndocs</icon>
   <!-- Only url types known to appstream 0.15 (Ubuntu 22.04, where CI validates): no vcs-browser. -->
-  <url type="homepage">https://getartcraft.com/apps/wordcraft</url>
-  <url type="bugtracker">https://github.com/storytold/wordcraft/issues</url>
-  <url type="help">https://github.com/storytold/wordcraft</url>
-  <url type="contact">https://discord.gg/artcraft</url>
+  <url type="homepage">https://github.com/MichaelMuClaude/MarkdownDocs</url>
+  <url type="bugtracker">https://github.com/MichaelMuClaude/MarkdownDocs/issues</url>
+  <url type="help">https://github.com/MichaelMuClaude/MarkdownDocs</url>
   <categories>
     <category>Office</category>
     <category>WordProcessor</category>
   </categories>
   <keywords>
+    <keyword>markdown</keyword>
     <keyword>word processor</keyword>
     <keyword>docx</keyword>
     <keyword>document</keyword>
@@ -35,12 +35,12 @@
   <screenshots>
     <screenshot type="default">
       <caption>The Open Studio Handbook sample with the Navigation pane</caption>
-      <image>https://raw.githubusercontent.com/storytold/wordcraft/main/docs/images/hero.png</image>
+      <image>https://raw.githubusercontent.com/MichaelMuClaude/MarkdownDocs/main/docs/images/hero.png</image>
     </screenshot>
   </screenshots>
   <branding>
-    <color type="primary" scheme_preference="light">#b9c7f5</color>
-    <color type="primary" scheme_preference="dark">#2b47b5</color>
+    <color type="primary" scheme_preference="light">#99d6cf</color>
+    <color type="primary" scheme_preference="dark">#0f766e</color>
   </branding>
   <requires>
     <display_length compare="ge">760</display_length>
@@ -50,9 +50,10 @@
     <control>pointing</control>
     <control>tablet</control>
   </supports>
-  <!-- Document types WordCraft opens (#295), as in the desktop entry's MimeType=. -->
+  <!-- Document types MarkdownDocs opens (#295), as in the desktop entry's MimeType=. -->
   <provides>
-    <binary>wordcraft</binary>
+    <binary>markdowndocs</binary>
+    <mediatype>text/markdown</mediatype>
     <mediatype>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mediatype>
     <mediatype>application/vnd.ms-word.document.macroEnabled.12</mediatype>
     <mediatype>application/vnd.openxmlformats-officedocument.wordprocessingml.template</mediatype>

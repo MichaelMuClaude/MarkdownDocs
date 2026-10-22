@@ -83,6 +83,8 @@ pub fn search_dirs(lo_exts: Option<&[String]>) -> Vec<PathBuf> {
     if cfg!(windows) {
         for var in ["LOCALAPPDATA", "APPDATA"] {
             if let Some(base) = std::env::var_os(var).filter(|v| !v.is_empty()).map(PathBuf::from) {
+                // This fork's own folder first, then WordCraft's: dictionaries installed for it work here too.
+                dirs.push(base.join("MarkdownDocs").join("dictionaries"));
                 dirs.push(base.join("WordCraft").join("dictionaries"));
                 dirs.push(base.join("hunspell"));
             }

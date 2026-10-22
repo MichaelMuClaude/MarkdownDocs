@@ -160,8 +160,8 @@ play it back (`tools.recordMacro`, `tools.macros`).
 ## Logs
 
 The desktop app writes its log records to standard error and to `logs/wordcraft.log` next to its
-preferences: on Linux `$XDG_CONFIG_HOME/wordcraft/logs/` (by default `~/.config/wordcraft/logs/`),
-on macOS `~/Library/Application Support/WordCraft/logs/`, on Windows `%APPDATA%\WordCraft\logs\`.
+preferences: on Linux `$XDG_CONFIG_HOME/markdowndocs/logs/` (by default `~/.config/markdowndocs/logs/`),
+on macOS `~/Library/Application Support/MarkdownDocs/logs/`, on Windows `%APPDATA%\MarkdownDocs\logs\`.
 A start from a desktop menu or the Dock has no terminal, so this file is what to attach to a bug
 report: unreadable parts of a .docx, pictures or fonts a PDF export had to leave out and panics the
 command guard recovered from land there. Each launch moves the previous log to `wordcraft.1.log`

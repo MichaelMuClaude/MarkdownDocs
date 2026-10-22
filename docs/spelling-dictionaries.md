@@ -48,7 +48,7 @@ The first folder holding a matching pair wins:
 
 | System | Folders |
 |---|---|
-| Windows | `%LOCALAPPDATA%\WordCraft\dictionaries`, `%LOCALAPPDATA%\hunspell`, `%APPDATA%\WordCraft\dictionaries`, `%APPDATA%\hunspell`, LibreOffice's `share\extensions\dict-*` under `Program Files` (on any drive) |
+| Windows | `%LOCALAPPDATA%\MarkdownDocs\dictionaries`, `%LOCALAPPDATA%\WordCraft\dictionaries`, `%LOCALAPPDATA%\hunspell`, `%APPDATA%\MarkdownDocs\dictionaries`, `%APPDATA%\WordCraft\dictionaries`, `%APPDATA%\hunspell`, LibreOffice's `share\extensions\dict-*` under `Program Files` (on any drive) |
 | macOS | `~/Library/Spelling`, `/Library/Spelling`, `/opt/homebrew/share/hunspell`, `/usr/local/share/hunspell`, `/Applications/LibreOffice.app/Contents/Resources/extensions/dict-*` |
 | Linux and BSD | `~/.local/share/hunspell`, `/usr/share/hunspell`, `/usr/share/myspell`, `/usr/share/myspell/dicts`, `/usr/local/share/hunspell`, `/usr/local/share/myspell`, LibreOffice's `share/extensions/dict-*` under `/usr/lib/libreoffice` or `/opt/libreoffice` |
 
@@ -118,7 +118,7 @@ from the LibreOffice repository (for example `it_IT/it_IT.aff`).
   ```
 
   The `review.issues` line lists `impramir` as a spelling issue with its suggestions.
-- The log file (`%APPDATA%\WordCraft\logs\wordcraft.log` on Windows) says
+- The log file (`%APPDATA%\MarkdownDocs\logs\wordcraft.log` on Windows) says
   `Portuguese spelling: no Hunspell pt_BR dictionary installed` when none was found.
 
 Never commit dictionary files to this repository: they stay on the user's system.

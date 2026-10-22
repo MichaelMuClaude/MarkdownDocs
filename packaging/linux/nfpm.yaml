@@ -3,7 +3,7 @@
 # exports VERSION and NFPM_ARCH.
 #
 #   nfpm package -f packaging/linux/nfpm.yaml -p deb -t dist/release/
-name: wordcraft
+name: markdowndocs
 arch: ${NFPM_ARCH}
 platform: linux
 version: ${VERSION}
@@ -13,14 +13,15 @@ release: 1
 section: graphics
 priority: optional
 maintainer: ${WORDCRAFT_MAINTAINER}
-vendor: Learning Machines LLC
-homepage: https://getartcraft.com/apps/wordcraft
+vendor: MarkdownDocs contributors
+homepage: https://github.com/MichaelMuClaude/MarkdownDocs
 license: MIT OR Apache-2.0
 description: |-
-  Open-source, native word processor that works the way Word users expect.
-  The ribbon, styles, tables, track changes, references and mail merge; reads
-  and writes .docx, opens .odt, .rtf, .html, .md and .txt, and exports PDF.
-  Includes wordcraft-cli, a headless converter and command runner.
+  Open-source document editor built for AI agents first, with Markdown as its
+  native format: an agent edits the .md file and the open window follows it.
+  A fork of WordCraft: reads and writes .md and .docx, opens .odt, .rtf, .html
+  and .txt, and exports PDF. Includes markdowndocs-cli, a headless converter
+  and command runner.
 
 # The binaries link only glibc and libgcc_s directly. Windowing (X11/Wayland, xkbcommon) and the
 # GPU (Vulkan, EGL/GL) are loaded at runtime, so they are dependencies/recommendations here
@@ -55,11 +56,11 @@ overrides:
       - xdg-desktop-portal
 
 contents:
-  - src: ${STAGE}/usr/bin/wordcraft
-    dst: /usr/bin/wordcraft
+  - src: ${STAGE}/usr/bin/markdowndocs
+    dst: /usr/bin/markdowndocs
     file_info: { mode: 0755 }
-  - src: ${STAGE}/usr/bin/wordcraft-cli
-    dst: /usr/bin/wordcraft-cli
+  - src: ${STAGE}/usr/bin/markdowndocs-cli
+    dst: /usr/bin/markdowndocs-cli
     file_info: { mode: 0755 }
   - src: ${STAGE}/usr/share/
     dst: /usr/share/

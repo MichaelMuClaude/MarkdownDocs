@@ -2683,3 +2683,17 @@ preview	Title	Titel
 	{name} was changed by another program and has been reloaded.	{name} is gewijzigd door een ander programma en opnieuw geladen.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Automatisch opslaan is gepauzeerd: een ander programma heeft het bestand gewijzigd. Sla op om uw versie te behouden, of laad het opnieuw van schijf.
 	Reload from Disk	Opnieuw laden van schijf
+	AutoSave documents you have saved in MarkdownDocs	AutoSave voor documenten die je in MarkdownDocs hebt opgeslagen
+	Browse in MarkdownDocs…	Bladeren in MarkdownDocs…
+	Couldn't make MarkdownDocs the default: {error}	Kan MarkdownDocs niet de standaardapp maken: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	Kies in Standaardapps MarkdownDocs voor de documenttypen die je ermee wilt openen.
+	Make MarkdownDocs the default for Word documents…	MarkdownDocs de standaardapp maken voor Word-documenten…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	Er is geen spellingwoordenboek voor {language} geïnstalleerd, dus de spelling wordt niet gecontroleerd. MarkdownDocs zoekt het Hunspell-woordenboek {name} in de map WORDCRAFT_DICTIONARIES en op de gebruikelijke systeemlocaties.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Een bestand openen met de eigen browser van MarkdownDocs wanneer het systeembestandsdialoogvenster niet verschijnt.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	Opent voortaan .md, .docx-, .doc-, .rtf- en .odt-bestanden en Word-sjablonen met MarkdownDocs.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Opent Instellingen › Standaardapps, waar je MarkdownDocs kiest voor .docx en de andere documenttypen.
+	Show the Start screen when MarkdownDocs starts	Het startscherm tonen wanneer MarkdownDocs start
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Om Word-documenten standaard met MarkdownDocs te openen: selecteer er een in Finder, kies Bestand › Info, selecteer MarkdownDocs bij Open met en klik daarna op Alles wijzigen.
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs is nu de standaardapp voor Word-documenten.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Aan: MarkdownDocs opent Bestand › Start met een leeg document, de sjablonen en je recente documenten. Uit: er wordt een leeg document geopend.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Het systeemvenster voor bestanden is niet beschikbaar, dus toont MarkdownDocs het eigen venster. Installeer een portaal voor bestandskiezer (zoals xdg-desktop-portal-gtk) of zenity om het systeemvenster te krijgen.

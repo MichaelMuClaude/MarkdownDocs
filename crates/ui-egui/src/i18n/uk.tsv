@@ -2393,3 +2393,17 @@
 	{name} was changed by another program and has been reloaded.	Файл {name} було змінено іншою програмою, і його перезавантажено.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Автозбереження призупинено: інша програма змінила файл. Збережіть, щоб залишити свою версію, або перезавантажте його з диска.
 	Reload from Disk	Перезавантажити з диска
+	AutoSave documents you have saved in MarkdownDocs	Автоматично зберігати документи, збережені у MarkdownDocs
+	Browse in MarkdownDocs…	Огляд у MarkdownDocs…
+	Couldn't make MarkdownDocs the default: {error}	Не вдалося зробити MarkdownDocs типовою програмою: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	У програмах за замовчуванням виберіть MarkdownDocs для типів документів, які він має відкривати.
+	Make MarkdownDocs the default for Word documents…	Зробити MarkdownDocs типовою програмою для документів Word…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	Орфографічний словник для мови «{language}» не встановлено, тому текст не перевіряється. MarkdownDocs шукає словник Hunspell {name} у теці WORDCRAFT_DICTIONARIES та в звичайних системних розташуваннях.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Відкрити файл власним оглядачем MarkdownDocs, коли системне діалогове вікно файлів не з'являється.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	Відтепер файли .md, .docx, .doc, .rtf, .odt і шаблони Word відкриватимуться у MarkdownDocs.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Відкриває Параметри › Програми за замовчуванням, де ви вибираєте MarkdownDocs для .docx та інших типів документів.
+	Show the Start screen when MarkdownDocs starts	Показувати початковий екран під час запуску MarkdownDocs
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Щоб документи Word типово відкривалися у MarkdownDocs: виберіть документ у Finder, оберіть Файл › Отримати інфо, виберіть MarkdownDocs у розділі «Відкривати за допомогою» і натисніть «Змінити все».
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs тепер типова програма для документів Word.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Увімкнено: MarkdownDocs відкривається на сторінці Файл › Основне з порожнім документом, шаблонами та нещодавніми документами. Вимкнено: відкривається порожній документ.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Системне діалогове вікно файлів недоступне, тож MarkdownDocs показує власне. Щоб отримати системне вікно, установіть портал вибору файлів (наприклад, xdg-desktop-portal-gtk) або zenity.

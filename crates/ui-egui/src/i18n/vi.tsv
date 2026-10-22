@@ -2828,3 +2828,17 @@ template	Letter	Thư
 	{name} was changed by another program and has been reloaded.	{name} đã bị một chương trình khác thay đổi và đã được tải lại.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Tự động lưu đang tạm dừng: một chương trình khác đã thay đổi tệp. Hãy lưu để giữ phiên bản của bạn, hoặc tải lại từ đĩa.
 	Reload from Disk	Tải lại từ đĩa
+	AutoSave documents you have saved in MarkdownDocs	Tự động lưu các tài liệu bạn đã lưu trong MarkdownDocs
+	Browse in MarkdownDocs…	Duyệt trong MarkdownDocs…
+	Couldn't make MarkdownDocs the default: {error}	Không thể đặt MarkdownDocs làm ứng dụng mặc định: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	Trong Ứng dụng mặc định, chọn MarkdownDocs cho các loại tài liệu bạn muốn mở bằng ứng dụng này.
+	Make MarkdownDocs the default for Word documents…	Đặt MarkdownDocs làm ứng dụng mặc định cho tài liệu Word…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	Chưa cài từ điển chính tả cho {language}, nên ngôn ngữ này không được kiểm tra. MarkdownDocs tìm từ điển Hunspell {name} trong thư mục WORDCRAFT_DICTIONARIES và ở các vị trí thông thường của hệ thống.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Mở tệp bằng trình duyệt tệp của MarkdownDocs khi hộp thoại tệp của hệ thống không xuất hiện.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	Từ nay, mở tệp .md, .docx, .doc, .rtf, .odt và mẫu Word bằng MarkdownDocs.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Mở Cài đặt › Ứng dụng mặc định để chọn MarkdownDocs cho .docx và các loại tài liệu khác.
+	Show the Start screen when MarkdownDocs starts	Hiện màn hình Bắt đầu khi khởi chạy MarkdownDocs
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Để mở tài liệu Word bằng MarkdownDocs theo mặc định: chọn một tài liệu trong Finder, chọn Tệp › Lấy thông tin, chọn MarkdownDocs ở mục Mở bằng, rồi nhấp Thay đổi tất cả.
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs hiện là ứng dụng mặc định cho tài liệu Word.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Bật: MarkdownDocs mở ở Tệp › Trang chủ, với tài liệu trống, các mẫu và tài liệu gần đây của bạn. Tắt: MarkdownDocs mở một tài liệu trống.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Hộp thoại tệp của hệ thống không khả dụng, nên MarkdownDocs hiển thị hộp thoại riêng. Để dùng hộp thoại của hệ thống, hãy cài đặt cổng chọn tệp (như xdg-desktop-portal-gtk) hoặc zenity.

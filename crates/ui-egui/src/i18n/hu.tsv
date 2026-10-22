@@ -2784,3 +2784,17 @@
 	{name} was changed by another program and has been reloaded.	A(z) {name} fájlt egy másik program módosította, ezért újra lett töltve.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Az automatikus mentés szünetel: egy másik program módosította a fájlt. Mentsen a saját verziója megtartásához, vagy töltse be újra a lemezről.
 	Reload from Disk	Újratöltés lemezről
+	AutoSave documents you have saved in MarkdownDocs	A MarkdownDocsban mentett dokumentumok automatikus mentése
+	Browse in MarkdownDocs…	Tallózás a MarkdownDocsban…
+	Couldn't make MarkdownDocs the default: {error}	Nem sikerült a MarkdownDocsot alapértelmezetté tenni: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	Az Alapértelmezett alkalmazások között válassza a MarkdownDocsot azokhoz a dokumentumtípusokhoz, amelyeket meg kell nyitnia.
+	Make MarkdownDocs the default for Word documents…	A MarkdownDocs legyen az alapértelmezett a Word-dokumentumokhoz…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	A(z) {language} nyelvhez nincs telepítve helyesírási szótár, ezért nem ellenőrzi. A MarkdownDocs a(z) {name} Hunspell-szótárat a WORDCRAFT_DICTIONARIES mappában és a szokásos rendszerhelyeken keresi.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Fájl megnyitása a MarkdownDocs saját tallózójával, ha a rendszer fájlpárbeszédablaka nem jelenik meg.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	Mostantól a .md, .docx, .doc, .rtf és .odt fájlok, valamint a Word-sablonok a MarkdownDocstal nyílnak meg.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Megnyitja a Beállítások › Alapértelmezett alkalmazások lapot, ahol a MarkdownDocsot választhatja a .docx és a többi dokumentumtípus számára.
+	Show the Start screen when MarkdownDocs starts	Kezdőképernyő megjelenítése a MarkdownDocs indításakor
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Ha a Word-dokumentumokat alapértelmezés szerint a MarkdownDocstal szeretné megnyitni: jelöljön ki egyet a Finderben, válassza a Fájl › Információ parancsot, a „Megnyitás ezzel” alatt válassza a MarkdownDocsot, majd kattintson az „Összes módosítása” gombra.
+	MarkdownDocs is now the default app for Word documents.	Mostantól a MarkdownDocs az alapértelmezett alkalmazás a Word-dokumentumokhoz.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Be: a MarkdownDocs a Fájl › Kezdőlap oldalon nyílik meg, üres dokumentummal, a sablonokkal és a legutóbbi dokumentumokkal. Ki: üres dokumentumot nyit meg.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	A rendszer fájlpárbeszédablaka nem érhető el, ezért a MarkdownDocs a sajátját mutatja. A rendszer párbeszédablakához telepíts egy fájlválasztó portált (például xdg-desktop-portal-gtk) vagy a zenity programot.

@@ -21,12 +21,12 @@ window's key. Once the port is bound, the app writes a random key (256 bits, as 
 `<settings>/control-key.<instance>` and removes the file when the window closes; a new start
 writes a new key. `WORDCRAFT_PROFILE_DIR` overrides the whole profile folder for isolated runs,
 including recovery copies. See [local recovery](recovery.md). `<settings>` is the folder that holds the preferences: on Linux
-`$XDG_CONFIG_HOME/wordcraft` (by default `~/.config/wordcraft`), on macOS
-`~/Library/Application Support/WordCraft`, on Windows `%APPDATA%\WordCraft`. `<instance>` is the
+`$XDG_CONFIG_HOME/markdowndocs` (by default `~/.config/markdowndocs`), on macOS
+`~/Library/Application Support/MarkdownDocs`, on Windows `%APPDATA%\MarkdownDocs`. `<instance>` is the
 Flatpak instance id inside Flatpak, and `local-<port>` otherwise. On Unix the file has mode 0600.
 
 ```sh
-cat ~/.config/wordcraft/control-key.local-7981   # Linux, outside Flatpak, port 7981
+cat ~/.config/markdowndocs/control-key.local-7981   # Linux, outside Flatpak, port 7981
 ```
 
 - Send the key as top-level `"key"` with every request, or once per connection with

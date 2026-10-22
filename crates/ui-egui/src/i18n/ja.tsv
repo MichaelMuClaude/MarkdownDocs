@@ -2381,3 +2381,17 @@
 	{name} was changed by another program and has been reloaded.	{name} は別のプログラムによって変更されたため、再読み込みしました。
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	自動保存は一時停止中です: 別のプログラムがファイルを変更しました。自分の版を残すには保存し、そうでなければディスクから再読み込みしてください。
 	Reload from Disk	ディスクから再読み込み
+	AutoSave documents you have saved in MarkdownDocs	MarkdownDocs で保存した文書を自動保存する
+	Browse in MarkdownDocs…	MarkdownDocs で参照…
+	Couldn't make MarkdownDocs the default: {error}	MarkdownDocs を既定のアプリにできませんでした: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	既定のアプリで、MarkdownDocs で開きたい文書の種類ごとに MarkdownDocs を選んでください。
+	Make MarkdownDocs the default for Word documents…	MarkdownDocs を Word 文書の既定のアプリにする…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	{language}のスペルチェック辞書がインストールされていないため、チェックされません。MarkdownDocs は Hunspell 辞書 {name} を WORDCRAFT_DICTIONARIES フォルダーと通常のシステムの場所から探します。
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	システムのファイル ダイアログが表示されないときに、MarkdownDocs 独自のブラウザーでファイルを開きます。
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	今後、.md、.docx、.doc、.rtf、.odt ファイルと Word テンプレートを MarkdownDocs で開きます。
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	設定 › 既定のアプリ を開きます。そこで .docx などの文書の種類ごとに MarkdownDocs を選びます。
+	Show the Start screen when MarkdownDocs starts	MarkdownDocs の起動時にスタート画面を表示する
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Word 文書を既定で MarkdownDocs で開くには: Finder で文書を選び、ファイル › 情報を見る を選んで、「このアプリケーションで開く」で MarkdownDocs を選び、「すべてを変更」をクリックします。
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs が Word 文書の既定のアプリになりました。
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	オン: MarkdownDocs は [ファイル] › [ホーム] で開き、白紙の文書、テンプレート、最近使った文書を表示します。オフ: 白紙の文書を開きます。
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	システムのファイル ダイアログを利用できないため、MarkdownDocs 独自のダイアログを表示しています。システムのダイアログを使うには、ファイル選択ポータル (xdg-desktop-portal-gtk など) または zenity をインストールしてください。

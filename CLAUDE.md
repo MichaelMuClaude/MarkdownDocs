@@ -106,8 +106,8 @@ Typing, Enter, Backspace, Tab, lists, AutoCorrect and AutoFormat follow Word's o
 ## Running and looking at the app
 - `cargo run --release -p wordcraft -- --sample --control 7981` (sample document + control channel).
 - Drive it with JSON lines on `127.0.0.1:7981`, each with the window's key from
-  `~/.config/wordcraft/control-key.local-7981` (macOS:
-  `~/Library/Application Support/WordCraft/`), e.g.
+  `~/.config/markdowndocs/control-key.local-7981` (macOS:
+  `~/Library/Application Support/MarkdownDocs/`), e.g.
   `{"id":1,"key":"…","method":"engine.execute","params":{"command":"text.insert","params":{"text":"Hello"}}}`
   then `{"id":2,"key":"…","method":"ui.screenshot","params":{"path":"/tmp/shot.png"}}`. Methods:
   `crates/ui-egui/src/control.rs`; docs: `docs/control-protocol.md`.

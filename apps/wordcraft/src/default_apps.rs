@@ -1,12 +1,12 @@
-//! File › Options › General › Make WordCraft the default for Word documents (#295).
+//! File › Options › General › Make MarkdownDocs the default for Markdown and Word documents (#295).
 //!
-//! The installers register WordCraft for Word, RTF and ODT files without taking over the
+//! The installers register MarkdownDocs for Markdown, Word, RTF and ODT files without taking over the
 //! defaults (`packaging/windows/wordcraft.wxs`, the `.desktop` file's `MimeType=`, `Info.plist`).
 //! This is the button that makes it the default when the user asks:
-//! - **Windows** doesn't let apps set defaults: it opens Settings › Default apps on WordCraft's
-//!   page (`ms-settings:defaultapps?registeredAppMachine=WordCraft`; Windows 10 ignores the query
-//!   and shows the Default apps list), where the user picks WordCraft per type.
-//! - **Linux and BSD**: `xdg-mime default ai.storyteller.wordcraft.desktop <types>` for
+//! - **Windows** doesn't let apps set defaults: it opens Settings › Default apps on MarkdownDocs'
+//!   page (`ms-settings:defaultapps?registeredAppMachine=MarkdownDocs`; Windows 10 ignores the query
+//!   and shows the Default apps list), where the user picks MarkdownDocs per type.
+//! - **Linux and BSD**: `xdg-mime default io.github.michaelmuclaude.markdowndocs.desktop <types>` for
 //!   [`WORD_MIME_TYPES`], which writes the user's `mimeapps.list`. Only when the desktop entry is
 //!   installed (deb, rpm, Flatpak; a bare AppImage has none), and not from inside the Flatpak
 //!   sandbox, which can't change the host's defaults.
@@ -32,14 +32,16 @@ pub fn hook() -> Option<Hook> {
 
 /// The desktop entry the Linux packages install, and the Flatpak's app id.
 #[cfg(any(all(unix, not(target_os = "macos")), test))]
-const DESKTOP_ID: &str = "ai.storyteller.wordcraft.desktop";
+const DESKTOP_ID: &str = "io.github.michaelmuclaude.markdowndocs.desktop";
 
-/// The types the button makes WordCraft the default for on Linux and BSD: Word documents and
-/// templates (also macro-enabled and legacy), RTF and ODT. The same set the Windows installer
-/// lists under WordCraft's Capabilities; Markdown and plain text are only offered under Open With.
+/// The types the button makes MarkdownDocs the default for on Linux and BSD: Markdown (this
+/// fork's own format), Word documents and templates (also macro-enabled and legacy), RTF and ODT.
+/// Plain text is only offered under Open With.
 /// Every one is in the `.desktop` file's `MimeType=` (a test checks).
 #[cfg(any(all(unix, not(target_os = "macos")), test))]
 const WORD_MIME_TYPES: &[&str] = &[
+    "text/markdown",                                                           // .md
+    "text/x-markdown",                                                         // .md (older name)
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
     "application/vnd.ms-word.document.macroEnabled.12",                        // .docm
     "application/vnd.openxmlformats-officedocument.wordprocessingml.template", // .dotx
@@ -82,9 +84,9 @@ fn application_dirs(data_home: Option<&str>, data_dirs: Option<&str>, home: Opti
 mod windows {
     use wordcraft_ui_egui::DefaultApp;
 
-    /// Settings › Default apps, on the page of the app registered as `WordCraft` under
+    /// Settings › Default apps, on the page of the app registered as `MarkdownDocs` under
     /// `HKLM\Software\RegisteredApplications` (the MSI writes it).
-    const SETTINGS_URI: &str = "ms-settings:defaultapps?registeredAppMachine=WordCraft";
+    const SETTINGS_URI: &str = "ms-settings:defaultapps?registeredAppMachine=MarkdownDocs";
 
     pub(super) fn open_default_apps() -> Result<DefaultApp, String> {
         open::that_detached(SETTINGS_URI).map_err(|e| format!("couldn't open Settings: {e}"))?;
@@ -106,7 +108,7 @@ mod xdg {
     pub(super) fn make_default() -> Result<DefaultApp, String> {
         if std::env::var_os("FLATPAK_ID").is_some() || std::path::Path::new("/.flatpak-info").exists() {
             return Err(
-                "the Flatpak sandbox can't change default apps; choose WordCraft under Open With in your file manager or system settings".into()
+                "the Flatpak sandbox can't change default apps; choose MarkdownDocs under Open With in your file manager or system settings".into()
             );
         }
         let var = |k: &str| std::env::var(k).ok();
@@ -139,7 +141,7 @@ mod tests {
     fn xdg_mime_sets_every_word_type_in_one_call() {
         let args = xdg_mime_args(DESKTOP_ID);
         assert_eq!(args.first().map(String::as_str), Some("default"));
-        assert_eq!(args.get(1).map(String::as_str), Some("ai.storyteller.wordcraft.desktop"));
+        assert_eq!(args.get(1).map(String::as_str), Some("io.github.michaelmuclaude.markdowndocs.desktop"));
         assert_eq!(&args[2..], WORD_MIME_TYPES);
         for t in [
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -149,19 +151,20 @@ mod tests {
         ] {
             assert!(args.iter().any(|a| a == t), "{t}");
         }
-        assert!(!args.iter().any(|a| a == "text/plain" || a == "text/markdown"), "plain text and Markdown are never claimed");
+        assert!(!args.iter().any(|a| a == "text/plain"), "plain text is never claimed");
+        assert!(args.iter().any(|a| a == "text/markdown"), "Markdown, this fork's own format, is");
     }
 
     /// Every type the button claims is one the desktop entry declares, or desktops ignore it.
     #[test]
     fn the_desktop_entry_declares_every_claimed_type() {
-        let entry = include_str!("../../../packaging/linux/ai.storyteller.wordcraft.desktop");
+        let entry = include_str!("../../../packaging/linux/io.github.michaelmuclaude.markdowndocs.desktop");
         let declared: Vec<&str> =
             entry.lines().find_map(|l| l.strip_prefix("MimeType=")).map(|v| v.split(';').filter(|s| !s.is_empty()).collect()).unwrap_or_default();
         for t in WORD_MIME_TYPES {
             assert!(declared.contains(t), "{t} missing from MimeType=");
         }
-        assert!(entry.lines().any(|l| l == "Exec=wordcraft %F"), "files are passed on the command line");
+        assert!(entry.lines().any(|l| l == "Exec=markdowndocs %F"), "files are passed on the command line");
     }
 
     #[cfg(unix)]

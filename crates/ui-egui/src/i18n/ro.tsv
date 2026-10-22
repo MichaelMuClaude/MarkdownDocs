@@ -2776,3 +2776,17 @@ template	Letter	Scrisoare
 	{name} was changed by another program and has been reloaded.	{name} a fost modificat de alt program și a fost reîncărcat.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Salvarea automată este întreruptă: alt program a modificat fișierul. Salvați pentru a vă păstra versiunea sau reîncărcați-l de pe disc.
 	Reload from Disk	Reîncarcă de pe disc
+	AutoSave documents you have saved in MarkdownDocs	Salvează automat documentele pe care le-ați salvat în MarkdownDocs
+	Browse in MarkdownDocs…	Răsfoire în MarkdownDocs…
+	Couldn't make MarkdownDocs the default: {error}	Nu s-a putut seta MarkdownDocs ca implicit: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	În Aplicații implicite, alegeți MarkdownDocs pentru tipurile de documente pe care doriți să le deschidă.
+	Make MarkdownDocs the default for Word documents…	Setați MarkdownDocs ca implicit pentru documentele Word…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	Nu este instalat niciun dicționar ortografic pentru {language}, așa că nu se verifică. MarkdownDocs caută dicționarul Hunspell {name} în folderul WORDCRAFT_DICTIONARIES și în locurile uzuale ale sistemului.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Deschideți un fișier cu propriul browser al MarkdownDocs când dialogul de fișiere al sistemului nu apare.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	De acum, deschide fișierele .md, .docx, .doc, .rtf și .odt și șabloanele Word cu MarkdownDocs.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Deschide Setări › Aplicații implicite, unde alegeți MarkdownDocs pentru .docx și celelalte tipuri de documente.
+	Show the Start screen when MarkdownDocs starts	Afișați ecranul de start când pornește MarkdownDocs
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Pentru a deschide implicit documentele Word cu MarkdownDocs: selectați unul în Finder, alegeți Fișier › Obține informații, alegeți MarkdownDocs la Deschide cu, apoi faceți clic pe Schimbă tot.
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs este acum aplicația implicită pentru documentele Word.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Activat: MarkdownDocs se deschide la Fișier › Pornire, cu un document gol, șabloanele și documentele dvs. recente. Dezactivat: se deschide un document gol.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Dialogul de fișiere al sistemului nu este disponibil, așa că MarkdownDocs îl afișează pe al lui. Pentru a obține dialogul sistemului, instalați un portal de selectare a fișierelor (cum ar fi xdg-desktop-portal-gtk) sau zenity.

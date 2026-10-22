@@ -2393,3 +2393,17 @@
 	{name} was changed by another program and has been reloaded.	{name} 已被其他程序修改，已重新加载。
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	自动保存已暂停：其他程序修改了文件。保存以保留你的版本，或从磁盘重新加载。
 	Reload from Disk	从磁盘重新加载
+	AutoSave documents you have saved in MarkdownDocs	自动保存在 MarkdownDocs 中保存过的文档
+	Browse in MarkdownDocs…	在 MarkdownDocs 中浏览…
+	Couldn't make MarkdownDocs the default: {error}	无法将 MarkdownDocs 设为默认应用：{error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	请在“默认应用”中，为希望由 MarkdownDocs 打开的文档类型选择 MarkdownDocs。
+	Make MarkdownDocs the default for Word documents…	将 MarkdownDocs 设为 Word 文档的默认应用…
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	未安装{language}的拼写词典，因此不会检查该语言。MarkdownDocs 会在 WORDCRAFT_DICTIONARIES 文件夹和常见的系统位置查找 Hunspell 词典 {name}。
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	当系统文件对话框没有出现时，使用 MarkdownDocs 自带的浏览器打开文件。
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	今后用 MarkdownDocs 打开 .md、.docx、.doc、.rtf、.odt 文件和 Word 模板。
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	打开“设置 › 默认应用”，在其中为 .docx 及其他文档类型选择 MarkdownDocs。
+	Show the Start screen when MarkdownDocs starts	启动 MarkdownDocs 时显示开始屏幕
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	要默认用 MarkdownDocs 打开 Word 文档：在访达中选中一个文档，选择“文件 › 显示简介”，在“打开方式”中选择 MarkdownDocs，然后点按“全部更改”。
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs 现在是 Word 文档的默认应用。
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	开：MarkdownDocs 打开时显示“文件 › 开始”，其中有空白文档、模板和最近使用的文档。关：直接打开空白文档。
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	系统文件对话框不可用，因此 MarkdownDocs 显示自己的对话框。要使用系统对话框，请安装文件选择器门户（例如 xdg-desktop-portal-gtk）或 zenity。

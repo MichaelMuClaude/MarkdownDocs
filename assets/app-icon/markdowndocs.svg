@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- MarkdownDocs app icon (original artwork; MIT OR Apache-2.0): a page with a Markdown-style
+       "M" and down arrow, and a spark for the agent that writes it. -->
+  <rect width="512" height="512" rx="112" fill="#0F766E"/>
+  <path d="M120 96 H310 L376 162 V432 H120 Z" fill="#F8FAFC" stroke="#0b0b0c" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M310 96 V162 H376" fill="none" stroke="#0b0b0c" stroke-width="14" stroke-linejoin="round"/>
+  <g fill="none" stroke="#0b0b0c" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="164,350 164,226 210,284 256,226 256,350"/>
+    <line x1="318" y1="226" x2="318" y2="336"/>
+    <polyline points="286,304 318,340 350,304"/>
+  </g>
+  <path d="M424 52 Q433 99 476 108 Q433 117 424 164 Q415 117 372 108 Q415 99 424 52 Z" fill="#FDE68A" stroke="#0b0b0c" stroke-width="8" stroke-linejoin="round"/>
+</svg>

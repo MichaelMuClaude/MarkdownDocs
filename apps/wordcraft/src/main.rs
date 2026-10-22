@@ -137,6 +137,68 @@ fn schedule_macos_terminate(app: &mut WordApp, key_file: Option<&control_server:
     });
 }
 
+/// What carries over from WordCraft's settings folder, which this fork used before it had its
+/// own: preferences (Recent included), the custom dictionary, added fonts and personal templates.
+/// Not recovery copies, logs or control keys: those belong to the app that made them.
+const MIGRATED_SETTINGS: [&str; 4] = ["ui.json", wordcraft_engine::Session::USER_DICT_FILE, "fonts", "Templates"];
+
+/// The first run with this fork's own settings folder copies [`MIGRATED_SETTINGS`] over from
+/// WordCraft's, once (a marker file remembers it), never over anything already there. Skipped
+/// for an isolated profile (`WORDCRAFT_PROFILE_DIR`).
+fn migrate_wordcraft_settings() {
+    if std::env::var_os("WORDCRAFT_PROFILE_DIR").is_some_and(|p| !p.is_empty()) {
+        return;
+    }
+    let (Some(new), Some(old)) = (wordcraft_control_key::settings_dir(), wordcraft_control_key::wordcraft_settings_dir()) else { return };
+    if let Err(e) = migrate_settings(&old, &new) {
+        log::warn!("carrying settings over from {}: {e}", old.display());
+    }
+}
+
+/// [`migrate_wordcraft_settings`] from `old` to `new`; `Ok(true)` when it copied anything.
+fn migrate_settings(old: &std::path::Path, new: &std::path::Path) -> std::io::Result<bool> {
+    let marker = new.join(".migrated-from-wordcraft");
+    if old == new || marker.exists() || !old.is_dir() {
+        return Ok(false);
+    }
+    std::fs::create_dir_all(new)?;
+    let mut copied = false;
+    for name in MIGRATED_SETTINGS {
+        let (from, to) = (old.join(name), new.join(name));
+        if to.exists() {
+            continue;
+        }
+        if from.is_file() {
+            std::fs::copy(&from, &to)?;
+            copied = true;
+        } else if from.is_dir() {
+            copy_dir(&from, &to, 0)?;
+            copied = true;
+        }
+    }
+    std::fs::write(&marker, "Settings were copied from WordCraft's folder once; delete this file to copy them again.\n")?;
+    Ok(copied)
+}
+
+/// Copy the folder `from` to `to` (files and subfolders; links are skipped, depth is bounded).
+fn copy_dir(from: &std::path::Path, to: &std::path::Path, depth: usize) -> std::io::Result<()> {
+    if depth > 8 {
+        return Ok(());
+    }
+    std::fs::create_dir_all(to)?;
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        let kind = entry.file_type()?;
+        let target = to.join(entry.file_name());
+        if kind.is_dir() {
+            copy_dir(&entry.path(), &target, depth + 1)?;
+        } else if kind.is_file() && !target.exists() {
+            std::fs::copy(entry.path(), &target)?;
+        }
+    }
+    Ok(())
+}
+
 /// `ui.json` in the settings folder, which the MCP bridge also uses to find the control key.
 fn prefs_path() -> Option<std::path::PathBuf> {
     wordcraft_control_key::settings_dir().map(|b| b.join("ui.json"))
@@ -258,17 +320,21 @@ fn services(file_dialog: file_dialogs::Hook, ctx: &egui::Context) -> Services {
     }
 }
 
+/// The app's reverse-DNS ID: the window's app ID (Wayland, X11 class), its desktop entry and
+/// icon names, and the package IDs. Its own, so it never stands in for an installed WordCraft.
+pub const APP_ID: &str = "io.github.michaelmuclaude.markdowndocs";
+
 /// Window, Dock and taskbar icon.
 fn app_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
-    let png: &[u8] = include_bytes!("../../../assets/app-icon/wordcraft-macos-512.png");
+    let png: &[u8] = include_bytes!("../../../assets/app-icon/markdowndocs-macos-512.png");
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/ai.storyteller.wordcraft.png");
+    let png: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/io.github.michaelmuclaude.markdowndocs.png");
     eframe::icon_data::from_png_bytes(png).map_err(|e| log::warn!("app icon: {e}")).ok()
 }
 
 const USAGE: &str = "\
-wordcraft — the WordCraft desktop app
+wordcraft — the MarkdownDocs desktop app
 
 USAGE:
   wordcraft [--sample] [--control PORT] [FILE…]
@@ -324,6 +390,8 @@ fn main() -> eframe::Result {
     // First, so the panic hook and every start-up warning are recorded (`logging`).
     let logger = logging::install();
     logging::install_panic_hook();
+    // Before anything reads or writes the settings folder (preferences, logs, key files).
+    migrate_wordcraft_settings();
     let mut control_port: Option<u16> = std::env::var("WORDCRAFT_CONTROL_PORT").ok().and_then(|p| p.parse().ok());
     let mut files = Vec::new();
     let mut sample = false;
@@ -366,7 +434,7 @@ fn main() -> eframe::Result {
     if let Some(logger) = logger {
         match log_dir().filter(|_| prefs_enabled()) {
             Some(dir) => match logger.attach_dir(&dir) {
-                Ok(path) => log::info!("WordCraft {} ({}), log file {}", env!("CARGO_PKG_VERSION"), build_sha(), path.display()),
+                Ok(path) => log::info!("MarkdownDocs {} ({}), log file {}", env!("CARGO_PKG_VERSION"), build_sha(), path.display()),
                 // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
                 Err(e) => log::warn!("no log file: {e}"),
             },
@@ -375,8 +443,8 @@ fn main() -> eframe::Result {
     }
     let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("WordCraft")
-            .with_app_id("ai.storyteller.wordcraft")
+            .with_title("MarkdownDocs")
+            .with_app_id(APP_ID)
             .with_inner_size([1440.0, 920.0])
             .with_min_inner_size([760.0, 480.0])
             .with_drag_and_drop(true)
@@ -418,7 +486,7 @@ fn main() -> eframe::Result {
     #[cfg(target_os = "macos")]
     let apple_events = &apple_events;
     eframe::run_native(
-        "WordCraft",
+        "MarkdownDocs",
         options,
         Box::new(move |cc| {
             // The system region picks the new document's paper, the units and the decimal
@@ -491,6 +559,36 @@ fn main() -> eframe::Result {
 #[cfg(all(test, unix, not(target_os = "macos")))]
 mod tests {
     use super::*;
+
+    /// The first run with this fork's own settings folder carries preferences, the dictionary,
+    /// fonts and templates over from WordCraft's, once, never over what is already there; recovery
+    /// copies, logs and control keys stay with WordCraft.
+    #[test]
+    fn settings_carry_over_from_wordcraft_once() {
+        let root = std::env::temp_dir().join(format!("markdowndocs-migrate-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let (old, new) = (root.join("wordcraft"), root.join("markdowndocs"));
+        std::fs::create_dir_all(old.join("fonts")).unwrap();
+        std::fs::create_dir_all(old.join("recovery")).unwrap();
+        std::fs::write(old.join("ui.json"), "{\"recent\":[\"a.md\"]}").unwrap();
+        std::fs::write(old.join(wordcraft_engine::Session::USER_DICT_FILE), "Kubernetes\n").unwrap();
+        std::fs::write(old.join("fonts").join("Mine.ttf"), "font").unwrap();
+        std::fs::write(old.join("recovery").join("copy.json"), "{}").unwrap();
+        std::fs::write(old.join("control-key.local-7981"), "secret").unwrap();
+        assert!(migrate_settings(&old, &new).unwrap());
+        assert!(std::fs::read_to_string(new.join("ui.json")).unwrap().contains("a.md"));
+        assert!(new.join(wordcraft_engine::Session::USER_DICT_FILE).is_file());
+        assert!(new.join("fonts").join("Mine.ttf").is_file());
+        assert!(!new.join("recovery").exists() && !new.join("control-key.local-7981").exists());
+        // Once: later WordCraft changes don't come over again, and nothing is overwritten.
+        std::fs::write(new.join("ui.json"), "{\"recent\":[]}").unwrap();
+        std::fs::write(old.join("ui.json"), "{\"recent\":[\"b.md\"]}").unwrap();
+        assert!(!migrate_settings(&old, &new).unwrap());
+        assert_eq!(std::fs::read_to_string(new.join("ui.json")).unwrap(), "{\"recent\":[]}");
+        // No WordCraft folder: nothing to do.
+        assert!(!migrate_settings(&root.join("none"), &root.join("fresh")).unwrap());
+        let _ = std::fs::remove_dir_all(&root);
+    }
     use std::os::unix::ffi::OsStringExt;
 
     #[test]

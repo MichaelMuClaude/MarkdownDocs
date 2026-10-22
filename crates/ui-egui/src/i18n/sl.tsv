@@ -2777,3 +2777,17 @@ preview	Title	Naslov
 	{name} was changed by another program and has been reloaded.	Datoteko {name} je spremenil drug program, zato je bila znova naložena.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	Samodejno shranjevanje je začasno ustavljeno: drug program je spremenil datoteko. Shranite, da obdržite svojo različico, ali jo znova naložite z diska.
 	Reload from Disk	Znova naloži z diska
+	AutoSave documents you have saved in MarkdownDocs	Samodejno shranjuj dokumente, ki ste jih shranili v programu MarkdownDocs
+	Browse in MarkdownDocs…	Prebrskaj v programu MarkdownDocs …
+	Couldn't make MarkdownDocs the default: {error}	MarkdownDocs ni bilo mogoče nastaviti kot privzeti program: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	V privzetih aplikacijah izberite MarkdownDocs za vrste dokumentov, ki naj jih odpira.
+	Make MarkdownDocs the default for Word documents…	Nastavi MarkdownDocs kot privzeti program za dokumente Word …
+	No spelling dictionary for {language} is installed, so it isn't checked. MarkdownDocs looks for the Hunspell dictionary {name} in the WORDCRAFT_DICTIONARIES folder and in the usual system locations.	Za jezik {language} ni nameščenega slovarja za črkovanje, zato se ne preverja. MarkdownDocs poišče slovar Hunspell {name} v mapi WORDCRAFT_DICTIONARIES in na običajnih sistemskih mestih.
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	Odpri datoteko z MarkdownDocsovim brskalnikom, kadar se sistemsko pogovorno okno ne prikaže.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	Odslej odpira datoteke .md, .docx, .doc, .rtf in .odt ter predloge Word s programom MarkdownDocs.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	Odpre Nastavitve › Privzete aplikacije, kjer izberete MarkdownDocs za .docx in druge vrste dokumentov.
+	Show the Start screen when MarkdownDocs starts	Ob zagonu programa MarkdownDocs prikaži začetni zaslon
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Če želite dokumente Word privzeto odpirati s programom MarkdownDocs: enega izberite v Finderju, izberite Datoteka › Informacije, pod Odpri z izberite MarkdownDocs in kliknite Spremeni vse.
+	MarkdownDocs is now the default app for Word documents.	MarkdownDocs je zdaj privzeta aplikacija za dokumente Word.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Vklopljeno: MarkdownDocs se odpre na Datoteka › Osnovno s praznim dokumentom, predlogami in nedavnimi dokumenti. Izklopljeno: odpre prazen dokument.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Sistemsko pogovorno okno za datoteke ni na voljo, zato MarkdownDocs prikaže svoje. Za sistemsko okno namestite portal za izbiro datotek (npr. xdg-desktop-portal-gtk) ali zenity.

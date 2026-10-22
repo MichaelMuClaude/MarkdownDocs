@@ -2631,3 +2631,16 @@ preview	Title	제목
 	{name} was changed by another program and has been reloaded.	{name}이(가) 다른 프로그램에 의해 변경되어 다시 불러왔습니다.
 	AutoSave is paused: another program changed the file. Save to keep your version, or reload it from disk.	자동 저장이 일시 중지되었습니다: 다른 프로그램이 파일을 변경했습니다. 내 버전을 유지하려면 저장하고, 아니면 디스크에서 다시 불러오세요.
 	Reload from Disk	디스크에서 다시 불러오기
+	AutoSave documents you have saved in MarkdownDocs	MarkdownDocs에서 저장한 문서 자동 저장
+	Browse in MarkdownDocs…	MarkdownDocs에서 찾아보기…
+	Couldn't make MarkdownDocs the default: {error}	MarkdownDocs를 기본 앱으로 설정하지 못했습니다: {error}
+	In Default apps, choose MarkdownDocs for the document types you want it to open.	기본 앱에서 MarkdownDocs로 열 문서 형식을 선택하세요.
+	Make MarkdownDocs the default for Word documents…	Word 문서의 기본 앱으로 MarkdownDocs 설정…
+	Open a file with MarkdownDocs's own browser when the system file dialog doesn't appear.	시스템 파일 대화상자가 나타나지 않을 때 MarkdownDocs의 파일 브라우저로 파일을 엽니다.
+	Opens .md, .docx, .doc, .rtf and .odt files and Word templates with MarkdownDocs from now on.	이제부터 .md, .docx, .doc, .rtf, .odt 파일과 Word 템플릿을 MarkdownDocs에서 엽니다.
+	Opens Settings › Default apps, where you choose MarkdownDocs for .docx and the other document types.	설정 › 기본 앱을 열어 .docx 및 다른 문서 형식의 기본 앱으로 MarkdownDocs를 선택합니다.
+	Show the Start screen when MarkdownDocs starts	MarkdownDocs 시작 시 시작 화면 표시
+	To open Word documents with MarkdownDocs by default: select one in Finder, choose File › Get Info, pick MarkdownDocs under Open with, then click Change All.	Word 문서를 기본적으로 MarkdownDocs에서 열려면 Finder에서 문서를 선택하고 파일 › 정보 가져오기를 선택한 다음, 다음으로 열기에서 MarkdownDocs를 고르고 모두 변경을 클릭하세요.
+	MarkdownDocs is now the default app for Word documents.	이제 MarkdownDocs가 Word 문서의 기본 앱입니다.
+	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	켜기: MarkdownDocs를 실행하면 파일 › 홈에 빈 문서, 서식 파일 및 최근 문서가 표시됩니다. 끄기: 빈 문서가 열립니다.
+	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	시스템 파일 대화상자를 사용할 수 없어 MarkdownDocs의 파일 대화상자를 표시합니다. 시스템 대화상자를 사용하려면 xdg-desktop-portal-gtk 또는 zenity 같은 파일 선택 포털을 설치하세요.
