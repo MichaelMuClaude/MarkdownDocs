@@ -692,6 +692,22 @@ impl<'a> Builder<'a> {
         nid
     }
 
+    /// A list instance like [`Self::new_list`]'s with no label on any level (Word's numbering
+    /// format "none"): items keep the list's indents, without a bullet.
+    fn unlabelled_list(&mut self, group: &[ListInfo]) -> u32 {
+        let nid = self.new_list(group);
+        let aid = self.doc.numbering.num(nid).map(|n| n.abstract_id);
+        if let Some(abs) = self.doc.numbering.abstracts.iter_mut().find(|a| Some(a.id) == aid) {
+            for level in &mut abs.levels {
+                level.format = NumFormat::None;
+                level.text.clear();
+                // The box starts where the item's text would, and wrapped lines line up with it.
+                level.hanging = 0.0;
+            }
+        }
+        nid
+    }
+
     fn blocks(&mut self, blocks: &[FBlock], depth: usize) -> Blocks {
         let mut out = Blocks::new();
         let mut i = 0;
@@ -715,8 +731,15 @@ impl<'a> Builder<'a> {
                         j += 1;
                     }
                     let num = self.new_list(&group);
+                    // Bulleted task items sit in a list whose levels show no label, so the check
+                    // box stands where the bullet would, as GitHub renders them.
+                    let mut task_num = None;
                     for q in blocks.get(i..j).unwrap_or(&[]) {
                         if let FBlock::Para(q) = q {
+                            let num = match q.list {
+                                Some(li) if q.task.is_some() && !li.ordered => *task_num.get_or_insert_with(|| self.unlabelled_list(&group)),
+                                _ => num,
+                            };
                             let para = self.para(q, Some(num));
                             out.push(para_block(para));
                         }

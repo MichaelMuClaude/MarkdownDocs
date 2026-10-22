@@ -130,8 +130,12 @@ fn blocks_text(blocks: &[FBlock], out: &mut Vec<String>, lists: &mut ListCounter
                 match p.list {
                     Some(li) => {
                         line.push_str(&"\t".repeat(li.level as usize));
-                        line.push_str(&lists.label(li));
-                        line.push('\t');
+                        // A bulleted task item's check box stands in place of its bullet.
+                        let label = lists.label(li);
+                        if p.task.is_none() || li.ordered {
+                            line.push_str(&label);
+                            line.push('\t');
+                        }
                     }
                     None => lists.reset(),
                 }

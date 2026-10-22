@@ -2137,8 +2137,18 @@ mod tests {
             .collect();
         assert_eq!(boxes, [false, true, true], "each task item starts with a real check box");
         assert_eq!(export(&doc), "- [ ] todo\n- [x] done\n- [x] shouted\n- plain\n");
+        // The box stands in place of the bullet, as GitHub shows task items; a plain item in the
+        // same list keeps its bullet, and an ordered task item keeps its number.
+        let labels: Vec<bool> =
+            doc.body.iter().filter_map(|b| b.as_para()?.props.numbering).map(|n| doc.numbering.shows_label(n.num, n.level)).collect();
+        assert_eq!(labels, [false, false, false, true]);
+        let ordered = import("1. [ ] first\n");
+        let n = ordered.body.iter().find_map(|b| b.as_para()?.props.numbering).unwrap();
+        assert!(ordered.numbering.shows_label(n.num, n.level));
         // Formats without task lists show the box itself, as before.
-        assert_eq!(String::from_utf8_lossy(&crate::txt::export(&doc)).lines().next(), Some("•\t\u{2610} todo"));
+        let txt = String::from_utf8_lossy(&crate::txt::export(&doc)).into_owned();
+        assert_eq!(txt.lines().next().map(str::trim_start), Some("\u{2610} todo"), "{txt}");
+        assert_eq!(txt.lines().nth(3), Some("•\tplain"), "{txt}");
         // `[ ]` that isn't followed by a space is ordinary text.
         assert_eq!(export(&import("- [ ]x\n")).trim_end(), "- \\[ \\]x");
     }

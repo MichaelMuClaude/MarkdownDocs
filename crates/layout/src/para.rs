@@ -1435,7 +1435,12 @@ pub fn layout_para(p: &Paragraph, env: &ParaEnv) -> ParaLayout {
     // that switches its style's list off (`num: 0`) drops the styles' indents, as Word does.
     let own_left = p.props.indent_left.is_some() || p.props.indent_left_chars.is_some_and(|c| c != 0.0);
     let own_first = p.props.indent_first.is_some() || p.props.indent_first_chars.is_some_and(|c| c != 0.0);
-    if let Some((_, lvl)) = &env.label {
+    // A level that shows no label (numbering format "none") still indents its paragraphs.
+    let unlabelled = match (&env.label, p.props.numbering) {
+        (None, Some(n)) if n.num != 0 => doc.numbering.level(n.num, n.level).filter(|l| l.format == wordcraft_doc::section::NumFormat::None),
+        _ => None,
+    };
+    if let Some(lvl) = env.label.as_ref().map(|(_, l)| l).or(unlabelled) {
         let (style_left, style_first) =
             if p.props.numbering.is_some() { (false, false) } else { doc.styles.indents_over_list(para_style.unwrap_or("Normal")) };
         if !own_left && !style_left {

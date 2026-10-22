@@ -1248,6 +1248,26 @@ fn private_use_bullet_no_font_draws_shows_the_levels_default_bullet() {
 }
 
 #[test]
+fn a_level_with_no_label_still_indents() {
+    // Numbering format "none" (a GFM task item's list) hides the label, not the level's indent.
+    let mut d = Document::from_text("one");
+    let id = d.numbering.add_list(wordcraft_doc::ListKind::Bullet);
+    for a in &mut d.numbering.abstracts {
+        if let Some(l) = a.levels.get_mut(1) {
+            l.format = wordcraft_doc::section::NumFormat::None;
+            l.text.clear();
+            (l.indent, l.hanging) = (72.0, 0.0);
+        }
+    }
+    d.format_paragraphs(&Pos::body(0, 0), &Pos::body(0, 0), &|p| p.numbering = Some(wordcraft_doc::props::NumRef { num: id, level: 1 })).unwrap();
+    let l = lay(&d);
+    let pl = l.pages[0].items.iter().find_map(|it| if let Placed::Lines { para, .. } = it { Some(para.clone()) } else { None }).unwrap();
+    assert!(pl.label.is_none());
+    let ln = &pl.lines[0];
+    assert_eq!(ln.cl_left(ln.c0), Some(72.0));
+}
+
+#[test]
 fn wingdings_text_draws_and_reads_as_its_unicode_symbols() {
     // Word stores symbol-font text both ways: plain codes ("J" = smiley) and private-use codes
     // (U+F0FC = check mark, what `w:sym` writes).
