@@ -126,6 +126,13 @@ cargo run --release -p wordcraft -- report.md       # open a document
 (The binaries are still named `wordcraft`/`wordcraft-cli`, inherited from the fork — not yet
 renamed.)
 
+Install it for your user on Linux, as `markdowndocs` and `markdowndocs-cli` with a launcher entry
+in `~/.local` (rerun after pulling or changing the code; `--uninstall` removes it):
+
+```sh
+packaging/linux/install-local.sh
+```
+
 Command line:
 
 ```sh
