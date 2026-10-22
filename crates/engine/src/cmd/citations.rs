@@ -1432,7 +1432,9 @@ mod tests {
     #[test]
     fn a_generated_list_leaves_the_caret_after_it_not_inside_it() {
         let after = |s: &Session| {
-            s.doc.para_at(&s.sel.focus).is_some_and(|p| p.props.style.as_deref() != Some("Heading1") && p.props.style.as_deref() != Some(ENTRY_STYLE))
+            s.doc.para_at(&s.sel.focus).is_some_and(|p| {
+                p.props.style.as_deref() != Some("Heading1") && p.props.style.as_deref() != Some(ENTRY_STYLE) && list_kind(p).is_none()
+            })
         };
 
         let mut s = Session::new(wordcraft_doc::Document::new());
