@@ -737,7 +737,8 @@ impl Session {
             macros: Default::default(),
             versions: Vec::new(),
             building_blocks: Default::default(),
-            autosave: true,
+            // Off by default, as the app's switch is (see `WordApp::new`).
+            autosave: false,
             bib_style,
             merge: Default::default(),
             ui_requests: Vec::new(),

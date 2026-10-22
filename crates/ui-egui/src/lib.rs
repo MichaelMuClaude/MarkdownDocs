@@ -743,7 +743,11 @@ impl WordApp {
             seen_full_screen: None,
             escape_free: false,
             quit_requested: false,
-            autosave: true,
+            // Off until the user turns it on (the switch, File › Options): in this fork an agent
+            // usually edits the Markdown file itself while the window follows it (`disk_tick`), and
+            // an app writing the file on its own is what could race that agent's write. The
+            // Recover copies still keep unsaved work safe from a crash.
+            autosave: false,
             word_count: (0, 0),
             last_autosave: 0.0,
             equation_prev_tab: None,
@@ -3459,6 +3463,14 @@ mod tests {
 
     fn app() -> WordApp {
         WordApp::new(Session::new(wordcraft_doc::Document::new()), Services::default())
+    }
+
+    /// [`app`] with AutoSave turned on, for the tests of what AutoSave does (it starts off).
+    fn autosave_app() -> WordApp {
+        let mut a = app();
+        a.autosave = true;
+        a.session.autosave = true;
+        a
     }
 
     #[test]
@@ -6956,6 +6968,8 @@ mod tests {
             let dir = scratch(&format!("autosave-{ext}"));
             let path = dir.join(format!("novel.{ext}"));
             let mut a = typed();
+            a.autosave = true;
+            a.session.autosave = true;
             a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
             assert!(a.autosaves(), "{ext}");
             a.run("text.insert", json!({"text": "More "})).unwrap();
@@ -6973,6 +6987,8 @@ mod tests {
         let path = dir.join("notes.docx");
         let renamed = dir.join("Notes v2.docx");
         let mut a = typed();
+        a.autosave = true;
+        a.session.autosave = true;
         a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
         assert!(a.autosaves());
         a.run("file.rename", json!({"name": "Notes v2"})).unwrap();
@@ -7350,7 +7366,7 @@ mod tests {
         for id in MAILINGS {
             let dir = scratch(&format!("mailings-{}", id.len()));
             let path = docx_on_disk(&dir, "Signed contract");
-            let mut a = app();
+            let mut a = autosave_app();
             a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
             a.run("text.insert", json!({"text": "Revised "})).unwrap();
             a.run("file.save", json!({})).unwrap();
@@ -7458,7 +7474,7 @@ mod tests {
         let dir = scratch("autosave");
         let path = docx_on_disk(&dir, "Original");
         let before = std::fs::read(&path).unwrap();
-        let mut a = app();
+        let mut a = autosave_app();
         a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
         a.run("text.insert", json!({"text": "Typed "})).unwrap();
         a.autosave_tick(now_ms() + 10_000.0);
@@ -7486,7 +7502,7 @@ mod tests {
         let dir = scratch("autosave-txt");
         let txt = dir.join("notes.txt");
         std::fs::write(&txt, "Notes\n\nSome text\n").unwrap();
-        let mut a = app();
+        let mut a = autosave_app();
         assert_eq!(a.autosave_block(), Some(AutoSaveBlock::Unsaved), "a new document has no file yet");
         a.run("file.open", json!({"path": txt.to_string_lossy()})).unwrap();
         a.run("text.insert", json!({"text": "Typed "})).unwrap();
@@ -7522,7 +7538,7 @@ mod tests {
     fn autosave_covers_markdown() {
         let dir = scratch("autosave-md");
         let path = dir.join("notes.md");
-        let mut a = app();
+        let mut a = autosave_app();
         a.run("text.insert", json!({"text": "Original "})).unwrap();
         a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
         assert_eq!(a.autosave_block(), None, "a .md file saved here is covered");
@@ -7544,6 +7560,32 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// AutoSave starts off: the app writes the file only when the user saves (or turns AutoSave
+    /// on), so it never races an agent editing the Markdown. The window still follows the file.
+    #[test]
+    fn autosave_is_off_by_default_and_the_window_still_follows_the_file() {
+        let dir = scratch("autosave-off");
+        let path = dir.join("notes.md");
+        std::fs::write(&path, "Original\n").unwrap();
+        let mut a = app();
+        assert!(!a.autosave && !a.session.autosave);
+        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        assert!(!a.autosaves());
+        a.run("text.insert", json!({"text": "Typed "})).unwrap();
+        a.autosave_tick(now_ms() + 60_000.0);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "Original\n", "nothing written until the user saves");
+        a.run("file.save", json!({})).unwrap();
+        assert!(std::fs::read_to_string(&path).unwrap().contains("Typed"));
+        assert!(!a.autosaves(), "an explicit save doesn't switch AutoSave on");
+        std::fs::write(&path, "Agent edit\n").unwrap();
+        a.disk_tick(now_ms() + 120_000.0);
+        assert!(a.session.doc.plain_text(wordcraft_doc::StoryRef::Body).contains("Agent edit"));
+        // The switch still turns it on.
+        a.run("file.autosave", json!({"value": true})).unwrap();
+        assert!(a.autosaves());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     /// An agent (or any program) rewriting the open Markdown file: without unsaved changes the
     /// window reloads to show it; with some, it asks which version wins and AutoSave waits, so
     /// neither side is overwritten silently — not even by an AutoSave due in the same second.
@@ -7552,7 +7594,7 @@ mod tests {
         let dir = scratch("disk-changed");
         let path = dir.join("notes.md");
         std::fs::write(&path, "Original notes\n").unwrap();
-        let mut a = app();
+        let mut a = autosave_app();
         a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
         let body = |a: &WordApp| a.session.doc.plain_text(wordcraft_doc::StoryRef::Body);
         let on_disk = || std::fs::read_to_string(&path).unwrap();
@@ -7610,7 +7652,7 @@ mod tests {
         let dir = scratch("autosave-md-reopen");
         let path = dir.join("notes.md");
         std::fs::write(&path, "Existing notes\n").unwrap();
-        let mut a = app();
+        let mut a = autosave_app();
         a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
         assert_eq!(a.autosave_block(), None, "opening a .md file covers it immediately");
         assert!(a.autosaves());
@@ -7643,6 +7685,8 @@ mod tests {
         let dir = scratch("autosave-open");
         let path = dir.join("novel.docx");
         let mut a = typed();
+        a.autosave = true;
+        a.session.autosave = true;
         a.services.pick_open = Some(Box::new(|_| None));
         a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
         assert!(a.autosaves());
@@ -7664,6 +7708,8 @@ mod tests {
         let path = dir.join("gone").join("novel.docx");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         let mut a = typed();
+        a.autosave = true;
+        a.session.autosave = true;
         a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
         // The folder disappears (unplugged drive, network share gone).
         std::fs::remove_dir_all(path.parent().unwrap()).unwrap();

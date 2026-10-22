@@ -1025,6 +1025,8 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("draft.docx");
         let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), crate::Services::default());
+        // AutoSave starts off in this fork; these tests are about its switch once it is on.
+        a.autosave = true;
         a.run("text.insert", json!({"text": "Hello"})).unwrap();
         a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
         assert!(a.autosaves(), "a saved .docx is covered by AutoSave");
