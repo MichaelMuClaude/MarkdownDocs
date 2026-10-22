@@ -562,6 +562,8 @@ pub struct WordApp {
     /// The document (id, revision) whose comment text [`WordApp::ensure_comment_fonts`] last
     /// looked at.
     comment_fonts_for: Option<(u64, u64)>,
+    /// The Backstage file names (Recent, Recover) [`WordApp::ensure_backstage_fonts`] last looked at.
+    backstage_fonts_for: Option<u64>,
     fonts_frames: u32,
     /// The effective interface theme last installed in egui ([`theme::apply`]).
     applied_theme: Option<theme::Appearance>,
@@ -693,6 +695,7 @@ impl WordApp {
             fonts_system_cjk: false,
             want_system_cjk: false,
             comment_fonts_for: None,
+            backstage_fonts_for: None,
             fonts_frames: 0,
             applied_theme: None,
             native_scale: 1.0,
@@ -1963,6 +1966,41 @@ impl WordApp {
         }
     }
 
+    /// File › Home's Recent list and File › Recover draw file names with the interface faces too:
+    /// a Chinese name was a row of boxes, an Arabic or Hebrew one likewise. The same treatment as
+    /// the caption: CJK loads the CJK UI font, other scripts borrow the document fallback faces.
+    /// Looked at again only when the names change.
+    fn ensure_backstage_fonts(&mut self) {
+        use std::hash::{Hash, Hasher};
+        let docs = self.session.recovery_documents();
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        self.ui.recent.hash(&mut hasher);
+        docs.iter().for_each(|d| d.name.hash(&mut hasher));
+        let key = hasher.finish();
+        if self.backstage_fonts_for == Some(key) {
+            return;
+        }
+        self.backstage_fonts_for = Some(key);
+        let mut chars = std::collections::BTreeSet::new();
+        for p in &self.ui.recent {
+            chars.extend(p.chars());
+        }
+        for d in &docs {
+            chars.extend(d.name.chars());
+        }
+        if chars.iter().any(|c| wordcraft_fonts::is_cjk(*c)) {
+            self.want_system_cjk = true;
+        }
+        let text: String = chars.into_iter().collect();
+        let new = theme::faces_for_preedit(&text, &self.canvas.ime_faces, theme::caption_char_covered, |c| {
+            wordcraft_fonts::FontDb::global().fallback_for(c, u32::MAX)
+        });
+        if !new.is_empty() {
+            self.canvas.ime_faces.extend(new);
+            self.styled = false;
+        }
+    }
+
     /// Document title for the title bar (and the suggested file name). An untitled document is
     /// named in the interface language, as `Document1` is in English.
     pub fn title_stem(&self) -> String {
@@ -2017,6 +2055,7 @@ impl WordApp {
         // in this frame (dialog, drop, control channel) is picked up again at the end.
         self.ensure_caption_fonts();
         self.ensure_comment_fonts();
+        self.ensure_backstage_fonts();
         self.install_ui_fonts(ctx, lang);
         if let Some(answer) = self.desktop_theme.take_change() {
             self.desktop_dark = Some(answer);
@@ -2127,6 +2166,7 @@ impl WordApp {
         // The open above may have changed the file name the caption draws.
         self.ensure_caption_fonts();
         self.ensure_comment_fonts();
+        self.ensure_backstage_fonts();
         self.install_ui_fonts(ctx, lang);
         self.report_dirty();
     }
@@ -3055,6 +3095,25 @@ mod tests {
         frame(&mut cjk);
         assert!(cjk.want_system_cjk, "a CJK file name loads the CJK UI font");
         assert!(cjk.canvas.ime_faces.is_empty(), "CJK collections are not copied into the fallback list");
+    }
+
+    /// File › Home's Recent list and File › Recover draw file names with the interface faces:
+    /// a Chinese name there was a row of boxes because nothing asked for the CJK UI font.
+    #[test]
+    fn non_latin_file_names_in_backstage_lists_get_a_face() {
+        let ctx = egui::Context::default();
+        let frame = |app: &mut WordApp| {
+            ctx.run_ui(egui::RawInput::default(), |ui| app.logic(ui.ctx())).drop_without_applying_deltas();
+        };
+        let mut latin = app();
+        latin.ui.recent = vec!["/tmp/report.docx".into()];
+        frame(&mut latin);
+        assert!(!latin.want_system_cjk, "Latin names need no CJK font");
+
+        let mut cjk = app();
+        cjk.ui.recent = vec!["/tmp/report.docx".into(), "/tmp/会议记录-草稿.md".into()];
+        frame(&mut cjk);
+        assert!(cjk.want_system_cjk, "a CJK name in Recent loads the CJK UI font");
     }
 
     /// Comment balloons draw comment text and author names with the interface faces, which have
