@@ -325,6 +325,63 @@ fn code_para(line: &str) -> FBlock {
     FBlock::Para(p)
 }
 
+/// Prefix of the hidden bookmark (Word hides names starting with `_`) on a code block's first
+/// line: it marks where a block starts, so two blocks in a row stay two, and carries the fence's
+/// info string (```` ```rust ````) so the language survives a round trip, through .docx too.
+const CODE_MARK: &str = "_mdcode";
+/// Word's limit on a bookmark name.
+const MAX_BOOKMARK: usize = 40;
+
+/// A code block's lines, its first marked with [`CODE_MARK`] and `info` (an empty block keeps one
+/// empty line, so it isn't lost).
+fn code_block(lines: Vec<&str>, info: &str) -> impl Iterator<Item = FBlock> {
+    let lines = if lines.is_empty() { vec![""] } else { lines };
+    lines.into_iter().enumerate().map(move |(n, l)| {
+        let mut b = code_para(l);
+        if n == 0
+            && let FBlock::Para(p) = &mut b
+        {
+            p.inlines.insert(0, Inline::Anchor(code_mark(info)));
+        }
+        b
+    })
+}
+
+/// The bookmark name for a code block with this info string: letters and digits as they are,
+/// every other character as `_<hex>_` (bookmark names hold only letters, digits and `_`).
+fn code_mark(info: &str) -> String {
+    let mut out = format!("{CODE_MARK}_");
+    for c in info.trim().chars() {
+        let piece = if c.is_ascii_alphanumeric() { c.to_string() } else { format!("_{:x}_", c as u32) };
+        if out.len() + piece.len() > MAX_BOOKMARK {
+            break;
+        }
+        out.push_str(&piece);
+    }
+    out
+}
+
+/// The info string a [`code_mark`] bookmark carries, if `name` is one.
+fn code_info(name: &str) -> Option<String> {
+    let rest = name.strip_prefix(CODE_MARK)?.strip_prefix('_').unwrap_or("");
+    let mut out = String::new();
+    let mut it = rest.split('_');
+    if let Some(first) = it.next() {
+        out.push_str(first);
+    }
+    // After the first piece, pieces alternate: hex code, then plain text.
+    let mut hex = true;
+    for piece in it {
+        if hex {
+            out.extend(u32::from_str_radix(piece, 16).ok().and_then(char::from_u32));
+        } else {
+            out.push_str(piece);
+        }
+        hex = !hex;
+    }
+    Some(out)
+}
+
 /// Parse block structure. `level` is the list nesting level for lists found here.
 fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
     let mut out = Vec::new();
@@ -358,7 +415,7 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
             while code.last().is_some_and(|l| l.is_empty()) {
                 code.pop();
             }
-            out.extend(code.into_iter().map(code_para));
+            out.extend(code_block(code, ""));
             continue;
         }
         let t = line.trim_start_matches([' ', '\t']);
@@ -392,6 +449,8 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
         }
         if let Some((fc, fl)) = fence(t) {
             flush_para(&mut para, &mut out, depth);
+            let info = t.trim_start_matches(fc).trim();
+            let mut code = Vec::new();
             i += 1;
             while let Some(l) = lines.get(i) {
                 i += 1;
@@ -399,8 +458,9 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
                 if indent(l) < 4 && fence(lt).is_some_and(|(c, n)| c == fc && n >= fl) && lt.trim_start_matches(fc).trim().is_empty() {
                     break;
                 }
-                out.push(code_para(strip_indent(l, ind)));
+                code.push(strip_indent(l, ind));
             }
+            out.extend(code_block(code, info));
             continue;
         }
         if t.starts_with('>') {
@@ -1241,6 +1301,8 @@ fn inlines_md_impl(inlines: &[Inline], in_table: bool) -> String {
                 };
                 pieces.push((String::new(), Fmt::default(), Some(format!("![{}]({dest})", escape(&img.alt)))));
             }
+            // A code block's marker means nothing outside one (the paragraph's style changed).
+            Inline::Anchor(a) if a.starts_with(CODE_MARK) => {}
             Inline::Anchor(a) => {
                 let safe: String = a.chars().filter(|c| c.is_alphanumeric() || matches!(c, '_' | '-' | '.' | ':')).collect();
                 pieces.push((String::new(), Fmt::default(), Some(format!("<a id=\"{safe}\"></a>"))));
@@ -1397,9 +1459,15 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                 prev_list = false;
             }
             FBlock::Para(p) if p.kind == Kind::Code && p.list.is_none() => {
+                let mark = |q: &Para| match q.inlines.first() {
+                    Some(Inline::Anchor(a)) => code_info(a),
+                    _ => None,
+                };
+                let info = mark(p).unwrap_or_default();
                 let mut lines = Vec::new();
                 while let Some(FBlock::Para(q)) = blocks.get(i) {
-                    if q.kind != Kind::Code || q.list.is_some() {
+                    // A marked line after the first starts the next block.
+                    if q.kind != Kind::Code || q.list.is_some() || (!lines.is_empty() && mark(q).is_some()) {
                         break;
                     }
                     lines.push(q.text());
@@ -1407,7 +1475,9 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                 }
                 let longest = lines.iter().map(|l| l.chars().filter(|c| *c == '`').count()).max().unwrap_or(0);
                 let fence = "`".repeat(3.max(longest + 1).min(64));
-                out.push(fence.clone());
+                // A backtick in the info string would end a backtick fence's opening line early.
+                let info: String = info.chars().filter(|c| *c != '`' && *c != '\n').collect();
+                out.push(format!("{fence}{info}"));
                 out.extend(lines);
                 out.push(fence);
                 out.push(String::new());
@@ -1838,6 +1908,26 @@ mod tests {
         assert!(md.starts_with("![dot](data:image/png;base64,"), "{md}");
         let back = import(&md);
         assert!(back.media.values().any(|d| d.as_slice() == png.as_slice()), "the embedded picture reads back unchanged");
+    }
+
+    /// A fenced block's info string (its language) survives, two code blocks in a row stay two,
+    /// and an empty block isn't dropped. They used to come back as one unlabelled block.
+    #[test]
+    fn code_blocks_keep_their_language_and_boundaries() {
+        let round = |md: &str| export(&import(md));
+        assert_eq!(round("```rust\nfn main() {}\n```\n").trim_end(), "```rust\nfn main() {}\n```");
+        let two = round("```python\nprint(1)\n```\n\n    indented\n");
+        assert_eq!(two.trim_end(), "```python\nprint(1)\n```\n\n```\nindented\n```", "{two}");
+        assert_eq!(round("```c++\nint x;\n```").trim_end(), "```c++\nint x;\n```");
+        assert_eq!(round("```{.python}\nx\n```").trim_end(), "```{.python}\nx\n```");
+        // Bookmark names stop at Word's 40 characters: a very long info string keeps its start.
+        let long = round("```{.python .numberLines startFrom=10}\nx\n```");
+        assert!(long.starts_with("```{.python .number") && long.contains("\nx\n```"), "{long}");
+        assert_eq!(round("```js\n```").trim_end(), "```js\n\n```", "an empty block keeps a line");
+        // Saving the same text twice changes nothing.
+        let once = round("```rust\na\n```\n\n```\nb\n```\n");
+        assert_eq!(round(&once), once);
+        assert_eq!(code_info(&code_mark("objective-c")).as_deref(), Some("objective-c"));
     }
 
     #[test]
