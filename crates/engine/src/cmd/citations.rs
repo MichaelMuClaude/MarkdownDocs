@@ -1431,10 +1431,19 @@ mod tests {
     /// ordinary next step after inserting one) would corrupt them.
     #[test]
     fn a_generated_list_leaves_the_caret_after_it_not_inside_it() {
+        // In a paragraph of its own, not the list's, and right after the list: the block before
+        // it is the list's last entry or (an empty list) its title.
         let after = |s: &Session| {
-            s.doc.para_at(&s.sel.focus).is_some_and(|p| {
+            let here = s.sel.focus.path.last();
+            let own = s.doc.para_at(&s.sel.focus).is_some_and(|p| {
                 p.props.style.as_deref() != Some("Heading1") && p.props.style.as_deref() != Some(ENTRY_STYLE) && list_kind(p).is_none()
-            })
+            });
+            let follows = here
+                .checked_sub(1)
+                .and_then(|k| s.doc.body.get(k))
+                .and_then(|b| b.as_para())
+                .is_some_and(|p| p.props.style.as_deref() == Some(ENTRY_STYLE) || list_kind(p).is_some());
+            own && follows
         };
 
         let mut s = Session::new(wordcraft_doc::Document::new());
