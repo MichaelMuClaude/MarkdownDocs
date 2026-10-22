@@ -62,6 +62,34 @@ fn legacy_table_gap(mode: u32, allow: bool, location: SpacingLocation) -> f32 {
     baselines[1] - baselines[0] - 24.0
 }
 
+/// #3407: in an older-mode document the table moves out by its default left cell margin
+/// (`w:tblCellMar`), not the first cell's own (`w:tcMar`): with table margins of 0 and cells of
+/// 7.2pt, Word keeps the table on the margin and the text starts 7.2pt in.
+#[test]
+fn legacy_table_outdent_ignores_the_first_cells_own_margin() {
+    let text_x = |mode: u32| {
+        let mut d = Document::new();
+        d.settings.compat_mode = mode;
+        let mut table = Table::new(1, 2, 400.0);
+        table.props.style = None;
+        table.props.cell_margins = Some([0.0; 4]);
+        for c in &mut table.rows[0].cells {
+            c.props.margins = Some([3.6, 7.2, 3.6, 7.2]);
+            c.blocks = vec![wordcraft_doc::para_block(wordcraft_doc::Paragraph::with_text("Alpha", Default::default()))];
+        }
+        d.body = vec![Arc::new(Block::Table(table))];
+        let l = lay(&d);
+        let x = l.pages[0].items.iter().find_map(|i| match i {
+            Placed::Lines { para, x, .. } => Some(x + para.lines[0].cl_left(para.lines[0].c0).unwrap_or(0.0)),
+            _ => None,
+        });
+        x.unwrap() - d.last_section.margin_left
+    };
+    assert!((text_x(14) - 7.2).abs() < 0.01, "older mode: {}", text_x(14));
+    // Word 2013 mode doesn't move the table out: the text is in by the margin (and half the border).
+    assert!(text_x(15) >= 7.2 - 0.01, "Word 2013 mode: {}", text_x(15));
+}
+
 #[test]
 fn legacy_table_contextual_spacing_flag_keeps_after_space() {
     // Original Word for Mac 16.113.3 probe: after 12 pt, before 0 pt, both contextual.
