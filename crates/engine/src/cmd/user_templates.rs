@@ -23,6 +23,7 @@ pub const MAX_TEMPLATES: usize = 500;
 /// Most category folders looked into.
 pub const MAX_CATEGORIES: usize = 64;
 /// Most directory entries looked at in one folder.
+#[cfg(not(target_arch = "wasm32"))]
 const MAX_ENTRIES: usize = 10_000;
 /// Longest folder path taken, in bytes.
 const MAX_DIR: usize = 32 * 1024;
@@ -186,6 +187,7 @@ fn entries(dir: &std::path::Path) -> (Vec<crate::io::DirEntry>, Vec<std::path::P
 /// The name a template shows: its file name without the template extension, every one of them
 /// (`Contract.dotm.dotx`, as older Save as Template made, is `Contract`); the whole name if
 /// nothing would be left.
+#[cfg(not(target_arch = "wasm32"))]
 fn label_of(name: &str) -> String {
     let mut label = name;
     while is_template_name(label) {
