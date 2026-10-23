@@ -2842,3 +2842,13 @@ template	Letter	Thư
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs hiện là ứng dụng mặc định cho tài liệu Word.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Bật: MarkdownDocs mở ở Tệp › Trang chủ, với tài liệu trống, các mẫu và tài liệu gần đây của bạn. Tắt: MarkdownDocs mở một tài liệu trống.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Hộp thoại tệp của hệ thống không khả dụng, nên MarkdownDocs hiển thị hộp thoại riêng. Để dùng hộp thoại của hệ thống, hãy cài đặt cổng chọn tệp (như xdg-desktop-portal-gtk) hoặc zenity.
+	First Record	Bản ghi đầu tiên
+	Last Record	Bản ghi cuối cùng
+	Go to Record	Đi tới bản ghi
+	Edit Individual Documents…	Sửa từng tài liệu…
+	Print Documents…	In tài liệu…
+	Print Documents	In tài liệu
+	Current record	Bản ghi hiện tại
+	From:	Từ:
+	To:	Đến:
+	Enter a number.	Nhập một số.

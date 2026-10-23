@@ -2697,3 +2697,13 @@ preview	Title	Titel
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs is nu de standaardapp voor Word-documenten.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Aan: MarkdownDocs opent Bestand › Start met een leeg document, de sjablonen en je recente documenten. Uit: er wordt een leeg document geopend.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Het systeemvenster voor bestanden is niet beschikbaar, dus toont MarkdownDocs het eigen venster. Installeer een portaal voor bestandskiezer (zoals xdg-desktop-portal-gtk) of zenity om het systeemvenster te krijgen.
+	First Record	Eerste record
+	Last Record	Laatste record
+	Go to Record	Ga naar record
+	Edit Individual Documents…	Afzonderlijke documenten bewerken…
+	Print Documents…	Documenten afdrukken…
+	Print Documents	Documenten afdrukken
+	Current record	Huidig record
+	From:	Van:
+	To:	Tot:
+	Enter a number.	Voer een getal in.

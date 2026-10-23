@@ -2395,3 +2395,13 @@
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs が Word 文書の既定のアプリになりました。
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	オン: MarkdownDocs は [ファイル] › [ホーム] で開き、白紙の文書、テンプレート、最近使った文書を表示します。オフ: 白紙の文書を開きます。
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	システムのファイル ダイアログを利用できないため、MarkdownDocs 独自のダイアログを表示しています。システムのダイアログを使うには、ファイル選択ポータル (xdg-desktop-portal-gtk など) または zenity をインストールしてください。
+	First Record	最初のレコード
+	Last Record	最後のレコード
+	Go to Record	レコードへ移動
+	Edit Individual Documents…	個々のドキュメントを編集…
+	Print Documents…	ドキュメントを印刷…
+	Print Documents	ドキュメントを印刷
+	Current record	現在のレコード
+	From:	開始:
+	To:	終了:
+	Enter a number.	数値を入力してください。

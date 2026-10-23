@@ -252,6 +252,8 @@ fn untranslated_interface_text() {
         "models",
         "insertMergeField",
         "findRecipient",
+        "mergeRecords",
+        "printRecords",
         "caption",
         "index",
         "markEntry",

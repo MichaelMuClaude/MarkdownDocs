@@ -2798,3 +2798,13 @@
 	MarkdownDocs is now the default app for Word documents.	Mostantól a MarkdownDocs az alapértelmezett alkalmazás a Word-dokumentumokhoz.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Be: a MarkdownDocs a Fájl › Kezdőlap oldalon nyílik meg, üres dokumentummal, a sablonokkal és a legutóbbi dokumentumokkal. Ki: üres dokumentumot nyit meg.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	A rendszer fájlpárbeszédablaka nem érhető el, ezért a MarkdownDocs a sajátját mutatja. A rendszer párbeszédablakához telepíts egy fájlválasztó portált (például xdg-desktop-portal-gtk) vagy a zenity programot.
+	First Record	Első rekord
+	Last Record	Utolsó rekord
+	Go to Record	Ugrás rekordra
+	Edit Individual Documents…	Egyedi dokumentumok szerkesztése…
+	Print Documents…	Dokumentumok nyomtatása…
+	Print Documents	Dokumentumok nyomtatása
+	Current record	Aktuális rekord
+	From:	Ettől:
+	To:	Eddig:
+	Enter a number.	Adj meg egy számot.

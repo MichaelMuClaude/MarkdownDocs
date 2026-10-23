@@ -2407,3 +2407,13 @@
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs 现在是 Word 文档的默认应用。
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	开：MarkdownDocs 打开时显示“文件 › 开始”，其中有空白文档、模板和最近使用的文档。关：直接打开空白文档。
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	系统文件对话框不可用，因此 MarkdownDocs 显示自己的对话框。要使用系统对话框，请安装文件选择器门户（例如 xdg-desktop-portal-gtk）或 zenity。
+	First Record	第一条记录
+	Last Record	最后一条记录
+	Go to Record	转到记录
+	Edit Individual Documents…	编辑单个文档…
+	Print Documents…	打印文档…
+	Print Documents	打印文档
+	Current record	当前记录
+	From:	从：
+	To:	到：
+	Enter a number.	请输入数字。

@@ -2757,3 +2757,13 @@ preview	Title	Título
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs es ahora la aplicación predeterminada para los documentos de Word.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Activado: MarkdownDocs se abre en Archivo › Inicio, con un documento en blanco, las plantillas y tus documentos recientes. Desactivado: abre un documento en blanco.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	El cuadro de diálogo de archivos del sistema no está disponible, así que MarkdownDocs muestra el suyo. Para usar el del sistema, instala un portal selector de archivos (como xdg-desktop-portal-gtk) o zenity.
+	First Record	Primer registro
+	Last Record	Último registro
+	Go to Record	Ir al registro
+	Edit Individual Documents…	Editar documentos individuales…
+	Print Documents…	Imprimir documentos…
+	Print Documents	Imprimir documentos
+	Current record	Registro actual
+	From:	Desde:
+	To:	Hasta:
+	Enter a number.	Introduce un número.

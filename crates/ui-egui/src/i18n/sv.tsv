@@ -2830,3 +2830,13 @@ template	Letter	Brev
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs är nu standardprogram för Word-dokument.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	På: MarkdownDocs öppnas på Arkiv › Start, med ett tomt dokument, mallarna och dina senaste dokument. Av: ett tomt dokument öppnas.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Systemets fildialogruta är inte tillgänglig, så MarkdownDocs visar sin egen. Installera en filväljarportal (till exempel xdg-desktop-portal-gtk) eller zenity för att få systemets dialogruta.
+	First Record	Första post
+	Last Record	Sista post
+	Go to Record	Gå till post
+	Edit Individual Documents…	Redigera enskilda dokument…
+	Print Documents…	Skriv ut dokument…
+	Print Documents	Skriv ut dokument
+	Current record	Aktuell post
+	From:	Från:
+	To:	Till:
+	Enter a number.	Ange ett tal.

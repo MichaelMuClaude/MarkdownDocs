@@ -2803,3 +2803,13 @@ template	Letter	Lettre
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs est désormais l’application par défaut pour les documents Word.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Activé : MarkdownDocs s'ouvre sur Fichier › Accueil, avec un document vierge, les modèles et vos documents récents. Désactivé : il ouvre un document vierge.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	La boîte de dialogue de fichiers du système n’est pas disponible, MarkdownDocs affiche donc la sienne. Pour utiliser celle du système, installez un portail de sélection de fichiers (comme xdg-desktop-portal-gtk) ou zenity.
+	First Record	Premier enregistrement
+	Last Record	Dernier enregistrement
+	Go to Record	Atteindre l’enregistrement
+	Edit Individual Documents…	Modifier les documents individuels…
+	Print Documents…	Imprimer les documents…
+	Print Documents	Imprimer les documents
+	Current record	Enregistrement actif
+	From:	De :
+	To:	À :
+	Enter a number.	Entrez un nombre.

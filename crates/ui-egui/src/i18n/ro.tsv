@@ -2790,3 +2790,13 @@ template	Letter	Scrisoare
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs este acum aplicația implicită pentru documentele Word.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Activat: MarkdownDocs se deschide la Fișier › Pornire, cu un document gol, șabloanele și documentele dvs. recente. Dezactivat: se deschide un document gol.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Dialogul de fișiere al sistemului nu este disponibil, așa că MarkdownDocs îl afișează pe al lui. Pentru a obține dialogul sistemului, instalați un portal de selectare a fișierelor (cum ar fi xdg-desktop-portal-gtk) sau zenity.
+	First Record	Prima înregistrare
+	Last Record	Ultima înregistrare
+	Go to Record	Salt la înregistrare
+	Edit Individual Documents…	Editare documente individuale…
+	Print Documents…	Imprimare documente…
+	Print Documents	Imprimare documente
+	Current record	Înregistrarea curentă
+	From:	De la:
+	To:	Până la:
+	Enter a number.	Introduceți un număr.

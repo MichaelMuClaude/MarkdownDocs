@@ -2791,3 +2791,13 @@ preview	Title	Naslov
 	MarkdownDocs is now the default app for Word documents.	MarkdownDocs je zdaj privzeta aplikacija za dokumente Word.
 	On: MarkdownDocs opens on File › Home, with a blank document, the templates and your recent documents. Off: it opens a blank document.	Vklopljeno: MarkdownDocs se odpre na Datoteka › Osnovno s praznim dokumentom, predlogami in nedavnimi dokumenti. Izklopljeno: odpre prazen dokument.
 	The system file dialog isn't available, so MarkdownDocs shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Sistemsko pogovorno okno za datoteke ni na voljo, zato MarkdownDocs prikaže svoje. Za sistemsko okno namestite portal za izbiro datotek (npr. xdg-desktop-portal-gtk) ali zenity.
+	First Record	Prvi zapis
+	Last Record	Zadnji zapis
+	Go to Record	Pojdi na zapis
+	Edit Individual Documents…	Uredi posamezne dokumente…
+	Print Documents…	Natisni dokumente…
+	Print Documents	Natisni dokumente
+	Current record	Trenutni zapis
+	From:	Od:
+	To:	Do:
+	Enter a number.	Vnesite število.
