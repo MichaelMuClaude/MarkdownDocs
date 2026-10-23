@@ -1047,6 +1047,7 @@ impl Session {
         let opts = LayoutOptions {
             view: ViewMode::Print,
             comment_balloons: markup && self.prefs.markup.comments,
+            numeral: self.view.numeral.resolve(SYSTEM_LOCALE.get().map(String::as_str)),
             filename: Some(Arc::from(fn_name.as_str())),
             filepath: Some(Arc::from(fn_path.as_str())),
             ..Default::default()
