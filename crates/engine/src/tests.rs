@@ -3973,6 +3973,48 @@ fn a_file_changed_on_disk_is_noticed_and_reloaded() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// A write of the same size within the file system's timestamp step leaves size and modified
+/// time as they were (NTFS stamps in ~16 ms steps, FAT in 2 s), so right after a stamp those prove
+/// nothing and the bytes are compared: an agent's edit landing in the same moment as an open or a
+/// save is still noticed, and AutoSave (`ifUnchanged`) still refuses to write over it. The first
+/// version trusted size and time alone and lost such an edit on Windows. The coarse step is
+/// simulated by putting the old modified time back.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn a_same_size_edit_in_the_same_timestamp_step_is_still_noticed() {
+    let dir = std::env::temp_dir().join(format!("wordcraft-engine-racy-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("notes.md");
+    std::fs::write(&path, "Agent wins\n").unwrap();
+    let rewrite_in_the_same_step = |text: &str| {
+        let before = std::fs::metadata(&path).unwrap().modified().unwrap();
+        std::fs::write(&path, text).unwrap();
+        std::fs::File::options().write(true).open(&path).unwrap().set_modified(before).unwrap();
+        assert_eq!(std::fs::metadata(&path).unwrap().modified().unwrap(), before, "the time is back");
+    };
+
+    let mut s = s();
+    run(&mut s, "file.open", json!({"path": path.to_string_lossy()}));
+    assert!(!s.disk_changed());
+    rewrite_in_the_same_step("Agent last\n");
+    assert_eq!(std::fs::metadata(&path).unwrap().len(), "Agent wins\n".len() as u64, "same size");
+    assert!(s.disk_changed(), "same size and time, different bytes");
+    assert!(!s.dirty);
+    // AutoSave's save refuses to write over it...
+    run(&mut s, "text.insert", json!({"text": "Mine"}));
+    assert!(s.run("file.save", &json!({"ifUnchanged": true})).is_err());
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "Agent last\n");
+    // ...and reloading catches up with it.
+    run(&mut s, "file.reload", json!({"force": true}));
+    assert!(!s.disk_changed());
+
+    // A file that is rewritten with the same bytes within the step is not a change.
+    rewrite_in_the_same_step("Agent last\n");
+    assert!(!s.disk_changed());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// A save that fails to write (no permission, disk full, a bad path) leaves the document's own
 /// save stamps untouched: `stamp_save` runs before the fallible write, so a prior version of this
 /// left `modified`/`created`/`last_modified_by`/`revision`/`zoom` changed for a save that never

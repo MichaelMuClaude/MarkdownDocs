@@ -29,5 +29,8 @@ jobs:
     # Intentionally tracked at @main (not SHA-pinned) so org-wide CI improvements, security fixes, and build optimizations propagate without PR churn across all craftapp repos.
     uses: storytold/craft-common-actions/.github/workflows/windows-arm64.yml@main
     with:
-      app-name: wordcraft
-      app-dir: WordCraft
+      # This fork's own names: the MSI installs markdowndocs.exe and markdowndocs-cli.exe into
+      # Program Files\MarkdownDocs (packaging/windows/wordcraft.wxs). The shared workflow only uses
+      # these to name the artifact and to find what the MSI installed.
+      app-name: markdowndocs
+      app-dir: MarkdownDocs

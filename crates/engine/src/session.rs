@@ -367,7 +367,16 @@ pub struct DiskStamp {
     len: u64,
     modified: Option<std::time::SystemTime>,
     hash: u64,
+    /// When the stamp was taken (or the file last checked against it): see [`DiskStamp::racy`].
+    taken: std::time::SystemTime,
 }
+
+/// A file's modified time only tells the file changed if the clock that wrote it ticked between
+/// two writes, and file systems stamp in coarse steps (about 16 ms on NTFS, 2 s on FAT). A write
+/// within a step of the stamp, of the same size, leaves size and time as they were (git's "racy"
+/// entries). So a modified time this close to the moment it was looked at proves nothing, and
+/// the bytes are compared instead.
+const RACY_MARGIN: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// A hash of a file's bytes: equal bytes, equal hash.
 fn bytes_hash(bytes: &[u8]) -> u64 {
@@ -386,7 +395,13 @@ impl DiskStamp {
         Some(Self::of_bytes(path, &bytes, modified))
     }
     fn of_bytes(path: &std::path::Path, bytes: &[u8], modified: Option<std::time::SystemTime>) -> DiskStamp {
-        DiskStamp { path: path.to_path_buf(), len: bytes.len() as u64, modified, hash: bytes_hash(bytes) }
+        DiskStamp { path: path.to_path_buf(), len: bytes.len() as u64, modified, hash: bytes_hash(bytes), taken: std::time::SystemTime::now() }
+    }
+
+    /// Whether the file's unchanged size and modified time can't be trusted yet: the time is
+    /// unknown, in the future, or within [`RACY_MARGIN`] of when the stamp was taken.
+    fn racy(&self) -> bool {
+        self.modified.is_none_or(|m| self.taken.duration_since(m).is_ok_and(|age| age < RACY_MARGIN) || m > self.taken)
     }
 }
 
@@ -848,12 +863,15 @@ impl Session {
         let Some(stamp) = self.disk.as_mut().filter(|d| d.path == path) else { return false };
         let name = path.to_string_lossy();
         let Some((len, modified)) = crate::io::file_meta(&name) else { return false };
-        if len == stamp.len && modified == stamp.modified {
+        if len == stamp.len && modified == stamp.modified && !stamp.racy() {
             return false;
         }
         let Ok(bytes) = crate::io::read_file(&name) else { return false };
         if bytes.len() as u64 == stamp.len && bytes_hash(&bytes) == stamp.hash {
+            // The same bytes: remember the time, and that it was checked now, so a file that
+            // stays as it is stops being read once its time is safely in the past.
             stamp.modified = modified;
+            stamp.taken = std::time::SystemTime::now();
             return false;
         }
         true

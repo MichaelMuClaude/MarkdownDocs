@@ -5,7 +5,7 @@
 .DESCRIPTION
   Produces, in $env:DIST (default: dist/release):
     markdowndocs-<version>-windows-<arch>.msi         per-machine installer (WiX v5); installs markdowndocs.exe
-    markdowndocs-<version>-windows-<arch>-portable.zip   wordcraft.exe + wordcraft-cli.exe
+    markdowndocs-<version>-windows-<arch>-portable.zip   markdowndocs.exe + markdowndocs-cli.exe
 
   The binaries link the C runtime statically (+crt-static), so neither the MSI nor the portable
   zip needs the Visual C++ redistributable. Signing is delegated to sign.ps1 (skipped with a
@@ -140,7 +140,9 @@ Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Ms
 $Portable = Join-Path $TargetDir "windows-package\markdowndocs-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
-Copy-Item (Join-Path $Stage '*.exe') $Portable
+# Under this fork's own names, as the MSI installs them (the build's are wordcraft*.exe).
+Copy-Item (Join-Path $Stage 'wordcraft.exe') (Join-Path $Portable 'markdowndocs.exe')
+Copy-Item (Join-Path $Stage 'wordcraft-cli.exe') (Join-Path $Portable 'markdowndocs-cli.exe')
 foreach ($f in 'README.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE') {
   $p = Join-Path $Root $f
   if (Test-Path $p) { Copy-Item $p $Portable }

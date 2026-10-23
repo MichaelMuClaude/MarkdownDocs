@@ -151,7 +151,7 @@
       </Component>
 
       <Component Id="WordcraftCli">
-        <File Id="WordcraftCliExe" Source="$(var.BinDir)\wordcraft-cli.exe" KeyPath="yes" />
+        <File Id="WordcraftCliExe" Source="$(var.BinDir)\wordcraft-cli.exe" Name="markdowndocs-cli.exe" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
