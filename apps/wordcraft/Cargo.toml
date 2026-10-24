@@ -82,4 +82,4 @@ pollster = "0.4"
 # in the build through egui-winit, with the same features.
 arboard = { workspace = true, features = ["image-data"] }
 # The control server's random key.
-getrandom = "0.3"
+getrandom = "0.4"
