@@ -10,7 +10,7 @@ workspace = true
 
 [dependencies]
 craft-ui = { git = "https://github.com/storytold/craft-libs", rev = "d27646a5f7c8b4fc85d9dd3213b8c88b58e0088d" }
-wordcraft-geom = { workspace = true }
+wordcraft-geom = { workspace = true, features = ["image"] }
 wordcraft-doc = { workspace = true }
 unicode-bidi = { workspace = true }
 wordcraft-fonts = { workspace = true }
@@ -33,6 +33,10 @@ sys-locale = { version = "0.3", features = ["js"] }
 # bus; pinned to one version so nothing is built twice.
 [target.'cfg(target_os = "linux")'.dependencies]
 zbus = "=5.19.0"
+
+# Comment times in the user's own time zone (`local_time.rs`); the web app asks the browser.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # The browser clock (`SystemTime::now()`/`Instant::now()` panic on wasm32).
