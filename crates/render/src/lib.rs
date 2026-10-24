@@ -231,17 +231,15 @@ fn premul_pixmap(w: u32, h: u32, rgba: &[u8]) -> Option<Pixmap> {
     if rgba.len() != (w as usize * h as usize).saturating_mul(4) {
         return None;
     }
-    let data: Vec<vello_cpu::color::PremulRgba8> = rgba
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .map(|p| {
-            let a = p[3] as u16;
-            let m = |c: u8| ((c as u16 * a + 127) / 255) as u8;
-            vello_cpu::color::PremulRgba8 { r: m(p[0]), g: m(p[1]), b: m(p[2]), a: p[3] }
-        })
-        .collect();
-    Some(Pixmap::from_parts(data, w as u16, h as u16))
+    // Filled in place: `Pixmap::from_parts` takes bytes and panics unless their capacity is a
+    // multiple of four, and a pixmap made by `new` can't be mis-sized.
+    let mut pixmap = Pixmap::new(w as u16, h as u16);
+    for (dst, p) in pixmap.data_mut().iter_mut().zip(rgba.as_chunks::<4>().0) {
+        let a = p[3] as u16;
+        let m = |c: u8| ((c as u16 * a + 127) / 255) as u8;
+        *dst = vello_cpu::color::PremulRgba8 { r: m(p[0]), g: m(p[1]), b: m(p[2]), a: p[3] };
+    }
+    Some(pixmap)
 }
 
 /// Pixel size of an encoded image.
