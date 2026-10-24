@@ -24,6 +24,7 @@
 //! - [`tc`] / [`trc`]: worded for a context (`preview`), for text that must fit a tight spot.
 //! - [`location`]: a ribbon location such as `Home › Font`, segment by segment.
 //! - [`fmt`]: fill `{name}` placeholders after a lookup; translators may reorder them.
+//! - [`fmt_plain`]: [`fmt`] without bidi isolate marks, for text that goes into the document.
 
 mod catalog;
 
@@ -486,6 +487,12 @@ pub fn fmt(template: &str, args: &[(&str, &str)]) -> String {
     }
     out.push_str(rest);
     out
+}
+
+/// [`fmt`] for text that goes into the document. This registry never adds bidi isolate marks, so
+/// the two are the same (upstream's craft-i18n does add them, and needs the distinction).
+pub fn fmt_plain(template: &str, args: &[(&str, &str)]) -> String {
+    fmt(template, args)
 }
 
 /// A test language whose catalog is `source` (catalog format), so tests of lookup code don't
