@@ -216,7 +216,12 @@ impl Package {
             if f.is_dir() {
                 continue;
             }
-            let name = f.name().trim_start_matches('/').to_string();
+            // A name zip can't decode is kept as its bytes read leniently, as zip 3 gave it: the part
+            // stays, and a name that is no valid OPC part name is dealt with downstream.
+            let name = match f.name() {
+                Ok(n) => n.trim_start_matches('/').to_string(),
+                Err(_) => String::from_utf8_lossy(f.name_raw()).trim_start_matches('/').to_string(),
+            };
             if f.size() > max_part {
                 return Err(DocxError::Limit(format!("part {name} declares {} bytes", f.size())));
             }
