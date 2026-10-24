@@ -127,15 +127,14 @@ fn bgra_pixmap(bgra: &[u8], w: u32, h: u32) -> Option<Pixmap> {
         return None;
     }
     let n = (w as usize).checked_mul(h as usize)?.checked_mul(4)?;
-    let data: Vec<vello_cpu::color::PremulRgba8> = bgra
-        .get(..n)?
-        .as_chunks::<4>()
-        .0
-        .iter()
+    // Filled in place (see `premul_pixmap`): no byte vector whose capacity could make
+    // `Pixmap::from_parts` panic.
+    let mut pixmap = Pixmap::new(w as u16, h as u16);
+    for (dst, p) in pixmap.data_mut().iter_mut().zip(bgra.get(..n)?.as_chunks::<4>().0) {
         // Premultiplied channels can't exceed alpha; clamp in case the font says otherwise.
-        .map(|p| vello_cpu::color::PremulRgba8 { r: p[2].min(p[3]), g: p[1].min(p[3]), b: p[0].min(p[3]), a: p[3] })
-        .collect();
-    Some(Pixmap::from_parts(data, w as u16, h as u16))
+        *dst = vello_cpu::color::PremulRgba8 { r: p[2].min(p[3]), g: p[1].min(p[3]), b: p[0].min(p[3]), a: p[3] };
+    }
+    Some(pixmap)
 }
 
 /// Draw a colour glyph. `at` maps font units (y down, pen at the origin) to device pixels; `fg` is
