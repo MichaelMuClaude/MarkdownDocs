@@ -12,6 +12,27 @@ updates:
       cargo-dependencies:
         patterns:
           - "*"
+    # Held back: a new minor of these 0.x crates is a breaking release, and each needs a migration
+    # in files upstream WordCraft edits constantly (this fork ports its changes with cherry-pick, so
+    # migrating on its own would conflict on every port). Take them when upstream moves; patch
+    # releases still come. Tried on 2026-10-24:
+    ignore:
+      - dependency-name: "quick-xml"          # 0.42: names are &str, not bytes; 78 errors in docx and formats
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "harfrust"           # 0.14: renames the shaper's core types (crates/fonts)
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "hayro-syntax"       # 0.8: a new Device trait (crates/pdf)
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "hayro-interpret"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "egui"               # 0.37: errors across crates/ui-egui (the whole front end)
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "eframe"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "egui_extras"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "egui_kittest"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     commit-message:
       prefix: "chore(deps)"
 
