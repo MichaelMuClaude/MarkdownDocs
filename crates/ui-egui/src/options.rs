@@ -464,7 +464,7 @@ fn language(app: &mut WordApp, ui: &mut Ui) {
     let text = if crate::ribbon::caret_no_proof(app) {
         tl!("The text at the insertion point is marked Do not check spelling or grammar.").to_string()
     } else if !crate::ribbon::caret_language_proofed(app) {
-        crate::i18n::fmt(tl!("{language}: WordCraft doesn't check spelling or grammar in this language yet."), &[("language", &lang)])
+        crate::i18n::fmt(tl!("{language}: MarkdownDocs doesn't check spelling or grammar in this language yet."), &[("language", &lang)])
     } else {
         let unreadable = crate::ribbon::caret_unreadable_dictionary(app);
         crate::chrome::dictionary_problem(&lang, &unreadable, crate::ribbon::caret_missing_dictionary(app))

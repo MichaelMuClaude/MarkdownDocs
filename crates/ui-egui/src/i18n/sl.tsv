@@ -2190,7 +2190,7 @@
 	Spelling &\nGrammar	Črkovanje\nin slovnica
 	Spelling and grammar are checked in {language}.	Jezik preverjanja črkovanja in slovnice: {language}.
 	The text at the insertion point is marked Do not check spelling or grammar.	Besedilo na mestu vstavljanja je označeno: Ne preverjaj črkovanja ali slovnice.
-	{language}: WordCraft doesn't check spelling or grammar in this language yet.	{language}: WordCraft v tem jeziku še ne preverja črkovanja ali slovnice.
+	{language}: MarkdownDocs doesn't check spelling or grammar in this language yet.	{language}: MarkdownDocs v tem jeziku še ne preverja črkovanja ali slovnice.
 	Spelling Suggestions	Predlogi za črkovanje
 	Split	Razdeli
 	Split Cells	Razdeli celice
@@ -2827,7 +2827,7 @@ preview	Title	Naslov
 	the document is protected	dokument je zaščiten
 	there is nothing to undo	ni ničesar za razveljaviti
 	the Spike is empty	Spike je prazen
-	this chart was made in another program: WordCraft shows it but can't edit it	ta grafikon je bil ustvarjen v drugem programu: WordCraft ga prikaže, vendar ga ne more urejati
-	this SmartArt was made in another program: WordCraft shows it but can't edit it	ta SmartArt je bil ustvarjen v drugem programu: WordCraft ga prikaže, vendar ga ne more urejati
+	this chart was made in another program: MarkdownDocs shows it but can't edit it	ta grafikon je bil ustvarjen v drugem programu: MarkdownDocs ga prikaže, vendar ga ne more urejati
+	this SmartArt was made in another program: MarkdownDocs shows it but can't edit it	ta SmartArt je bil ustvarjen v drugem programu: MarkdownDocs ga prikaže, vendar ga ne more urejati
 	this text box is already linked: break the link first	to besedilno polje je že povezano: najprej prekinite povezavo
 	Open a document first	Najprej odprite dokument

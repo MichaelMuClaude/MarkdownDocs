@@ -202,7 +202,7 @@
 	Spelling	拼字
 	Spelling and grammar are checked in {language}.	拼字和文法檢查語言：{language}
 	The text at the insertion point is marked Do not check spelling or grammar.	插入點處的文字已標示為：不要檢查拼字或文法
-	{language}: WordCraft doesn't check spelling or grammar in this language yet.	{language}：WordCraft 暫不檢查此語言的拼字和文法
+	{language}: MarkdownDocs doesn't check spelling or grammar in this language yet.	{language}：MarkdownDocs 暫不檢查此語言的拼字和文法
 	Tab characters	定位字元
 	Tab stop position:	定位點位置：
 	Default tab stops:	預設定位點間距：
@@ -2433,8 +2433,8 @@
 	the Clipboard pane is empty	剪貼簿窗格是空的
 	the cursor isn't in a table	游標不在表格中
 	there is nothing to undo	沒有可復原的動作
-	this SmartArt was made in another program: WordCraft shows it but can't edit it	此 SmartArt 由其他程式建立: WordCraft 可以顯示但無法編輯
-	this chart was made in another program: WordCraft shows it but can't edit it	此圖表由其他程式建立: WordCraft 可以顯示但無法編輯
+	this SmartArt was made in another program: MarkdownDocs shows it but can't edit it	此 SmartArt 由其他程式建立: MarkdownDocs 可以顯示但無法編輯
+	this chart was made in another program: MarkdownDocs shows it but can't edit it	此圖表由其他程式建立: MarkdownDocs 可以顯示但無法編輯
 	this text box is already linked: break the link first	此文字方塊已連結: 請先中斷連結
 	leave the equation first	請先離開公式
 	the Spike is empty	收集區是空的

@@ -1986,7 +1986,7 @@
 	Spelling	Spelling
 	Spelling and grammar are checked in {language}.	Controletaal voor spelling en grammatica: {language}.
 	The text at the insertion point is marked Do not check spelling or grammar.	De tekst bij de invoegpositie is gemarkeerd: Spelling of grammatica niet controleren.
-	{language}: WordCraft doesn't check spelling or grammar in this language yet.	{language}: WordCraft controleert in deze taal nog geen spelling of grammatica.
+	{language}: MarkdownDocs doesn't check spelling or grammar in this language yet.	{language}: MarkdownDocs controleert in deze taal nog geen spelling of grammatica.
 	Stacked Bar	Gestapeld staafdiagram
 	Stacked Column	Gestapeld kolomdiagram
 	Standard	Standaard
@@ -2733,7 +2733,7 @@ preview	Title	Titel
 	the document is protected	het document is beveiligd
 	there is nothing to undo	er is niets om ongedaan te maken
 	the Spike is empty	de verzamelbak is leeg
-	this chart was made in another program: WordCraft shows it but can't edit it	deze grafiek is gemaakt in een ander programma: WordCraft toont hem, maar kan hem niet bewerken
-	this SmartArt was made in another program: WordCraft shows it but can't edit it	deze SmartArt is gemaakt in een ander programma: WordCraft toont hem, maar kan hem niet bewerken
+	this chart was made in another program: MarkdownDocs shows it but can't edit it	deze grafiek is gemaakt in een ander programma: MarkdownDocs toont hem, maar kan hem niet bewerken
+	this SmartArt was made in another program: MarkdownDocs shows it but can't edit it	deze SmartArt is gemaakt in een ander programma: MarkdownDocs toont hem, maar kan hem niet bewerken
 	this text box is already linked: break the link first	dit tekstvak is al gekoppeld: verbreek eerst de koppeling
 	Open a document first	Open eerst een document
