@@ -167,6 +167,16 @@ mod tests {
         assert!(entry.lines().any(|l| l == "Exec=markdowndocs %F"), "files are passed on the command line");
     }
 
+    /// Declaring `text/plain` makes MarkdownDocs a handler for every config, script and log on systems with no default set.
+    #[test]
+    fn the_desktop_entry_does_not_declare_plain_text() {
+        let entry = include_str!("../../../packaging/linux/io.github.michaelmuclaude.markdowndocs.desktop");
+        let declared: Vec<&str> =
+            entry.lines().find_map(|l| l.strip_prefix("MimeType=")).map(|v| v.split(';').filter(|s| !s.is_empty()).collect()).unwrap_or_default();
+        assert!(!declared.is_empty(), "MimeType= line not found");
+        assert!(!declared.contains(&"text/plain"), "text/plain must not be declared");
+    }
+
     #[cfg(unix)]
     #[test]
     fn application_dirs_follow_the_xdg_spec() {
