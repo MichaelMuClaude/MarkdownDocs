@@ -5,7 +5,7 @@
 //! bottom-border paragraph), bullet and ordered lists (nested by indentation), GFM pipe tables,
 //! and inlines: emphasis/strong (the CommonMark delimiter algorithm), `~~strike~~`, code spans,
 //! inline links, autolinks, images (`data:` URIs become pictures, others their alt text),
-//! backslash escapes, entities, `<br>` and `<a id>` anchors.
+//! backslash escapes, entities, HTML comments (`<!-- ... -->`), `<br>` and `<a id>` anchors.
 //!
 //! Export writes the same constructs. A picture read from Markdown keeps its destination and is
 //! written back as the same `![alt](path)`; any other picture (pasted, from a .docx) is embedded
@@ -515,6 +515,7 @@ fn interrupts(l: &str) -> bool {
         || thematic_break(t)
         || fence(t).is_some()
         || t.starts_with('>')
+        || t.starts_with("<!--")
         || list_marker(t).is_some_and(|m| (!m.ordered || m.start == 1) && !is_blank(t.get(m.len..).unwrap_or("")))
 }
 
@@ -524,7 +525,11 @@ fn flush_para(lines: &mut Vec<String>, out: &mut Vec<FBlock>, depth: usize, refs
     }
     let text = join_lines(lines);
     lines.clear();
-    let p = Para { inlines: parse_inlines(&text, &Fmt::default(), depth, refs), ..Default::default() };
+    let inlines = parse_inlines(&text, &Fmt::default(), depth, refs);
+    if inlines.is_empty() {
+        return;
+    }
+    let p = Para { inlines, ..Default::default() };
     out.push(FBlock::Para(p));
 }
 
@@ -692,6 +697,16 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8, refs: &Refs) -> Vec<F
                 code.push(strip_indent(l, ind));
             }
             out.extend(code_block(code, info));
+            continue;
+        }
+        if t.starts_with("<!--") {
+            flush_para(&mut para, &mut out, depth, refs);
+            while let Some(l) = lines.get(i) {
+                i += 1;
+                if l.contains("-->") {
+                    break;
+                }
+            }
             continue;
         }
         if t.starts_with('>') {
@@ -1273,6 +1288,12 @@ fn tokenize(s: &str, base: &Fmt, depth: usize, refs: &Refs) -> Vec<Node> {
                 }
             }
             b'<' => {
+                if let Some(pos) = s.get(i..).and_then(|r| r.strip_prefix("<!--")).and_then(|r| r.find("-->")) {
+                    flush!();
+                    i += 4 + pos + 3;
+                    text_start = i;
+                    continue;
+                }
                 let rest = s.get(i + 1..).unwrap_or("");
                 let end = within(rest, MAX_TAG).find('>');
                 let inner = end.and_then(|e| rest.get(..e)).unwrap_or("");
@@ -2516,5 +2537,14 @@ mod tests {
         let FBlock::Para(p3) = &f.blocks[3] else { panic!() };
         assert_eq!(p3.text(), "one item");
         assert!(p3.list.unwrap().ordered);
+    }
+
+    #[test]
+    fn html_comments_are_ignored_in_blocks_and_inlines() {
+        let md = "<!-- block comment -->\n\nHello <!-- inline comment -->world!\n\n<!--\nmultiline\ncomment\n-->\n\nAfter comment.";
+        let flow = parse(md);
+        assert_eq!(flow.blocks.len(), 2);
+        let texts: Vec<String> = flow.blocks.iter().filter_map(|b| if let FBlock::Para(p) = b { Some(p.text()) } else { None }).collect();
+        assert_eq!(texts, ["Hello world!", "After comment."]);
     }
 }
