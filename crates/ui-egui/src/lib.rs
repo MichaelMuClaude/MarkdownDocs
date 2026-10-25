@@ -7173,15 +7173,15 @@ mod tests {
         assert!(got.iter().all(|(_, _, len)| *len > 0));
     }
 
-    /// A Markdown file goes back as Markdown, which doesn't keep everything: the document stays
-    /// unsaved, as on the desktop.
+    /// A Markdown file goes back as Markdown, which MarkdownDocs treats as a full-fidelity format:
+    /// the document is saved, as on the desktop.
     #[test]
-    fn host_save_of_markdown_keeps_its_format_and_stays_unsaved() {
+    fn host_save_of_markdown_keeps_its_format_and_is_saved() {
         let (mut a, got) = host_app(false);
         host_open(&mut a, "notes.md");
         a.execute("file.save", json!({})).unwrap();
         assert_eq!(got.borrow().first().map(|(n, s, _)| (n.as_str(), *s)), Some(("notes.md", false)));
-        assert!(a.session.dirty);
+        assert!(!a.session.dirty);
         assert_eq!(a.session.path.as_deref(), Some(std::path::Path::new("notes.md")));
     }
 
@@ -7221,8 +7221,9 @@ mod tests {
         assert!(a.session.dirty, "an export is a copy");
     }
 
-    /// Save As in a format that doesn't keep everything (File › Export to PDF or Markdown) is a
-    /// copy: the host page isn't told the document is now that file.
+    /// Save As in a format that doesn't keep everything (File › Export to PDF) is a copy: the host
+    /// page isn't told the document is now that file. Markdown keeps everything here, so it is a
+    /// real Save As.
     #[test]
     fn host_save_as_a_copy_format_is_not_save_as() {
         let (mut a, got) = host_app(false);
@@ -7230,8 +7231,8 @@ mod tests {
         a.execute("file.saveAs", json!({"path": "report.pdf"})).unwrap();
         a.execute("file.saveAs", json!({"path": "report.md"})).unwrap();
         let calls: Vec<(String, bool)> = got.borrow().iter().map(|(n, s, _)| (n.clone(), *s)).collect();
-        assert_eq!(calls, [("report.pdf".to_string(), false), ("report.md".to_string(), false)]);
-        assert_eq!(a.session.path.as_deref(), Some(std::path::Path::new("report.docx")));
+        assert_eq!(calls, [("report.pdf".to_string(), false), ("report.md".to_string(), true)]);
+        assert_eq!(a.session.path.as_deref(), Some(std::path::Path::new("report.md")));
     }
 
     /// The page not getting the file is a failed save: the document keeps its changes.
