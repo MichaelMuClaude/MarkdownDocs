@@ -490,7 +490,17 @@ fn shrink(pm: &Pixmap, max_pixels: u64) -> Option<Pixmap> {
             out.push(vello_cpu::color::PremulRgba8 { r, g, b, a });
         }
     }
-    Some(Pixmap::from_parts(out, nw as u16, nh as u16))
+    Some(pixmap_of(&out, nw as u16, nh as u16))
+}
+
+/// A pixmap holding `px`, filled in place: `Pixmap::from_parts` takes bytes and panics unless their
+/// capacity is a multiple of four.
+fn pixmap_of(px: &[vello_cpu::color::PremulRgba8], w: u16, h: u16) -> Pixmap {
+    let mut pixmap = Pixmap::new(w, h);
+    for (dst, p) in pixmap.data_mut().iter_mut().zip(px) {
+        *dst = *p;
+    }
+    pixmap
 }
 
 /// Options for a page raster.
@@ -1783,7 +1793,7 @@ mod tests {
     fn pictures_too_large_for_the_cache_are_kept_smaller() {
         let px = vello_cpu::color::PremulRgba8 { r: 40, g: 80, b: 120, a: 200 };
         // 6000 × 6000 is 144 MB of RGBA, past the 128 MB cache.
-        let big = Pixmap::from_parts(vec![px; 6000 * 6000], 6000, 6000);
+        let big = pixmap_of(&vec![px; 6000 * 6000], 6000, 6000);
         let small = cacheable(big);
         let bytes = small.width() as usize * small.height() as usize * 4;
         assert!(bytes <= CACHE_BYTES / 2, "{} x {}", small.width(), small.height());
@@ -1795,13 +1805,13 @@ mod tests {
         cache.insert("big", &src, Some(Arc::new(small)), bytes);
         assert!(cache.get("big", &src).is_some(), "cached");
         // Pictures the cache holds as they are keep their size.
-        assert_eq!(cacheable(Pixmap::from_parts(vec![px; 100 * 50], 100, 50)).width(), 100);
+        assert_eq!(cacheable(pixmap_of(&vec![px; 100 * 50], 100, 50)).width(), 100);
     }
 
     #[test]
     fn shrinking_averages_premultiplied_pixels() {
         let p = |v: u8| vello_cpu::color::PremulRgba8 { r: v, g: v, b: v, a: 255 };
-        let pm = Pixmap::from_parts(vec![p(0), p(100), p(200), p(40)], 4, 1);
+        let pm = pixmap_of(&[p(0), p(100), p(200), p(40)], 4, 1);
         let out = shrink(&pm, 2).unwrap();
         assert_eq!((out.width(), out.height()), (2, 1));
         assert_eq!(out.data().iter().map(|q| q.r).collect::<Vec<_>>(), [50, 120]);
