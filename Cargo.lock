@@ -5270,6 +5270,7 @@ dependencies = [
  "getrandom 0.4.3",
  "image",
  "js-sys",
+ "libc",
  "log",
  "regex",
  "regex-automata",
