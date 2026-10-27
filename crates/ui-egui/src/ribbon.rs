@@ -1309,7 +1309,8 @@ fn home(app: &mut WordApp, ui: &mut Ui) {
                     mi(ui, app, "Remove Space After Paragraph", "para.removeSpaceAfter", json!({}));
                     mi(ui, app, "Line Spacing Options…", "para.dialog", json!({}));
                 });
-                split(ui, app, "shading", "Shading", "para.shading", json!({"color": app.canvas.last_shading.clone()}), false, None, |ui, app| {
+                let sw = wordcraft_doc::Rgb::parse(&app.canvas.last_shading).map(crate::theme::c32);
+                split(ui, app, "shadingNoBar", "Shading", "para.shading", json!({"color": app.canvas.last_shading.clone()}), false, sw, |ui, app| {
                     mi(ui, app, "No Color", "para.shading", json!({"color": null}));
                     let theme = app.session.doc.settings.theme_colors.clone();
                     crate::colors::menu(ui, app, &theme, Target::cmd("para.shading").remember(Remember::Shading));
@@ -3153,7 +3154,8 @@ fn table_design(app: &mut WordApp, ui: &mut Ui) {
                     ui.close();
                 }
             });
-            split(ui, app, "shading", "Shading", "table.shading", json!({"color": app.canvas.last_shading.clone()}), false, None, |ui, app| {
+            let sw = wordcraft_doc::Rgb::parse(&app.canvas.last_shading).map(crate::theme::c32);
+            split(ui, app, "shadingNoBar", "Shading", "table.shading", json!({"color": app.canvas.last_shading.clone()}), false, sw, |ui, app| {
                 mi(ui, app, "No Color", "table.shading", json!({"color": null}));
                 let theme = app.session.doc.settings.theme_colors.clone();
                 crate::colors::menu(ui, app, &theme, Target::cmd("table.shading").remember(Remember::Shading));
@@ -3377,6 +3379,35 @@ mod tests {
         app.session.path = Some("notes.md".into());
         let drawn = frame(&ctx, &mut app);
         assert!(drawn.iter().any(|t| t == "File"), "{drawn:?}");
+    }
+
+    /// #4412: the Shading button's bar is the colour a click applies (the last one picked), as
+    /// the Font Color and Text Highlight Color buttons' bars are, not always the icon's yellow.
+    #[test]
+    fn the_shading_button_shows_the_last_picked_colour() {
+        let mut a = WordApp::new(Session::new(wordcraft_doc::Document::from_text("Text")), crate::Services::default());
+        a.run("view.commentsPane", json!({"value": false})).unwrap();
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            a,
+        );
+        let ribbon_bars = |h: &egui_kittest::Harness<'_, WordApp>, hex: &str| {
+            let want = crate::theme::c32(wordcraft_doc::Rgb::parse(hex).unwrap());
+            h.output()
+                .shapes
+                .iter()
+                .any(|s| matches!(&s.shape, egui::Shape::Rect(r) if r.fill == want && r.rect.height() < 4.0 && r.rect.width() > 10.0))
+        };
+        h.run_steps(6);
+        assert!(ribbon_bars(&h, "FFF2CC"), "the default colour");
+        h.state_mut().canvas.last_shading = "00B0F0".into();
+        h.run_steps(3);
+        assert!(ribbon_bars(&h, "00B0F0"), "the picked colour");
+        assert!(!ribbon_bars(&h, "FFF2CC"), "and not the old one");
     }
 
     /// Two clicks arm and disarm the painter; the double-click handling then leaves it sticky (#2785).
