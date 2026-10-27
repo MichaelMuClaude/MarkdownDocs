@@ -534,6 +534,21 @@ pub fn controls_public(tab: &str) -> Vec<ControlInfo> {
         .collect()
 }
 
+/// Compact ribbon buttons (the 24×22 icon buttons) are at most this tall.
+const COMPACT_H: f32 = 26.0;
+
+/// Where a badge `width` wide goes for a control at `rect`. A big control has room for the badge
+/// in its top-left corner. A compact button is nearly all icon (17×17 in 24×22), so there the
+/// badge is smaller and hangs out over the button's corner, in the padding and the gap to the
+/// neighbours, instead of sitting on the glyph (#4497).
+pub fn badge_rect(rect: Rect, width: f32) -> Rect {
+    if rect.height() <= COMPACT_H {
+        Rect::from_min_size(rect.min + Vec2::new(-4.0, -4.0), Vec2::new((width + 3.0).max(12.0), 12.0))
+    } else {
+        Rect::from_min_size(rect.min + Vec2::new(2.0, 1.0), Vec2::new((width + 4.0).max(15.0), 15.0))
+    }
+}
+
 /// A keytip badge: letters or toolbar numbers, high contrast in both themes.
 pub fn badge(ui: &Ui, rect: Rect, letter: &str) {
     let count = letter.chars().count();
@@ -541,9 +556,16 @@ pub fn badge(ui: &Ui, rect: Rect, letter: &str) {
         return;
     }
     let t = Tokens::get(ui.ctx());
-    let font = semibold(if count > 3 { 8.5 } else { 10.0 });
+    let compact = rect.height() <= COMPACT_H;
+    let font = semibold(if count > 3 || (compact && count > 1) {
+        8.5
+    } else if compact {
+        9.0
+    } else {
+        10.0
+    });
     let width = ui.ctx().fonts_mut(|f| f.layout_no_wrap(letter.to_string(), font.clone(), t.on_accent).size().x);
-    let r = Rect::from_min_size(rect.min + Vec2::new(2.0, 1.0), Vec2::new((width + 4.0).max(15.0), 15.0));
+    let r = badge_rect(rect, width);
     let p = ui.painter();
     p.rect_filled(r, CornerRadius::same(3), t.accent);
     p.rect_stroke(r, CornerRadius::same(3), Stroke::new(1.0, t.menu), egui::StrokeKind::Inside);
@@ -906,6 +928,25 @@ mod tests {
 
     fn input_frame(ctx: &egui::Context, app: &mut WordApp, events: Vec<egui::Event>) {
         ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| logic(app, ui.ctx())).drop_without_applying_deltas();
+    }
+
+    /// #4497: a compact button is nearly all icon (`widgets::small`: 17×17 in 24×22), and its
+    /// badge sat on 63% of the glyph. It now hangs out over the corner and covers a sliver, for a
+    /// one-letter and a two-letter badge alike; a big control keeps its corner badge.
+    #[test]
+    fn a_compact_buttons_badge_leaves_its_icon_visible() {
+        let button = Rect::from_min_size(egui::pos2(100.0, 60.0), Vec2::new(24.0, 22.0));
+        let icon = Rect::from_center_size(egui::pos2(button.min.x + 12.0, button.center().y), Vec2::splat(17.0));
+        for (width, most) in [(7.0, 0.10), (14.0, 0.20)] {
+            let r = badge_rect(button, width);
+            let covered = r.intersect(icon);
+            let share = covered.width().max(0.0) * covered.height().max(0.0) / (icon.width() * icon.height());
+            assert!(share <= most, "a badge {width} wide covers {share:.2} of the icon (at most {most})");
+            assert!(r.min.x >= button.min.x - 4.0 && r.min.y >= button.min.y - 4.0, "it hangs out of the corner by no more than 4 px");
+            assert!(r.width() >= 12.0 && r.height() >= 12.0, "and stays big enough to read");
+        }
+        let big = Rect::from_min_size(egui::pos2(100.0, 60.0), Vec2::new(44.0, 66.0));
+        assert_eq!(badge_rect(big, 7.0), Rect::from_min_size(egui::pos2(102.0, 61.0), Vec2::new(15.0, 15.0)));
     }
 
     #[test]
