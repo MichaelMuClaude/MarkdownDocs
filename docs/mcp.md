@@ -155,6 +155,26 @@ Resources: `wordcraft://document` (inspect) and `wordcraft://commands`.
 
 The acceptance test `crates/mcp/src/tests.rs` writes a formatted document using MCP only.
 
+## Reading and writing by heading, in Markdown
+
+An agent that works on a document's text can address it by its headings instead of counting
+paragraphs. A section is a heading and everything under it, up to the next heading of the same or a
+higher level. All three go through `execute`:
+
+- `document.sections` lists the headings: `{block, level, title, end}` each, where `block..end` are
+  the body blocks the section covers.
+- `document.markdown` returns the whole document, or one section (`"section": "Notes"` by heading
+  text, case-insensitive, or `"section": 5` by block index), as Markdown. Footnotes, task lists,
+  tables, code and `$…$` / `$$…$$` equations are kept.
+- `document.setMarkdown` replaces the section (or, with no `section`, the document) with Markdown,
+  as one undo step. `"mode": "append"` adds at the end of the section (or document), `"before"` at
+  its start. Pictures, footnotes, lists and styles in the new text become the document's own, so
+  inserting a second `[^1]` makes a second note. A heading name that two headings share is refused
+  with their block indexes; pass the index.
+
+Section breaks, bookmarks and comments inside a replaced section go with it, and tracked changes
+are not recorded for this edit (use `edit.*` commands for that).
+
 ## Character and paragraph properties
 
 `format.set {"props": CharProps}`, `para.set {"props": ParaProps}`,

@@ -942,6 +942,120 @@ impl Document {
         Some(id)
     }
 
+    /// Bring what `blocks`, read from another document `from` (a Markdown or HTML import, say),
+    /// refer to into this one, so the blocks mean the same thing wherever they are put: each
+    /// picture's bytes go into this document's media, each footnote or endnote gets a story of its
+    /// own here, each list a numbering definition of its own, and a style this document lacks is
+    /// copied over. A reference `from` doesn't hold is left as it is.
+    pub fn adopt_foreign(&mut self, blocks: &mut [Block], from: &Document) {
+        let mut lists = std::collections::HashMap::new();
+        for b in blocks.iter_mut() {
+            self.adopt_table_styles(b, from, 0);
+            each_para_mut(b, 0, &mut |p| {
+                let mut changed = self.adopt_para(p, from, &mut lists);
+                for o in p.objects.iter_mut() {
+                    let InlineObject::NoteRef { id, .. } = o else { continue };
+                    let Some(part) = from.parts.get(id).filter(|p| matches!(p.kind, PartKind::Footnote | PartKind::Endnote)) else { continue };
+                    // A note holds text and pictures, never another note.
+                    let mut note: Vec<Block> = part.blocks.iter().map(|b| (**b).clone()).collect();
+                    for nb in note.iter_mut() {
+                        self.adopt_table_styles(nb, from, 0);
+                        each_para_mut(nb, 0, &mut |q| {
+                            if self.adopt_para(q, from, &mut lists) {
+                                q.touch();
+                            }
+                        });
+                    }
+                    let blocks: Blocks = note.into_iter().map(Arc::new).collect();
+                    if let Ok(new) = self.try_add_part(part.kind, blocks) {
+                        *id = new;
+                        changed = true;
+                    }
+                }
+                if changed {
+                    p.touch();
+                }
+            });
+        }
+    }
+
+    /// The pictures, list and styles of `p` (read from `from`) made this document's own; whether
+    /// anything changed. `lists` remembers the numbering each of `from`'s lists became.
+    fn adopt_para(&mut self, p: &mut Paragraph, from: &Document, lists: &mut std::collections::HashMap<u32, u32>) -> bool {
+        let mut changed = false;
+        for o in p.objects.iter_mut() {
+            if let InlineObject::Image { media, .. } = o
+                && let Some(bytes) = from.media.get(media.as_str())
+            {
+                let ext = media.rsplit_once('.').map_or("png", |(_, e)| e);
+                *media = self.add_media(bytes.to_vec(), ext);
+                changed = true;
+            }
+        }
+        if let Some(r) = p.props.numbering.as_mut()
+            && r.num != 0
+            && let Some(new) = self.adopt_list(from, r.num, lists)
+        {
+            r.num = new;
+            changed = true;
+        }
+        if let Some(id) = &p.props.style {
+            self.adopt_style(id, from, 0);
+        }
+        for r in &p.runs {
+            if let Some(id) = &r.props.style {
+                self.adopt_style(id, from, 0);
+            }
+        }
+        changed
+    }
+
+    /// A numbering definition here like `from`'s list `num`, made once however many paragraphs
+    /// are in it.
+    fn adopt_list(&mut self, from: &Document, num: u32, lists: &mut std::collections::HashMap<u32, u32>) -> Option<u32> {
+        if let Some(n) = lists.get(&num) {
+            return Some(*n);
+        }
+        let src = from.numbering.num(num)?;
+        let abs = from.numbering.abstract_of(num)?;
+        let new = self.numbering.try_add_levels(abs.name.clone(), abs.levels.clone()).ok()?;
+        if let Some(n) = self.numbering.nums.iter_mut().find(|n| n.id == new) {
+            n.start_overrides = src.start_overrides.clone();
+            n.level_overrides = src.level_overrides.clone();
+        }
+        lists.insert(num, new);
+        Some(new)
+    }
+
+    /// Copy style `id` (and the styles it is based on) from `from`, unless this document has it.
+    fn adopt_style(&mut self, id: &str, from: &Document, depth: usize) {
+        if depth > 8 || self.styles.get(id).is_some() {
+            return;
+        }
+        if let Some(st) = from.styles.get(id) {
+            let based = st.based_on.clone();
+            self.styles.upsert(st.clone());
+            if let Some(b) = based {
+                self.adopt_style(&b, from, depth + 1);
+            }
+        }
+    }
+
+    /// [`Document::adopt_style`] for the table styles used in `b`, inside tables too.
+    fn adopt_table_styles(&mut self, b: &Block, from: &Document, depth: usize) {
+        let Block::Table(t) = b else { return };
+        if let Some(id) = &t.props.style {
+            self.adopt_style(id, from, 0);
+        }
+        if depth < MAX_TABLE_DEPTH {
+            for cell in t.rows.iter().flat_map(|r| r.cells.iter()) {
+                for cb in &cell.blocks {
+                    self.adopt_table_styles(cb, from, depth + 1);
+                }
+            }
+        }
+    }
+
     /// Insert a fragment at `pos`; returns the position after the pasted content.
     pub fn insert_fragment(&mut self, pos: &Pos, frag: &Fragment) -> Result<Pos> {
         // Tables that would nest deeper than the limit here become their paragraphs (#1596).
