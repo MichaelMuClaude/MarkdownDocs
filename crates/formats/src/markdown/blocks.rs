@@ -487,6 +487,34 @@ fn delimiter_row(l: &str) -> Option<Vec<Option<Align>>> {
     Some(out)
 }
 
+/// Does this line open a `$$` display-math block, that is, start with `$$` without closing it on
+/// the same line?
+fn math_block_start(t: &str) -> bool {
+    t.strip_prefix("$$").is_some_and(|rest| !rest.contains("$$"))
+}
+
+/// The display equation of a `$$` block that opens at `lines[at]`: its TeX and the index of the
+/// line after the block, or `None` when nothing closes it (or text follows the closing `$$`).
+fn math_block(lines: &[String], at: usize) -> Option<(String, usize)> {
+    let first = lines.get(at)?.trim_start_matches([' ', '\t']).strip_prefix("$$")?;
+    let mut tex = vec![first.to_string()];
+    for (k, l) in lines.iter().enumerate().skip(at + 1) {
+        if let Some(end) = l.find("$$") {
+            if !l.get(end + 2..)?.trim().is_empty() {
+                return None;
+            }
+            tex.push(l.get(..end)?.to_string());
+            return Some((tex.join("\n"), k + 1));
+        }
+        if is_blank(l) {
+            // A display block is one paragraph's worth of TeX, as in Pandoc.
+            return None;
+        }
+        tex.push(l.clone());
+    }
+    None
+}
+
 /// Does this line start a block that interrupts a paragraph?
 fn interrupts(l: &str) -> bool {
     if indent(l) >= 4 {
@@ -496,6 +524,7 @@ fn interrupts(l: &str) -> bool {
     atx_heading(t).is_some()
         || thematic_break(t)
         || fence(t).is_some()
+        || math_block_start(t)
         || t.starts_with('>')
         || t.starts_with("<!--")
         || list_marker(t).is_some_and(|m| (!m.ordered || m.start == 1) && !is_blank(t.get(m.len..).unwrap_or("")))
@@ -679,6 +708,15 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8, refs: &Refs) -> Vec<F
                 code.push(strip_indent(l, ind));
             }
             out.extend(code_block(code, info));
+            continue;
+        }
+        if math_block_start(t)
+            && let Some((tex, next)) = math_block(lines, i)
+            && let Some(eq) = super::inlines::math_equation(&tex, true)
+        {
+            flush_para(&mut para, &mut out, depth, refs);
+            out.push(FBlock::Para(Para { inlines: vec![eq], ..Default::default() }));
+            i = next;
             continue;
         }
         if t.starts_with("<!--") {

@@ -212,6 +212,64 @@ fn tag_attr(tag: &str, name: &str) -> Option<String> {
     None
 }
 
+/// Where the math delimiters of a paragraph can close: the unescaped `$` that may end a
+/// `$…$` span (not after whitespace, not before a digit, so "$5 and $10" is money) and the
+/// unescaped `$$` that end a `$$…$$` span. Found once, so a `$` that never closes costs a
+/// lookup, not a rescan of the rest of the text.
+struct MathCloser {
+    single: Vec<usize>,
+    double: Vec<usize>,
+}
+
+impl MathCloser {
+    fn new(s: &str) -> Self {
+        let b = s.as_bytes();
+        let (mut single, mut double) = (Vec::new(), Vec::new());
+        let mut i = 0;
+        while let Some(&c) = b.get(i) {
+            match c {
+                b'\\' => i += 2,
+                b'$' if b.get(i + 1) == Some(&b'$') => {
+                    double.push(i);
+                    i += 2;
+                }
+                b'$' => {
+                    let before = s.get(..i).and_then(|r| r.chars().next_back());
+                    if before.is_some_and(|c| !c.is_whitespace()) && !b.get(i + 1).is_some_and(u8::is_ascii_digit) {
+                        single.push(i);
+                    }
+                    i += 1;
+                }
+                _ => i += 1,
+            }
+        }
+        MathCloser { single, double }
+    }
+
+    /// The math span starting at the `$` at `i`: its TeX, whether it is display math (`$$…$$`),
+    /// and the offset after it.
+    fn span<'a>(&self, s: &'a str, i: usize) -> Option<(&'a str, bool, usize)> {
+        if s.as_bytes().get(i + 1) == Some(&b'$') {
+            let end = *self.double.get(self.double.partition_point(|&p| p < i + 2))?;
+            let tex = s.get(i + 2..end)?.trim();
+            return (!tex.is_empty()).then_some((tex, true, end + 2));
+        }
+        // An opening `$` is followed by something that is not whitespace.
+        if s.get(i + 1..)?.chars().next().is_none_or(char::is_whitespace) {
+            return None;
+        }
+        let end = *self.single.get(self.single.partition_point(|&p| p <= i))?;
+        let tex = s.get(i + 1..end)?;
+        (!tex.is_empty()).then_some((tex, false, end + 1))
+    }
+}
+
+/// The equation a `$…$` or `$$…$$` span holds, or `None` when its TeX reads as nothing.
+pub(super) fn math_equation(tex: &str, display: bool) -> Option<Inline> {
+    let linear = crate::latex::latex_to_linear(tex);
+    (!linear.is_empty()).then_some(Inline::Equation { linear, display })
+}
+
 fn tokenize(s: &str, base: &Fmt, depth: usize, refs: &Refs) -> Vec<Node> {
     let mut nodes: Vec<Node> = Vec::new();
     // Bytes the link and image scans below may look ahead in total. Each unmatched `[` or `![(`
@@ -220,6 +278,7 @@ fn tokenize(s: &str, base: &Fmt, depth: usize, refs: &Refs) -> Vec<Node> {
     // earlier scan passed are looked up in `known` instead.
     let mut scan_budget = s.len().saturating_mul(8).saturating_add(8192);
     let ticks = Backticks::new(s);
+    let math = MathCloser::new(s);
     let mut known: HashMap<usize, Option<usize>> = HashMap::new();
     let b = s.as_bytes();
     let mut i = 0usize;
@@ -274,6 +333,14 @@ fn tokenize(s: &str, base: &Fmt, depth: usize, refs: &Refs) -> Vec<Node> {
                         i += n;
                     }
                 }
+                text_start = i;
+            }
+            b'$' if let Some((tex, display, end)) = math.span(s, i)
+                && let Some(eq) = math_equation(tex, display) =>
+            {
+                flush!();
+                nodes.push(Node::Inl(eq));
+                i = end;
                 text_start = i;
             }
             b'*' | b'_' | b'~' => {

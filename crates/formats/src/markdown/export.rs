@@ -100,7 +100,8 @@ fn inlines_md_table(inlines: &[Inline]) -> String {
 fn inlines_md_impl(inlines: &[Inline], in_table: bool) -> String {
     // Split into (text, fmt) pieces with whitespace moved outside emphasis.
     let mut pieces: Vec<(String, Fmt, Option<String>)> = Vec::new();
-    let eq = crate::model::equations_as_text(inlines);
+    // A table cell keeps its equations as text: TeX holds `|`, which would split the cell.
+    let eq = if in_table { crate::model::equations_as_text(inlines) } else { std::borrow::Cow::Borrowed(inlines) };
     // Markdown keeps no ruby: its base text goes through the text path below.
     let inlines = crate::model::ruby_as_text(&eq);
     for i in inlines.iter() {
@@ -149,7 +150,14 @@ fn inlines_md_impl(inlines: &[Inline], in_table: bool) -> String {
                 });
                 pieces.push((String::new(), Fmt::default(), Some(format!("[^{n}]"))));
             }
-            Inline::Equation { .. } => {}
+            Inline::Equation { linear, display } => {
+                let tex = crate::latex::linear_to_latex(linear);
+                let tex = tex.trim();
+                if !tex.is_empty() {
+                    let mark = if *display { "$$" } else { "$" };
+                    pieces.push((String::new(), Fmt::default(), Some(format!("{mark}{tex}{mark}"))));
+                }
+            }
             // Read as its base text by `ruby_as_text` above.
             Inline::Ruby { .. } => {}
         }
@@ -436,7 +444,11 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                                     i += 1;
                                     continue;
                                 }
-                                escape_lines(body)
+                                match lone_display_equation(&p.inlines) {
+                                    // A paragraph that is one display equation is a `$$` block.
+                                    Some(tex) => format!("$$\n{tex}\n$$"),
+                                    None => escape_lines(body),
+                                }
                             }
                         };
                         out.push(line);
@@ -478,4 +490,17 @@ fn link_destination(dest: &str) -> String {
     } else {
         dest.to_string()
     }
+}
+
+/// The TeX of a paragraph that holds a display equation and nothing else.
+fn lone_display_equation(inlines: &[Inline]) -> Option<String> {
+    let mut eq = None;
+    for i in inlines {
+        match i {
+            Inline::Equation { linear, display: true } if eq.is_none() => eq = Some(crate::latex::linear_to_latex(linear)),
+            Inline::Text(t, _) if t.trim().is_empty() => {}
+            _ => return None,
+        }
+    }
+    eq.map(|t| t.trim().to_string()).filter(|t| !t.is_empty() && !t.contains("\n\n"))
 }

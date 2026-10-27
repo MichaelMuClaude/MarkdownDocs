@@ -713,3 +713,80 @@ fn footnotes_round_trip_as_real_notes() {
     let orphan = export(&import("Text.\n\n[^z]: Nobody points here.\n"));
     assert!(orphan.contains("Nobody points here."), "{orphan}");
 }
+
+/// The equations of `doc`'s body, in order: (linear text, display).
+fn equations(doc: &wordcraft_doc::Document) -> Vec<(String, bool)> {
+    doc.body
+        .iter()
+        .filter_map(|b| b.as_para())
+        .flat_map(|p| p.objects.iter())
+        .filter_map(|o| match o {
+            wordcraft_doc::InlineObject::Equation { linear, display, .. } => Some((linear.clone(), *display)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// `$…$` is an inline equation and `$$…$$` a display one, and both are written back as TeX. They
+/// used to be read as text and written with the backslashes doubled (`\\frac`).
+#[test]
+fn dollar_math_round_trips_as_equations() {
+    let md = "Energy $E=mc^2$ and $a_1 + b_1$ here.\n\n$$\n\\frac{a}{b}\n$$\n";
+    let doc = import(md);
+    let eqs = equations(&doc);
+    assert_eq!(eqs.iter().map(|(_, d)| *d).collect::<Vec<_>>(), [false, false, true], "{eqs:?}");
+    assert_eq!(eqs[2].0, "a/b", "a fraction in the linear format: {eqs:?}");
+    let out = export(&doc);
+    assert_eq!(out.trim_end(), "Energy $E=mc^2$ and $a_1 + b_1$ here.\n\n$$\na/b\n$$", "{out}");
+    // Saving the text again changes nothing.
+    assert_eq!(export(&import(&out)), out);
+}
+
+/// A display block may hold lines that would open a list, a heading or a quote on their own, and
+/// may be written on one line or opened and closed on the lines around it.
+#[test]
+fn a_display_block_holds_whatever_its_lines_start_with() {
+    let doc = import("Before.\n$$\nx\n- y\n# z\n> w\n$$\nAfter.\n");
+    let eqs = equations(&doc);
+    assert_eq!(eqs.len(), 1, "{eqs:?}");
+    assert!(eqs[0].1);
+    assert_eq!(doc.plain_text(wordcraft_doc::StoryRef::Body).matches("Before.").count(), 1);
+    let one = equations(&import("$$ x^2 $$\n"));
+    assert_eq!(one, [("x^2".to_string(), true)]);
+    // Never closed: just text, nothing is swallowed.
+    assert!(equations(&import("$$\nx\n\nnext paragraph\n")).is_empty());
+}
+
+/// Money, escaped dollars and a lone `$` stay text, so a document that talks about prices is not
+/// turned into formulas.
+#[test]
+fn dollars_that_are_not_math_stay_text() {
+    for md in ["It costs $5 and $10 today.", "A \\$ sign and another \\$ one.", "Only one $ here.", "$ spaced $ out"] {
+        let doc = import(md);
+        assert!(equations(&doc).is_empty(), "{md:?}: {:?}", equations(&doc));
+        let back = export(&doc);
+        assert_eq!(equations(&import(&back)), vec![], "{md:?} -> {back:?}");
+    }
+    // The closing `$` may not be followed by a digit; a digit inside the delimiters is math.
+    assert_eq!(equations(&import("Pay $x$5 now")), vec![]);
+    assert_eq!(equations(&import("Cash: $5$")).len(), 1);
+    assert_eq!(equations(&import("so $x$.")).len(), 1);
+}
+
+/// Inside code, dollars are code; in a table cell an equation is written as text (TeX holds `|`).
+#[test]
+fn math_is_not_read_in_code_and_not_written_in_cells() {
+    assert!(equations(&import("`$x$` and\n\n```\n$y$\n```\n")).is_empty());
+    let table = export(&import("$z$\n\n| a |\n|---|\n| b |\n"));
+    assert!(table.starts_with("$z$"), "{table}");
+}
+
+/// A run of unclosed dollars costs a lookup each, not a rescan: no quadratic blow-up.
+#[test]
+fn many_unclosed_dollars_are_read_in_linear_time() {
+    let md = "$a ".repeat(20_000);
+    let t = std::time::Instant::now();
+    let doc = import(&md);
+    assert!(equations(&doc).is_empty());
+    assert!(t.elapsed() < std::time::Duration::from_secs(10), "{:?}", t.elapsed());
+}
