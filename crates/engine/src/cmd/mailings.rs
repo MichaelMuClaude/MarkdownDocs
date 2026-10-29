@@ -492,7 +492,7 @@ pub fn specs() -> Vec<CommandSpec> {
             r#"{"delivery": string, "return"?: string, "size"?: "Envelope #10|#9|Monarch|DL|C4|C5|C6|B5", "width"?: pt, "height"?: pt, "add"?: bool (add to this document instead of a new one)}"#,
         ),
         CommandSpec::new("mailings.labels", "Labels", "Mailings › Create", labels).params(
-            r#"{"text"?: string, "product"?: "letter-3x10|letter-2x10|letter-2x7|letter-2x5|letter-4x20|a4-3x7|a4-2x7|a4-3x8|a4-2x4", "rows"?: n, "cols"?: n, "fromRecipients"?: bool, "single"?: {"row": n, "col": n}}"#,
+            r#"{"text"?: string, "product"?: "letter-3x10|letter-2x10|letter-2x7|letter-2x5|letter-4x20|a4-3x7|a4-2x7|a4-3x8|a4-2x4", "rows"?: n, "cols"?: n, "fromRecipients"?: bool (one label per selected recipient, continuing across sheets), "single"?: {"row": n, "col": n}}"#,
         ),
     ]
 }
@@ -1432,8 +1432,9 @@ impl LabelProduct {
 }
 
 /// Labels: a new document with a table of labels laid out like the sheet (`product`; spacer
-/// columns and rows stand for the gaps). A full page of the same `text` (or one recipient per
-/// label), or (`single`: `{"row", "col"}`, from 1) one label at that place on the sheet.
+/// columns and rows stand for the gaps). A full page of the same `text`, as many sheets as
+/// needed for one label per recipient, or (`single`: `{"row", "col"}`, from 1) one label
+/// at that place on the sheet.
 fn labels(s: &mut Session, v: &Value) -> CmdResult {
     let prod = match p::str(v, "product") {
         Some(id) => *LabelProduct::by_id(id).ok_or_else(|| CmdError::Params(format!("unknown label product `{id}`")))?,
@@ -1463,49 +1464,61 @@ fn labels(s: &mut Session, v: &Value) -> CmdResult {
     let grid_cols: Vec<Option<usize>> = (0..cols).flat_map(|c| [Some(c)].into_iter().chain((c + 1 < cols && h_gap > 0.5).then_some(None))).collect();
     let grid_rows: Vec<Option<usize>> = (0..rows).flat_map(|r| [Some(r)].into_iter().chain((r + 1 < rows && v_gap > 0.5).then_some(None))).collect();
     let width: f32 = grid_cols.iter().map(|c| if c.is_some() { prod.width } else { h_gap }).sum();
-    let mut t = Table::new(grid_rows.len(), grid_cols.len(), width);
-    t.props.style = None;
-    t.props.borders = Some(wordcraft_doc::props::Borders::default());
-    t.props.fixed = true;
-    t.grid = grid_cols.iter().map(|c| if c.is_some() { prod.width } else { h_gap }).collect();
+    let per_sheet = rows * cols;
+    let sheets = if from_rec { s.merge.rows.len().div_ceil(per_sheet).max(1) } else { 1 };
     let mut k = 0usize;
     let mut made = 0usize;
-    for (row, r) in t.rows.iter_mut().zip(&grid_rows) {
-        row.props.height = Some(if r.is_some() { prod.height } else { v_gap });
-        row.props.height_rule = wordcraft_doc::props::HeightRule::Exact;
-        for (cell, c) in row.cells.iter_mut().zip(&grid_cols) {
-            cell.props.width = Some(if c.is_some() { prod.width } else { h_gap });
-            let (Some(r), Some(c)) = (r, c) else { continue };
-            let content = match single {
-                Some((sr, sc)) if (sr, sc) != (r + 1, c + 1) => String::new(),
-                _ if from_rec => {
-                    let rec = if k < s.merge.rows.len() { address_block(s, k) } else { String::new() };
-                    k += 1;
-                    rec
+    d.body.clear();
+    for sheet in 0..sheets {
+        let mut t = Table::new(grid_rows.len(), grid_cols.len(), width);
+        t.props.style = None;
+        t.props.borders = Some(wordcraft_doc::props::Borders::default());
+        t.props.fixed = true;
+        t.grid = grid_cols.iter().map(|c| if c.is_some() { prod.width } else { h_gap }).collect();
+        for (row, r) in t.rows.iter_mut().zip(&grid_rows) {
+            row.props.height = Some(if r.is_some() { prod.height } else { v_gap });
+            row.props.height_rule = wordcraft_doc::props::HeightRule::Exact;
+            for (cell, c) in row.cells.iter_mut().zip(&grid_cols) {
+                cell.props.width = Some(if c.is_some() { prod.width } else { h_gap });
+                let (Some(r), Some(c)) = (r, c) else { continue };
+                let content = match single {
+                    Some((sr, sc)) if (sr, sc) != (r + 1, c + 1) => String::new(),
+                    _ if from_rec => {
+                        let rec = if k < s.merge.rows.len() { address_block(s, k) } else { String::new() };
+                        k += 1;
+                        rec
+                    }
+                    _ => text.clone(),
+                };
+                if !content.is_empty() {
+                    made += 1;
                 }
-                _ => text.clone(),
-            };
-            if !content.is_empty() {
-                made += 1;
+                cell.props.valign = Some(wordcraft_doc::props::VAlign::Center);
+                cell.blocks = content
+                    .split('\n')
+                    .take(20)
+                    .map(|l| {
+                        let mut p = Paragraph::with_text(l, CharProps::default()).styled("NoSpacing");
+                        p.props.align = Some(Align::Left);
+                        p.props.indent_left = Some(9.0);
+                        para_block(p)
+                    })
+                    .collect();
             }
-            cell.props.valign = Some(wordcraft_doc::props::VAlign::Center);
-            cell.blocks = content
-                .split('\n')
-                .take(20)
-                .map(|l| {
-                    let mut p = Paragraph::with_text(l, CharProps::default()).styled("NoSpacing");
-                    p.props.align = Some(Align::Left);
-                    p.props.indent_left = Some(9.0);
-                    para_block(p)
-                })
-                .collect();
         }
+        d.body.push(std::sync::Arc::new(Block::Table(t)));
+        let mut end = Paragraph::new();
+        if sheet + 1 < sheets {
+            // End each sheet with the same next-page section, so the next table
+            // starts at the product's top margin without a leading blank line.
+            end.section = Some(Box::new(d.last_section.clone()));
+        }
+        d.body.push(para_block(end));
     }
-    d.body = vec![std::sync::Arc::new(Block::Table(t)), para_block(Paragraph::new())];
     s.set_document(d);
     s.path = None;
     let _ = Pos::body(0, 0);
-    Ok(json!({"labels": if single.is_some() { 1 } else { rows * cols }, "filled": made, "product": prod.id}))
+    Ok(json!({"labels": if single.is_some() { 1 } else { sheets * per_sheet }, "filled": made, "product": prod.id}))
 }
 
 #[cfg(test)]
@@ -1888,6 +1901,47 @@ mod tests {
         let cell = t.rows.get(1).and_then(|r| r.cells.get(4)).and_then(|c| c.blocks.first());
         assert!(matches!(cell.map(|b| &**b), Some(Block::Para(p)) if p.text == "Bo"));
         assert!(s.run("mailings.labels", &json!({"product": "nope"})).is_err());
+    }
+
+    /// #4880: every selected recipient gets a label, including those beyond the first sheet.
+    #[test]
+    fn recipient_labels_continue_on_product_sheets() {
+        for product in LABEL_PRODUCTS {
+            let per_sheet = product.rows * product.cols;
+            for count in [1, per_sheet, per_sheet + 1, per_sheet * 2, per_sheet * 2 + 5] {
+                let mut s = Session::new(Document::from_text("Original letter"));
+                let rows: Vec<Value> = (0..count).map(|i| json!({"FirstName": format!("Recipient{i:03}"), "Address": "Original Street"})).collect();
+                s.run("mailings.recipients", &json!({"rows": rows})).unwrap();
+                let r = s.run("mailings.labels", &json!({"product": product.id, "fromRecipients": true})).unwrap();
+                let sheets = count.div_ceil(per_sheet);
+                assert_eq!(r["filled"], count, "{}: {count} recipients", product.id);
+                assert_eq!(r["labels"], sheets * per_sheet);
+                assert_eq!(s.doc.sections().len(), sheets);
+                let tables: Vec<_> = s
+                    .doc
+                    .body
+                    .iter()
+                    .filter_map(|b| match &**b {
+                        Block::Table(t) => Some(t),
+                        _ => None,
+                    })
+                    .collect();
+                assert_eq!(tables.len(), sheets);
+                let label_text: Vec<_> = tables
+                    .iter()
+                    .flat_map(|t| t.rows.iter())
+                    .flat_map(|r| &r.cells)
+                    .flat_map(|c| &c.blocks)
+                    .filter_map(|b| match &**b {
+                        Block::Para(p) if !p.text.is_empty() => Some(p.text.clone()),
+                        _ => None,
+                    })
+                    .collect();
+                let expected: Vec<_> = (0..count).flat_map(|i| [format!("Recipient{i:03}"), "Original Street".to_string()]).collect();
+                assert_eq!(label_text, expected);
+                assert!(tables.windows(2).all(|t| t[0].grid == t[1].grid && t[0].props == t[1].props));
+            }
+        }
     }
 
     fn b64(b: &[u8]) -> String {
