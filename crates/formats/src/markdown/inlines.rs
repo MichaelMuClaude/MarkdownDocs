@@ -272,10 +272,10 @@ pub(super) fn math_equation(tex: &str, display: bool) -> Option<Inline> {
 
 fn tokenize(s: &str, base: &Fmt, depth: usize, refs: &Refs) -> Vec<Node> {
     let mut nodes: Vec<Node> = Vec::new();
-    // Bytes the link and image scans below may look ahead in total. Each unmatched `[` or `![(`
-    // would otherwise rescan the rest of the text, which is quadratic on hostile input; once the
-    // budget is gone, further brackets are plain text. A scan pays for what it reads; brackets an
-    // earlier scan passed are looked up in `known` instead.
+    // Bytes the link/image scans and reference-label lookups may read in total. Unmatched
+    // brackets and nested undefined references would otherwise rescan the rest of the text,
+    // which is quadratic on hostile input. Once the budget is gone, further brackets are plain
+    // text. A scan pays for what it reads; earlier bracket matches are looked up in `known`.
     let mut scan_budget = s.len().saturating_mul(8).saturating_add(8192);
     let ticks = Backticks::new(s);
     let math = MathCloser::new(s);
@@ -390,15 +390,28 @@ fn tokenize(s: &str, base: &Fmt, depth: usize, refs: &Refs) -> Vec<Node> {
                         // their destination from a definition collected before parsing (#3238).
                         // The shortcut form is only a link when the label is defined, so an
                         // ordinary bracketed phrase is still text.
+                        if refs.is_empty() {
+                            return None;
+                        }
                         let (label, end) = match s.get(close + 1..).and_then(|rest| rest.strip_prefix('[')) {
                             Some(rest) => {
-                                let shut = rest.find(']')?;
+                                let ahead = within(rest, scan_budget);
+                                let shut = ahead.find(']');
+                                scan_budget = scan_budget.saturating_sub(shut.map_or(ahead.len(), |n| n + 1));
+                                let shut = shut?;
                                 let inner = rest.get(..shut)?;
                                 let label = if inner.trim().is_empty() { text } else { inner };
                                 (label, close + 2 + shut + 1)
                             }
                             None => (text, close + 1),
                         };
+                        // A cached bracket pair still costs a pass over its label. Without charging
+                        // it, nested undefined references normalize every suffix again.
+                        if label.len() > scan_budget {
+                            scan_budget = 0;
+                            return None;
+                        }
+                        scan_budget -= label.len();
                         Some((text.to_string(), refs.get(&ref_label(label))?.clone(), end))
                     })
                 } else {
