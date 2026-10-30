@@ -646,9 +646,9 @@ impl<'r> Builder<'r> {
                 if let Some(sz) = attr(attrs, "size") {
                     let s = sz.trim();
                     let val = if let Some(rest) = s.strip_prefix('+') {
-                        rest.parse::<i32>().ok().map(|d| 3 + d)
+                        rest.parse::<i32>().ok().map(|d| 3i32.saturating_add(d))
                     } else if let Some(rest) = s.strip_prefix('-') {
-                        rest.parse::<i32>().ok().map(|d| 3 - d)
+                        rest.parse::<i32>().ok().map(|d| 3i32.saturating_sub(d))
                     } else {
                         s.parse::<i32>().ok()
                     };
