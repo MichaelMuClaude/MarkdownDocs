@@ -3642,13 +3642,11 @@ fn table_properties(ui: &mut Ui, f: &mut TableForm) {
         ui.horizontal(|ui| {
             ui.add_enabled(f.row_height_on, len(&mut f.row_height, 0.02, unit));
             ui.add_enabled_ui(f.row_height_on, |ui| {
-                let rule = egui::ComboBox::from_id_salt("tp_rule").selected_text(tl!(if f.row_exact { "Exactly" } else { "At least" })).show_ui(
-                    ui,
-                    |ui| {
+                let rule =
+                    egui::ComboBox::from_id_salt("tp_rule").selected_text(tl!(if f.row_exact { "Exactly" } else { "At least" })).show_ui(ui, |ui| {
                         ui.selectable_value(&mut f.row_exact, false, tl!("At least"));
                         ui.selectable_value(&mut f.row_exact, true, tl!("Exactly"));
-                    },
-                );
+                    });
                 // A screen reader names the rule by the box it belongs to.
                 rule.response.labelled_by(specify.id);
             });
@@ -5986,7 +5984,12 @@ mod tests {
         use egui_kittest::kittest::Queryable;
         let mut app = app_with("Report body");
         let _ = app.run("file.properties", json!({"custom": {"Status": "draft"}}));
-        app.session.doc.custom_props.push(wordcraft_doc::CustomProp { name: "Count".into(), kind: "i4".into(), value: "7".into(), ..Default::default() });
+        app.session.doc.custom_props.push(wordcraft_doc::CustomProp {
+            name: "Count".into(),
+            kind: "i4".into(),
+            value: "7".into(),
+            ..Default::default()
+        });
         let _ = app.run("ui.backstage", json!({"value": true, "page": "info"}));
         let mut h = egui_kittest::Harness::builder().with_size(vec2(1440.0, 900.0)).build_ui_state(
             |ui, app: &mut WordApp| {

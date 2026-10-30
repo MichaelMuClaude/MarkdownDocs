@@ -1381,7 +1381,6 @@ mod tests {
         }
     }
 
-
     /// Updating fields in a document without generated lists leaves its styles alone: a new
     /// style would make the next layout start over from nothing.
     #[test]

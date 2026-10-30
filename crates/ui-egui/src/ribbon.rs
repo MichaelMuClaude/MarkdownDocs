@@ -3424,7 +3424,8 @@ mod tests {
     fn the_shapes_menu_offers_its_basic_shapes_as_a_grid_of_tiles() {
         use egui_kittest::kittest::Queryable;
         let app = WordApp::new(Session::new(wordcraft_doc::Document::from_text("Lanterns")), crate::Services::default());
-        let mut h = egui_kittest::Harness::builder().with_size(vec2(400.0, 300.0)).build_ui_state(|ui, app: &mut WordApp| shape_gallery(ui, app), app);
+        let mut h =
+            egui_kittest::Harness::builder().with_size(vec2(400.0, 300.0)).build_ui_state(|ui, app: &mut WordApp| shape_gallery(ui, app), app);
         h.run_steps(2);
         let rects: Vec<Rect> = SHAPE_TILES.iter().map(|(label, _)| h.get_by_label(label).rect()).collect();
         // A grid, not a list: tiles sit side by side, wrapping into rows.

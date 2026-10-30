@@ -1012,7 +1012,6 @@ mod tests {
         assert_eq!(h.state().session.doc, before);
     }
 
-
     /// An app whose first paragraph holds `obj`, and where it's laid out.
     fn app_with(obj: InlineObject) -> (WordApp, ObjectHit) {
         let mut app = WordApp::new(wordcraft_engine::Session::new(Document::new()), crate::Services::default());
