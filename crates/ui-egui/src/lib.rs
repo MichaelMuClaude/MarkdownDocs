@@ -296,8 +296,9 @@ pub struct UiState {
     /// Headings whose sub-headings the Navigation pane hides (#1997); per session, not saved.
     #[serde(skip)]
     pub nav_collapsed: std::collections::HashSet<wordcraft_doc::Path>,
-    /// User name (File › Options) for comments and tracked changes; empty keeps the default.
-    pub author: String,
+    /// User name (File › Options) for comments and tracked changes. `None` (no saved name) keeps
+    /// the default; a saved empty name stays empty (#4368).
+    pub author: Option<String>,
     /// Desktop: the main window's size and position, restored at the next launch.
     pub window: Option<window_geometry::WindowGeometry>,
     /// Interface language: `auto` (follow the system) or a code from [`i18n::LANGUAGES`].
@@ -411,7 +412,7 @@ impl Default for UiState {
             nav_pane: false,
             show_github: true,
             nav_collapsed: Default::default(),
-            author: String::new(),
+            author: None,
             window: None,
             language: i18n::AUTO.into(),
             editing: wordcraft_engine::Prefs::default(),
@@ -824,7 +825,7 @@ impl WordApp {
     /// preferences.
     pub fn prefs(&self) -> UiState {
         let mut ui = self.ui.clone();
-        ui.author = self.session.author.clone();
+        ui.author = Some(self.session.author.clone());
         ui.initials = self.session.initials.clone();
         ui.dictionary = wordcraft_engine::proof::user_dictionary();
         ui.editing = self.session.prefs.clone();
@@ -858,8 +859,10 @@ impl WordApp {
         self.legacy_interface_size =
             self.ui.legacy_interface_size.take().filter(|_| self.ui.interface_size.is_auto()).and_then(|old| theme::legacy_interface_percent(&old));
         // The session owns the name from here on; `prefs` copies it back when saving.
-        let author = std::mem::take(&mut self.ui.author);
-        if !author.trim().is_empty() {
+        // A saved empty name stays empty (#4368); one of only spaces keeps the default.
+        if let Some(author) = self.ui.author.take()
+            && (author.is_empty() || !author.trim().is_empty())
+        {
             self.session.author = author;
         }
         self.session.initials = std::mem::take(&mut self.ui.initials).chars().take(wordcraft_engine::cmd::options::MAX_INITIALS_CHARS).collect();
@@ -5645,7 +5648,26 @@ mod tests {
 
         // A later rename is what gets saved next, not the name loaded at startup.
         second.run("file.setAuthor", json!({"name": "Grace Hopper"})).unwrap();
-        assert_eq!(second.prefs().author, "Grace Hopper");
+        assert_eq!(second.prefs().author.as_deref(), Some("Grace Hopper"));
+    }
+
+    /// #4368: a user name cleared in File › Options stays empty after a restart.
+    #[test]
+    fn blank_user_name_survives_restart() {
+        let mut first = app();
+        first.session.author.clear();
+        let saved = serde_json::to_vec(&first.prefs()).unwrap();
+
+        let mut second = app();
+        assert!(!second.session.author.is_empty());
+        second.apply_prefs(serde_json::from_slice(&saved).unwrap());
+        assert_eq!(second.session.author, "");
+
+        // A name of only spaces is not a name: the default stays.
+        let default = app().session.author;
+        let mut third = app();
+        third.apply_prefs(serde_json::from_str(r#"{"author": "   "}"#).unwrap());
+        assert_eq!(third.session.author, default);
     }
 
     const UNSAVED: &str = "My unsaved novel chapter";
