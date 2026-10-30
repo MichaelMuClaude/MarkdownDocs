@@ -1502,6 +1502,48 @@ fn insert_markdown(app: &mut WordApp, ui: &mut Ui) {
     });
 }
 
+/// The basic shapes of Insert › Shapes: tooltip and `insert.shape` kind.
+const SHAPE_TILES: [(&str, &str); 9] = [
+    ("Rectangle", "rectangle"),
+    ("Rounded Rectangle", "roundedRectangle"),
+    ("Oval", "ellipse"),
+    ("Triangle", "triangle"),
+    ("Diamond", "diamond"),
+    ("Line", "line"),
+    ("Arrow", "arrow"),
+    ("Star", "star"),
+    ("Heart", "heart"),
+];
+
+/// Shapes per row of the Insert › Shapes grid.
+const SHAPE_TILES_PER_ROW: usize = 5;
+
+/// The basic shapes as a grid of drawn tiles (#4349), each named by its tooltip; a click inserts it.
+fn shape_gallery(ui: &mut Ui, app: &mut WordApp) {
+    use crate::{icons, theme::Tokens};
+    use egui::{Rect, Sense, vec2};
+    let t = Tokens::get(ui.ctx());
+    let enabled = crate::widgets::enabled(app, "insert.shape");
+    ui.add_enabled_ui(enabled, |ui| {
+        ui.spacing_mut().item_spacing = vec2(2.0, 2.0);
+        for row in SHAPE_TILES.chunks(SHAPE_TILES_PER_ROW) {
+            ui.horizontal(|ui| {
+                for (label, kind) in row {
+                    let (r, resp) = ui.allocate_exact_size(vec2(34.0, 34.0), Sense::click());
+                    let name = crate::tl!(label);
+                    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), name));
+                    crate::widgets::bg(ui, r, &resp, false, &t);
+                    icons::paint(ui.painter(), Rect::from_center_size(r.center(), vec2(24.0, 24.0)), &format!("shape.{kind}"), t.icon, t.accent);
+                    if resp.on_hover_text(name).clicked() {
+                        crate::widgets::run_from_ribbon(app, "insert.shape", json!({"kind": kind}));
+                        ui.close();
+                    }
+                }
+            });
+        }
+    });
+}
+
 fn insert(app: &mut WordApp, ui: &mut Ui) {
     group(ui, "Pages", None, app, |ui, app| {
         stack(ui, |ui| {
@@ -1530,19 +1572,7 @@ fn insert(app: &mut WordApp, ui: &mut Ui) {
     group(ui, "Illustrations", None, app, |ui, app| {
         big(ui, app, "picture", "Pictures", "insert.picture", json!({}), false);
         menu_button(ui, app, "shapes", Some("Shapes"), "Shapes", true, "insert.shape", |ui, app| {
-            for (l, k) in [
-                ("Rectangle", "rectangle"),
-                ("Rounded Rectangle", "roundedRectangle"),
-                ("Oval", "ellipse"),
-                ("Triangle", "triangle"),
-                ("Diamond", "diamond"),
-                ("Line", "line"),
-                ("Arrow", "arrow"),
-                ("Star", "star"),
-                ("Heart", "heart"),
-            ] {
-                mi_icon(ui, app, &format!("shape.{k}"), l, "insert.shape", json!({"kind": k}));
-            }
+            shape_gallery(ui, app);
             ui.separator();
             mi_icon(ui, app, "canvas", "New Drawing Canvas", "insert.canvas", json!({}));
             // Connectors: glue their ends to shapes by dragging them (shape.connect).
@@ -3386,6 +3416,33 @@ mod tests {
         app.session.path = Some("notes.md".into());
         let drawn = frame(&ctx, &mut app);
         assert!(drawn.iter().any(|t| t == "File"), "{drawn:?}");
+    }
+
+    /// #4349: Insert › Shapes offers the basic shapes as a grid of drawn tiles, each named for
+    /// screen readers and by its tooltip; a click inserts that shape.
+    #[test]
+    fn the_shapes_menu_offers_its_basic_shapes_as_a_grid_of_tiles() {
+        use egui_kittest::kittest::Queryable;
+        let app = WordApp::new(Session::new(wordcraft_doc::Document::from_text("Lanterns")), crate::Services::default());
+        let mut h = egui_kittest::Harness::builder().with_size(vec2(400.0, 300.0)).build_ui_state(|ui, app: &mut WordApp| shape_gallery(ui, app), app);
+        h.run_steps(2);
+        let rects: Vec<Rect> = SHAPE_TILES.iter().map(|(label, _)| h.get_by_label(label).rect()).collect();
+        // A grid, not a list: tiles sit side by side, wrapping into rows.
+        assert_eq!(rects[0].top(), rects[1].top(), "the first two shapes share a row");
+        assert!(rects[0].right() <= rects[1].left(), "side by side");
+        let rows = rects.iter().map(|r| r.top().round() as i32).collect::<std::collections::BTreeSet<_>>().len();
+        assert!(rows >= 2 && rows < SHAPE_TILES.len(), "{rows} rows for {} shapes", SHAPE_TILES.len());
+        assert!(rects.iter().all(|r| r.width() >= 24.0 && r.height() >= 24.0), "tiles are big enough to read and hit");
+        // Every tile inserts its own shape.
+        for (label, kind) in SHAPE_TILES {
+            let before = h.state().session.undo_depth();
+            h.get_by_label(label).click();
+            h.run_steps(2);
+            assert_eq!(h.state().session.undo_depth(), before + 1, "{label} inserts a shape");
+            let doc = serde_json::to_string(&h.state().session.doc).unwrap();
+            assert!(doc.contains(&format!("\"{kind}\"")), "{label} inserts a {kind}");
+            assert!(h.state_mut().session.undo());
+        }
     }
 
     /// #4412: the Shading button's bar is the colour a click applies (the last one picked), as
