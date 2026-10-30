@@ -2081,9 +2081,16 @@ fn rotation_field(ui: &mut Ui, app: &mut WordApp) {
     }
 }
 
+/// The command the Group menu button follows: Ungroup while a group is selected (Group is off
+/// then, as one object has nothing to group), Group otherwise (#4229).
+fn group_menu_command(app: &WordApp) -> &'static str {
+    if crate::widgets::enabled(app, "arrange.ungroup") { "arrange.ungroup" } else { "arrange.group" }
+}
+
 /// Arrange › Group: Group (Shift+click objects to select several) and Ungroup.
 fn group_menu(ui: &mut Ui, app: &mut WordApp, label: Option<&str>) {
-    menu_button(ui, app, "group", label, "Group", false, "arrange.group", |ui, app| {
+    let id = group_menu_command(app);
+    menu_button(ui, app, "group", label, "Group", false, id, |ui, app| {
         mi(ui, app, "Group", "arrange.group", json!({}));
         mi(ui, app, "Ungroup", "arrange.ungroup", json!({}));
     });
@@ -3520,6 +3527,27 @@ mod tests {
         for id in ["table.selectTable", "table.deleteTable", "table.autofit"] {
             assert!(menu_enabled(&a, id), "{id} is on inside a table");
         }
+    }
+
+    /// #4229: with a group selected the Group button stays on, so Ungroup in its menu can be
+    /// reached; with nothing selected it is off, and with two objects it offers Group.
+    #[test]
+    fn the_group_menu_stays_on_for_a_selected_group() {
+        use crate::widgets::{enabled, menu_enabled};
+        let mut a = crate::WordApp::new(Session::new(wordcraft_doc::Document::from_text("one\ntwo\nthree")), crate::Services::default());
+        assert!(!menu_enabled(&a, group_menu_command(&a)), "nothing selected");
+        a.run("insert.shape", json!({"kind": "rectangle", "width": 80, "height": 40})).unwrap();
+        a.run("arrange.bounds", json!({"page": 0, "x": 100, "y": 150})).unwrap();
+        a.run("select.collapse", json!({"end": true})).unwrap();
+        a.run("insert.shape", json!({"kind": "ellipse", "width": 80, "height": 40})).unwrap();
+        a.run("arrange.bounds", json!({"page": 0, "x": 300, "y": 150})).unwrap();
+        a.run("select.addObject", json!({"index": 0})).unwrap();
+        assert_eq!(group_menu_command(&a), "arrange.group");
+        assert!(menu_enabled(&a, group_menu_command(&a)), "two objects to group");
+        a.run("arrange.group", json!({})).unwrap();
+        assert!(!enabled(&a, "arrange.group"), "one group: nothing to group");
+        assert_eq!(group_menu_command(&a), "arrange.ungroup");
+        assert!(menu_enabled(&a, group_menu_command(&a)), "the menu reaches Ungroup");
     }
 
     /// #1206: Margins, Orientation, Size and Columns mark the caret section's setting, as Word
