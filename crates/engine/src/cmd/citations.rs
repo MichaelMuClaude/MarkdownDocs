@@ -868,8 +868,8 @@ fn figures_label(instr: &str) -> Option<String> {
 
 /// Whether `p` is a caption numbered by SEQ identifier `ident` (any case, as Word matches it). A
 /// caption typed by hand, without a SEQ field, goes by its label.
-fn captioned_as(p: &Paragraph, ident: &str) -> bool {
-    if p.props.style.as_deref() != Some("Caption") {
+fn captioned_as(doc: &Document, p: &Paragraph, ident: &str) -> bool {
+    if !is_caption(doc, p) {
         return false;
     }
     let seq = p.objects.iter().find_map(|o| match o {
@@ -1038,7 +1038,7 @@ fn entries_for(s: &mut Session, kind: &str) -> Vec<(String, bool)> {
     for path in s.doc.para_paths(StoryRef::Body) {
         let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
         if let Some(ident) = &figures {
-            if captioned_as(p, ident) {
+            if captioned_as(&s.doc, p, ident) {
                 let text = if bare { caption_body(p, &ident.replace('_', " ")) } else { p.plain_text() };
                 marks.push((text, Pos { story: StoryRef::Body, path: path.clone(), off: 0 }));
             }
@@ -1062,7 +1062,7 @@ fn entries_for(s: &mut Session, kind: &str) -> Vec<(String, bool)> {
         for path in s.doc.para_paths(StoryRef::Body) {
             let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
             if let Some(ident) = &figures {
-                if captioned_as(p, ident) {
+                if captioned_as(&s.doc, p, ident) {
                     v.push(Pos { story: StoryRef::Body, path: path.clone(), off: 0 });
                 }
                 continue;
@@ -1191,13 +1191,19 @@ fn caption_label(p: &Paragraph, text: &str) -> Option<String> {
     (!label.is_empty() && label.chars().count() <= 40).then_some(label)
 }
 
+/// Whether `p` is a caption: its style is Caption or one based on it, as a caption restyled with a
+/// style of its own (a `Table Caption` based on Caption) still is (#4411).
+pub(super) fn is_caption(doc: &Document, p: &Paragraph) -> bool {
+    p.props.style.as_deref().is_some_and(|id| id == "Caption" || doc.styles.chain(id).iter().any(|s| s.id == "Caption"))
+}
+
 /// The caption paragraphs of the body: (text, position, label).
 fn captions(s: &Session) -> Vec<(String, Pos, Option<String>)> {
     s.doc
         .para_paths(StoryRef::Body)
         .into_iter()
         .filter_map(|path| {
-            let p = s.doc.para(StoryRef::Body, &path).filter(|p| p.props.style.as_deref() == Some("Caption"))?;
+            let p = s.doc.para(StoryRef::Body, &path).filter(|p| is_caption(&s.doc, p))?;
             let text = p.plain_text();
             let label = caption_label(p, &text);
             Some((text, Pos { story: StoryRef::Body, path, off: 0 }, label))
@@ -1239,7 +1245,7 @@ pub fn ref_targets(s: &Session, to: &str) -> Vec<(String, Pos)> {
             };
             for path in s.doc.para_paths(StoryRef::Body) {
                 if let Some(p) = s.doc.para(StoryRef::Body, &path)
-                    && p.props.style.as_deref() == Some("Caption")
+                    && is_caption(&s.doc, p)
                     && p.plain_text().starts_with(label)
                 {
                     targets.push((p.plain_text(), Pos { story: StoryRef::Body, path: path.clone(), off: 0 }));
@@ -1506,6 +1512,49 @@ mod tests {
         s.run("caret.docEnd", &json!({})).unwrap();
         s.run("insert.crossReference", &json!({"to": "label:Photo Plate", "target": "Photo Plate I", "show": "number"})).unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).ends_with("See Photo Plate I"), "{}", s.doc.plain_text(StoryRef::Body));
+    }
+
+    /// #4411: captions restyled with a style based on Caption, directly (`Caption Table`) or through
+    /// another (`Caption Table Wide`), are still captions after a DOCX save and reopen: every `tableX`
+    /// caption is a cross-reference target and in the table of figures, and a Table caption is a
+    /// Table target. Captions in a style not based on Caption are not, nor are their labels.
+    #[test]
+    fn captions_in_a_style_based_on_caption() {
+        let mut s = Session::new(wordcraft_doc::Document::from_text("T1\nT2\nT3\nT4\nT5\nNote\nGrid\nStone\nSee "));
+        let caption = |s: &mut Session, text: &str, label: &str, title: &str| {
+            s.run("select.text", &json!({"text": text})).unwrap();
+            s.run("references.caption", &json!({"label": label, "text": title})).unwrap();
+        };
+        for k in 1..=5 {
+            caption(&mut s, &format!("T{k}"), "tableX", &format!("Row {k}"));
+        }
+        caption(&mut s, "Note", "tableX", "Aside");
+        caption(&mut s, "Grid", "Table", "Grid");
+        caption(&mut s, "Stone", "Plate", "Stone");
+        s.run("styles.create", &json!({"name": "Caption Table", "basedOn": "Caption", "fromSelection": false})).unwrap();
+        s.run("styles.create", &json!({"name": "Caption Table Wide", "basedOn": "Caption Table", "fromSelection": false})).unwrap();
+        s.run("styles.create", &json!({"name": "Aside", "fromSelection": false})).unwrap();
+        let style = |s: &Session, name: &str| s.doc.styles.find(name).map(|st| st.id.clone());
+        let (table, wide, aside) = (style(&s, "Caption Table"), style(&s, "Caption Table Wide"), style(&s, "Aside"));
+        for path in s.doc.para_paths(StoryRef::Body) {
+            let p = s.doc.para_mut(StoryRef::Body, &path).unwrap();
+            let text = p.plain_text();
+            p.props.style = match text.get(..8).unwrap_or_default() {
+                "tableX 1" | "tableX 2" => table.clone(),
+                "tableX 3" | "Table 1:" => wide.clone(),
+                "tableX 6" | "Plate 1:" => aside.clone(),
+                _ => continue,
+            };
+        }
+        let bytes = wordcraft_docx::write(&s.doc).expect("docx write");
+        let mut s = Session::new(wordcraft_docx::read(&bytes).expect("docx read"));
+        let want: Vec<String> = (1..=5).map(|k| format!("tableX {k}: Row {k}")).collect();
+        assert_eq!(s.run("insert.crossReference", &json!({"to": "label:tableX"})).unwrap(), json!(want));
+        assert_eq!(s.run("insert.crossReference", &json!({"to": "table"})).unwrap(), json!(["Table 1: Grid"]));
+        assert_eq!(caption_labels(&s), ["tableX", "Table"]);
+        s.run("caret.docEnd", &json!({})).unwrap();
+        s.run("references.tableOfFigures", &json!({"label": "tableX", "pageNumbers": false})).unwrap();
+        assert_eq!(list_entries(&s).into_iter().map(|(t, _)| t).collect::<Vec<_>>(), want);
     }
 
     /// The entries of every generated list, in order, with their last tab stop's leader.
