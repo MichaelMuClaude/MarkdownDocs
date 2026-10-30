@@ -83,6 +83,8 @@ impl Reader {
                     self.pict_h = None;
                     self.pict_sx = 0.0;
                     self.pict_sy = 0.0;
+                    self.pict_nat = (0, 0);
+                    self.pict_mm = 0;
                 }
                 Dest::FldInst if self.st.field.is_none() => self.start_field(),
                 // Old character formatting holds the properties that changed (Word) or, after a
@@ -220,6 +222,14 @@ impl Reader {
                 match w {
                     "pngblip" => self.pict_kind = 1,
                     "jpegblip" => self.pict_kind = 2,
+            // Windows and Enhanced Metafiles (#4259): drawn by the metafile renderer.
+            "wmetafile" => {
+                self.pict_kind = 3;
+                self.pict_mm = pv;
+            }
+            "emfblip" => self.pict_kind = 4,
+            "picw" => self.pict_nat.0 = pv,
+            "pich" => self.pict_nat.1 = pv,
                     "picwgoal" => self.pict_w = Some(pv.clamp(1, 31_680) as f32 / 20.0),
                     "pichgoal" => self.pict_h = Some(pv.clamp(1, 31_680) as f32 / 20.0),
                     "picscalex" => self.pict_sx = pv.clamp(1, 1000) as f32,
