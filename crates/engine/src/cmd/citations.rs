@@ -117,8 +117,10 @@ pub static STYLES: [CiteStyle; 12] = [
         et_al_from: 3,
         order: Order::Author,
         names: names(Name::LastInitials, Name::LastInitials, ", ", ", & ", ", & "),
-        book: "⟦{names} ⟧({year}). {title}.⟦ {publisher}.⟧⟦ {url}⟧",
-        article: "⟦{names} ⟧({year}). {title}. {journal}⟦, {volume}⟧⟦, {pages}⟧.⟦ {url}⟧",
+        // The names end with a full stop: an initial's, or one added after a group author or a
+        // name without initials ("World Health Organization. (2021).", #4848).
+        book: "⟦{names}. ⟧({year}). {title}.⟦ {publisher}.⟧⟦ {url}⟧",
+        article: "⟦{names}. ⟧({year}). {title}. {journal}⟦, {volume}⟧⟦, {pages}⟧.⟦ {url}⟧",
         bib_title: "References",
     },
     CiteStyle {
@@ -456,17 +458,24 @@ fn render(template: &str, field: &dyn Fn(&str) -> String) -> String {
     out
 }
 
+/// A source's corporate author, when it has one: written as it is in place of the person names
+/// (Word's Corporate Author, #4848).
+pub(super) fn corporate(src: &Source) -> Option<&str> {
+    Some(src.corporate.trim()).filter(|c| !c.is_empty())
+}
+
 /// In-text citation for a style; `n` is the source's number in numbered styles.
 pub fn cite(src: &Source, style_name: &str, n: usize, pages: &str) -> String {
     let st = style(style_name);
     let au = authors(&src.author);
     let lasts: Vec<&str> = au.iter().map(|a| a.0.as_str()).collect();
-    let who = match lasts.as_slice() {
-        [] => src.title.clone(),
-        [one] => one.to_string(),
-        [first, ..] if lasts.len() >= st.et_al_from.max(2) => format!("{first} et al."),
-        [a, b] => format!("{a} {} {b}", st.and),
-        [init @ .., z] => format!("{} {} {z}", init.join(", "), st.and),
+    let who = match (corporate(src), lasts.as_slice()) {
+        (Some(c), _) => c.to_string(),
+        (None, []) => src.title.clone(),
+        (None, [one]) => one.to_string(),
+        (None, [first, ..]) if lasts.len() >= st.et_al_from.max(2) => format!("{first} et al."),
+        (None, [a, b]) => format!("{a} {} {b}", st.and),
+        (None, [init @ .., z]) => format!("{} {} {z}", init.join(", "), st.and),
     };
     match st.cite {
         Cite::AuthorPage if pages.is_empty() => format!("({who})"),
@@ -499,7 +508,7 @@ pub fn entry(src: &Source, style_name: &str, n: usize) -> String {
     let field = |key: &str| -> String {
         match key {
             "n" => n.to_string(),
-            "names" => name_list(&au, &st.names),
+            "names" => corporate(src).map_or_else(|| name_list(&au, &st.names), str::to_string),
             "year" if src.year.is_empty() => "n.d.".into(),
             "year" => src.year.clone(),
             "title" => src.title.clone(),
@@ -528,18 +537,19 @@ fn auto_tag(doc: &Document, src: &Source) -> String {
     (1u32..).map(|n| format!("{base}{n}")).find(|t| !taken(t)).unwrap_or(base)
 }
 
-/// The author of a source for matching untagged entries: the editor when there is no author.
+/// The author of a source for matching untagged entries: the corporate author (which takes the
+/// author's place when a source is saved), else the author, else the editor.
 #[cfg(not(target_arch = "wasm32"))]
 fn by_author(x: &Source) -> &str {
-    if x.author.is_empty() { x.editor.as_str() } else { x.author.as_str() }
+    [x.corporate.trim(), x.author.as_str(), x.editor.as_str()].into_iter().find(|w| !w.is_empty()).unwrap_or_default()
 }
 
 /// The stem of a new source's tag, before `1`, `2`… are added while it is taken: the first three
-/// alphanumerics of the first author's name (nothing of the author's, `Src`) and the last two
-/// digits of the year.
+/// alphanumerics of the first author's name or the corporate author (nothing of the author's,
+/// `Src`) and the last two digits of the year.
 fn auto_tag_base(src: &Source) -> String {
-    let name: String =
-        authors(&src.author).first().map(|x| x.0.clone()).unwrap_or_default().chars().filter(|c| c.is_alphanumeric()).take(3).collect();
+    let first = corporate(src).map(str::to_string).or_else(|| authors(&src.author).first().map(|x| x.0.clone())).unwrap_or_default();
+    let name: String = first.chars().filter(|c| c.is_alphanumeric()).take(3).collect();
     let name = if name.is_empty() { "Src".to_string() } else { name };
     let digits: Vec<char> = src.year.chars().filter(char::is_ascii_digit).collect();
     let year: String = digits.get(digits.len().saturating_sub(2)..).unwrap_or_default().iter().collect();
@@ -698,8 +708,13 @@ fn cited_tags(doc: &Document) -> Vec<String> {
     out
 }
 
+/// A source's place in an author-sorted bibliography: the corporate author, else the first
+/// author's surname, else the title.
 fn author_key(src: &Source) -> String {
-    authors(&src.author).first().map(|a| a.0.to_lowercase()).unwrap_or_else(|| src.title.to_lowercase())
+    corporate(src)
+        .map(str::to_lowercase)
+        .or_else(|| authors(&src.author).first().map(|a| a.0.to_lowercase()))
+        .unwrap_or_else(|| src.title.to_lowercase())
 }
 
 /// Indices into `doc.sources` in bibliography order: the cited sources (every source while
@@ -1322,6 +1337,50 @@ mod tests {
         s.run("references.citationStyle", &json!({"style": "IEEE"})).unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).contains("[1]"));
     }
+
+    /// #4848: a corporate author is cited and listed as written, in every style: never turned into
+    /// a surname and initials ("Organization, W. H."), never left out for the title. Its tag and its
+    /// place in an author-sorted list come from the name too.
+    #[test]
+    fn a_corporate_author_is_cited_and_listed_as_written() {
+        let mut s = Session::new(wordcraft_doc::Document::new());
+        s.run("text.insert", &json!({"text": "Hearing loss is common "})).unwrap();
+        let who = "World Health Organization";
+        s.run("references.citation", &json!({"source": {"kind": "report", "corporate": who, "title": "World report on hearing", "year": "2021", "publisher": "WHO Press", "city": "Geneva"}}))
+            .unwrap();
+        s.run("text.insert", &json!({"text": " and rising "})).unwrap();
+        s.run("references.citation", &json!({"source": {"author": "Adams, Kim", "title": "Quiet Rooms", "year": "2019"}})).unwrap();
+        s.run("text.newParagraph", &json!({})).unwrap();
+        s.run("references.bibliography", &json!({})).unwrap();
+        assert_eq!(s.doc.sources[0].tag, "Wor21", "the tag starts with the corporate name");
+        let t = s.doc.plain_text(StoryRef::Body);
+        assert!(t.contains(&format!("({who}, 2021)")), "{t}");
+        assert!(t.contains(&format!("{who}. (2021). World report on hearing. WHO Press.")), "{t}");
+        // Sorted by the corporate name: Adams before World.
+        let adams = t.find("Adams, K. (2019)").unwrap_or(usize::MAX);
+        let world = t.find(&format!("{who}. (2021)")).unwrap_or(0);
+        assert!(adams < world, "{t}");
+        for style in [
+            "MLA",
+            "Chicago",
+            "GB/T 7714",
+            "GOST (name sort)",
+            "GOST (title sort)",
+            "ISO 690 (author-date)",
+            "ISO 690 (numerical)",
+            "Harvard (Anglia)",
+            "Turabian",
+            "IEEE",
+            "SIST02",
+        ] {
+            s.run("references.citationStyle", &json!({"style": style})).unwrap();
+            let t = s.doc.plain_text(StoryRef::Body);
+            let entry = t.lines().find(|l| l.contains("World report on hearing")).unwrap_or_default();
+            assert!(entry.contains(who), "{style}: {entry}");
+            assert!(!entry.contains("Organization, W") && !entry.contains("ORGANIZATION, W"), "{style}: {entry}");
+        }
+    }
+
 
     /// Updating fields in a document without generated lists leaves its styles alone: a new
     /// style would make the next layout start over from nothing.

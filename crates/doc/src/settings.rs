@@ -10,6 +10,10 @@ pub struct Source {
     pub kind: String,
     /// "Last, First; Last, First"
     pub author: String,
+    /// A corporate author ("World Health Organization"): written as it is, never split into
+    /// names, and in place of `author` when set (Create Source › Corporate Author, `b:Corporate`,
+    /// #4848).
+    pub corporate: String,
     pub title: String,
     pub year: String,
     pub publisher: String,
