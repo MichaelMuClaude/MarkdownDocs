@@ -164,6 +164,7 @@ Ranked, to beta (detail and remaining milestones in [docs/roadmap.md](docs/roadm
 
 ## Progress log
 
+- 2026-10-28: Charts and SmartArt draw text their font lacks in a fallback face, as body text does: Chinese titles, axis labels and legends no longer show boxes (#4720). A run of such characters takes one face that covers it all, so a label doesn't mix serif and sans glyphs; bold labels stay bold.
 - 2026-10-28: Custom document properties retain their bookmark link targets through DOCX saves, native JSON reopens, value edits and dialog renames (#4767). Linked values are not evaluated; the existing dialog and field-update behavior are unchanged. Original fixtures cover ordinary and raw property values; broader corpus qualification and readiness estimates remain unchanged.
 
 - 2026-10-29: Increase/Decrease Font Size and the one-point shortcuts change each selected run from its own resolved size, retaining mixed-size formatting, inherited styles and one-step Undo (#4903). Existing size steps and limits stay unchanged.
@@ -1068,6 +1069,7 @@ Footer page-table height and body wrapping are corrected. Other pagination gaps 
 | 2026-10-23 | trivial | Progress log: justified lines ending in a manual line break reach the margin (#3924) |
 | 2026-10-23 | trivial | Progress log: "NaN" in the Font dialog's Size box no longer closes the app (#3663) |
 | 2026-10-23 | trivial | Progress log: a table cell span from a `.json` file no longer overflows (#3637) |
+| 2026-10-28 | trivial | Progress log: chart and SmartArt text the font lacks is drawn in a fallback face (#4720) |
 | 2026-10-29 | trivial | Progress log: corporate authors in bibliographies (#4848) |
 | 2026-10-29 | trivial | Progress log: Table Properties follows the selection (#4857) |
 | 2026-10-27 | trivial | Progress log: AutoCorrect Options with no document open (#4585) |
