@@ -24,6 +24,7 @@ mod positional_tabs;
 mod privacy;
 mod roundtrip;
 mod row_property_exceptions;
+mod run_props;
 mod section_form_protection;
 mod section_page_number_type;
 mod section_text_direction;

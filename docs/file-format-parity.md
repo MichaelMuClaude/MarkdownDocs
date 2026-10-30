@@ -116,7 +116,7 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 | Section text direction (`w:textDirection` in `w:sectPr`, §17.6.20) | ✅ | ✅ | `tbRl`, `btLr` (and `tbRlV`/`tbLrV`, read as `tbRl`); `lrTbV` and unknown values read as horizontal (#491) |
 | Section vertical alignment (`w:vAlign` in `w:sectPr`, §17.6.23) | ✅ | ✅ | `top`, `center`, `bottom` and `both` (Justified, read as Center before #1320); unknown values read as top, top writes nothing (`crates/docx/tests/it/section_valign.rs`). ODT/RTF don't carry it |
 | Ruby (`w:ruby`: `w:rubyPr`, `w:rt`, `w:rubyBase`) | ✅ | ✅ | #288; base and ruby text with their run formatting, alignment, sizes, raise, language |
-| Document grid (`w:docGrid`: type, line pitch, `w:charSpace`), paragraph `w:snapToGrid` | ✅ | ✅ | #391; run-level `w:snapToGrid` not read |
+| Document grid (`w:docGrid`: type, line pitch, `w:charSpace`), `w:snapToGrid` on paragraphs, runs and styles | ✅ | ✅ | #391; run and character-style flags keep absent/true/false across repeated saves; inherited true remains explicit false when overridden. `w:webHidden` remains distinct from `w:vanish` and preserves absent/true/false through runs, styles and repeated saves; Print Layout still shows web-hidden text |
 | Two lines in one and horizontal in vertical (`w:eastAsianLayout`, §17.3.2.10) | ✅ | ✅ | Every attribute (`w:id`, `w:combine`, `w:combineBrackets`, `w:vert`, `w:vertCompress`) read into the run's formatting and written back after `w:lang`, in runs and styles; values outside the schema are dropped (`crates/docx/tests/it/east_asian_layout.rs`). Not laid out yet: the text shows as ordinary text |
 | `w:fitText` | ❌ | ❌ | East Asian layout |
 | Glossary document (building blocks) | ✅ | ✅ | `w:docPart` entries (name, style, gallery, category, types, behaviours, description, guid, body) are read into `Document::glossary` and offered by Insert › Quick Parts and AutoText; `save` with `"in": "document"` stores one in the file. An untouched glossary is written back byte for byte with its own parts (styles, settings, fonts…); an edited one, or one whose parts weren't kept, is written from the model as `word/glossary1.xml` with copies of the document's styles and numbering. The glossary's own styles, settings and fonts, text boxes inside entries, and the notes and comments of a selection saved into the document don't survive an edit. Tests: `crates/docx/tests/it/glossary.rs` |
@@ -418,6 +418,7 @@ Repeated DOCX style IDs use the last complete definition. The original regressio
 | 2026-10-11 | trivial | Hyphenation zone, words in capitals and consecutive-hyphen limit read and written (#407) |
 | 2026-10-11 | trivial | Alt text, titles and the decorative mark for every drawing, table captions and descriptions round-trip (#386) |
 | 2026-10-11 | trivial | Document grid (`w:docGrid`) and paragraph `w:snapToGrid` read and written (#391) |
+| 2026-10-29 | trivial | Run/style `w:snapToGrid` and distinct `w:webHidden` values survive repeated DOCX saves |
 | 2026-10-11 | trivial | Move tracking (`w:moveFrom`/`w:moveTo` and their ranges) read and written (#400) |
 | 2026-10-11 | trivial | DOCX text-box `bodyPr` `vert`/`anchor` and linked text boxes (`wps:linkedTxbx`) read and written (#369) |
 | 2026-10-10 | trivial | Right-to-left tables (`w:bidiVisual`) read and written (#362) |
