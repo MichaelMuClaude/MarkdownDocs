@@ -82,6 +82,7 @@ Bullets and Numbering decide whether to toggle off from the selected paragraphs'
 | type, select some of it, type over it | two undo steps: the first ⌘Z brings the selected text back (still selected), the second removes the typing. Uninterrupted typing stays one step | `typing_then_selecting_then_typing_are_two_undo_steps` |
 | ⌘B with nothing selected, ⌘Z, type | the text isn't bold (Undo takes the waiting caret formatting back too); ⌘Y brings it back | `undoing_bold_at_the_caret_turns_bold_typing_off_again` |
 | ⌫ at the start of the document, or typing nothing | nothing happens: no undo step is added, the document is not marked edited, and the redo stack survives ³ | `backspace_at_the_start_of_the_document_is_not_an_edit`, `a_command_that_changes_nothing_is_not_an_edit`, `a_no_op_command_keeps_the_redo_stack` |
+| ⌫ right after a floating shape's anchor at the paragraph start (In Front of Text, Square…) | joins the paragraph above and keeps the shape; the anchor is not a character to delete (checked in Word for Windows, #4592) | `backspace_after_a_floating_shape_anchor_joins_paragraphs_and_keeps_the_shape` |
 
 ³ Not re-observed side by side in Word for this change: Word's undo list does not grow when a
 key changes nothing, and the document is not marked edited. The gap was found by the read-only
@@ -496,3 +497,5 @@ again.
 | 2026-10-10 | minor | Track Changes rows: tracked Enter, Backspace and Delete on paragraph marks (#244) |
 | 2026-10-10 | major | First version: lists, AutoCorrect and AutoFormat as you type, observed against Word (#204) |
 | 2026-10-15 | trivial | Text direction: typed and inserted text takes its direction from its own letters, not the caret's run; spaces typed into reopened Hebrew draw in the Latin font until reopened (#1543) |
+
+| 2026-10-27 | trivial | Backspace after a floating shape's anchor at a paragraph start joins paragraphs and keeps the shape (#4592) |

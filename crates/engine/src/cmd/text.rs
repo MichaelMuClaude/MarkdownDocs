@@ -969,8 +969,17 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
         delete_selection(s)?;
         return sel_result(s);
     }
-    let f = s.sel.focus.clone();
+    let mut f = s.sel.focus.clone();
     let Some(para) = s.doc.para_at(&f) else { return sel_result(s) };
+    // Only floating objects before the caret: they are anchors, not characters, so this is the
+    // paragraph start and the shape stays (Word).
+    let before = para.text.get(..f.off).unwrap_or_default();
+    if !before.is_empty()
+        && before.chars().all(|c| c == OBJ)
+        && para.objects_with_offsets().take_while(|(o, _)| *o < f.off).all(|(_, o)| o.is_marker() || o.is_floating())
+    {
+        f.off = 0;
+    }
     if f.off > 0 {
         let a = Pos { off: para.backspace_from(f.off), ..f.clone() };
         if let Some(c) = s.autocap.as_mut() {
@@ -1017,6 +1026,12 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
                 delete_selection(s)?;
                 return sel_result(s);
             }
+            // Joining moves a content control whose start is at the paragraph edge. Check its
+            // contents explicitly: the paragraph-mark range itself ends before those contents.
+            for control in s.doc.control_ranges(f.story).into_iter().filter(|r| r.start.path == f.path && r.start.off == f.off) {
+                crate::cmd::controls::check_edit(s, &control.content_start(), &control.end)?;
+            }
+            crate::cmd::controls::check_delete(s, &a, &f)?;
             let at = s.doc.delete_range(&a, &f)?;
             s.sel = Selection::caret(at);
         }

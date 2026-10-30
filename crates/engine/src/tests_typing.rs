@@ -3506,3 +3506,51 @@ fn double_space_adds_a_period_when_asked() {
     typ(&mut t, "Hello  world");
     assert_eq!(text(&t), "Hello  world");
 }
+
+#[test]
+fn backspace_after_a_floating_shape_anchor_joins_paragraphs_and_keeps_the_shape() {
+    let mut s = typed("Line one\nLine two");
+    run(&mut s, "caret.set", json!({"pos": {"story": "body", "path": [1], "off": 0}}));
+    run(&mut s, "insert.textBox", json!({"text": "Box"}));
+    let (a, f) = (Pos::body(1, 0), Pos::body(1, 3));
+    run(&mut s, "select.range", json!({"anchor": a, "focus": f}));
+    run(&mut s, "arrange.wrap", json!({"wrap": "inFrontOfText"}));
+    let objects = |s: &Session| s.doc.para_at(&Pos::body(1, 0)).map(|p| p.object_offsets().len());
+    assert_eq!(objects(&s), Some(1));
+    run(&mut s, "caret.set", json!({"pos": {"story": "body", "path": [1], "off": 3}}));
+    run(&mut s, "text.backspace", json!({}));
+    assert_eq!(s.doc.body.iter().filter(|b| b.as_para().is_some()).count(), 1);
+    assert_eq!(objects(&s), None);
+    assert_eq!(
+        s.doc.para_at(&Pos::body(0, 0)).map(|p| (p.text.replace('\u{FFFC}', ""), p.object_offsets().len())),
+        Some(("Line oneLine two".to_string(), 1))
+    );
+}
+
+#[test]
+fn backspace_after_marker_and_floating_anchors_still_joins_paragraphs() {
+    let mut s = typed("Line one\nLine two");
+    run(&mut s, "caret.set", json!({"pos": {"story": "body", "path": [1], "off": 0}}));
+    run(&mut s, "insert.textBox", json!({"text": "Box"}));
+    let (a, f) = (Pos::body(1, 0), Pos::body(1, 3));
+    run(&mut s, "select.range", json!({"anchor": a, "focus": f}));
+    run(&mut s, "arrange.wrap", json!({"wrap": "inFrontOfText"}));
+    s.doc.insert_object(&Pos::body(1, 0), wordcraft_doc::InlineObject::BookmarkStart { name: "anchor".into() }, &Default::default()).unwrap();
+    s.doc.insert_object(&Pos::body(1, 0), wordcraft_doc::InlineObject::CommentStart { id: 1 }, &Default::default()).unwrap();
+    run(&mut s, "caret.set", json!({"pos": {"story": "body", "path": [1], "off": 9}}));
+    run(&mut s, "text.backspace", json!({}));
+    assert_eq!(s.doc.body.iter().filter(|b| b.as_para().is_some()).count(), 1);
+    assert_eq!(s.doc.para_at(&Pos::body(0, 0)).map(|p| p.text.replace('\u{FFFC}', "")), Some("Line oneLine two".to_string()));
+}
+
+#[test]
+fn backspace_cannot_join_into_locked_content_control() {
+    let mut s = typed("Above\nInside");
+    run(&mut s, "select.range", json!({"anchor": {"story": "body", "path": [1], "off": 0}, "focus": {"story": "body", "path": [1], "off": 6}}));
+    run(&mut s, "developer.richText", json!({"tag": "locked"}));
+    run(&mut s, "developer.properties", json!({"control": "locked", "lockEdit": true}));
+    run(&mut s, "caret.set", json!({"pos": {"story": "body", "path": [1], "off": 0}}));
+    let before = s.doc.clone();
+    assert!(s.run("text.backspace", &json!({})).is_err());
+    assert_eq!(s.doc, before);
+}
