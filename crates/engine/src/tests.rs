@@ -5698,13 +5698,13 @@ fn styles_apply_rejected_on_protected_document() {
     assert_eq!(s.undo_labels(), undo);
 }
 
-fn column_doc() -> Session {
+pub(crate) fn column_doc() -> Session {
     let mut s = s();
     run(&mut s, "document.setText", json!({"text": "abcdef\nabcdef\nabcdef"}));
     s
 }
 
-fn block(s: &mut Session) {
+pub(crate) fn block(s: &mut Session) {
     let a = serde_json::to_value(Pos::body(0, 2)).unwrap();
     let f = serde_json::to_value(Pos::body(2, 4)).unwrap();
     let r = run(s, "select.column", json!({"anchor": a, "focus": f}));
