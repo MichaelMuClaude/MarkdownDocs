@@ -39,6 +39,8 @@ pub enum Phase {
     /// Partway through a legacy menu key sequence (#1697); the letters so far are in
     /// `keytip_prefix`, and a hint stands in for the badges.
     Legacy,
+    /// Badges over the Backstage side menu, after Alt, F (#4960).
+    Backstage,
 }
 
 /// Which ribbon item a letter is bound to, and what pressing it does.
@@ -633,8 +635,8 @@ pub fn handle_key(app: &mut WordApp, key: egui::Key) -> bool {
                         match hit {
                             Some(tab) => {
                                 let _ = app.run("ui.tab", serde_json::json!({ "tab": tab }));
-                                // File opens the Backstage: no ribbon commands to badge.
-                                app.ui.keytips = if tab == "File" { Phase::Off } else { Phase::Commands };
+                                // File opens the Backstage: its pages get the badges (Alt, F, P prints).
+                                app.ui.keytips = if tab == "File" && app.ui.backstage { Phase::Backstage } else { Phase::Commands };
                             }
                             // Q is the title bar's Search box, as in Word (#819).
                             None if name == SEARCH_LETTER => {
@@ -652,6 +654,12 @@ pub fn handle_key(app: &mut WordApp, key: egui::Key) -> bool {
                     Phase::Legacy => {
                         legacy_key(app, &name);
                         return true;
+                    }
+                    Phase::Backstage => {
+                        app.ui.keytips = Phase::Off;
+                        if let Some(page) = crate::backstage::keytip_page(&name) {
+                            crate::backstage::go_to_page(app, page);
+                        }
                     }
                     Phase::Commands => {
                         let tab = app.ui.tab.clone();
@@ -733,11 +741,16 @@ pub fn activate(app: &mut WordApp) {
 
 use crate::keys;
 
-/// Keytips are suppressed while the Backstage or a modal dialog is open, or while a text field
+/// Keytips are suppressed while the Backstage (except for its own badges, Alt, F) or a modal dialog is open, or while a text field
 /// (not the canvas) has focus; the canvas lets Alt open keytips and `canvas_events` swallows
-/// typing while they show.
+/// typing while they show. The Backstage's badges end with it (its back chevron, a mouse Save),
+/// so the next letter is typed and never picks a page that is no longer there.
 pub fn suppressed(app: &WordApp, ctx: &egui::Context) -> bool {
-    !app.ui.keytips_enabled || app.ui.backstage || app.dialog.is_some() || (ctx.egui_wants_keyboard_input() && !app.canvas.focused)
+    !app.ui.keytips_enabled
+        || (app.ui.backstage && app.ui.keytips != Phase::Backstage)
+        || (!app.ui.backstage && app.ui.keytips == Phase::Backstage)
+        || app.dialog.is_some()
+        || (ctx.egui_wants_keyboard_input() && !app.canvas.focused)
 }
 
 /// Native backends report Alt through both key and modifier events, in either order. Track
@@ -1291,12 +1304,13 @@ mod tests {
         assert_eq!(a.ui.keytips, Phase::Commands);
         assert!(handle_key(&mut a, egui::Key::F));
         assert_eq!(a.ui.keytips, Phase::Off);
-        // Alt, F: the Backstage, and keytips end.
+        // Alt, F: the Backstage, with its pages' keytips (#4960).
         a.ui.backstage = false;
         activate(&mut a);
         assert!(handle_key(&mut a, egui::Key::F));
         assert!(a.ui.backstage, "Alt, F opens File");
-        assert_eq!(a.ui.keytips, Phase::Off);
+        assert_eq!(a.ui.keytips, Phase::Backstage);
+        a.ui.keytips = Phase::Off;
         // Alt, W: View; Alt, R: Review (Word's letters, not V and S).
         a.ui.backstage = false;
         activate(&mut a);
@@ -1535,5 +1549,86 @@ mod tests {
         assert!(handle_key(&mut a, egui::Key::Q));
         assert_eq!(a.ui.keytips, Phase::Off);
         assert!(matches!(a.dialog, Some(crate::dialogs::Dialog::Commands { .. })), "{:?}", a.dialog.as_ref().map(|d| d.name()));
+    }
+
+    /// #4960: Alt, F opens the Backstage with badges on its pages, as in Word; Alt, F, P and Word's
+    /// older Alt, F, V open the Print page (Print Preview). Typed through `logic`, the path real
+    /// keys take, which keytips used to leave as soon as the Backstage opened.
+    #[test]
+    fn file_keytips_reach_the_backstage_pages() {
+        let ctx = egui::Context::default();
+        let tap = |ctx: &egui::Context, a: &mut WordApp| {
+            input_frame(ctx, a, vec![key_event(egui::Key::AltLeft, true, egui::Modifiers::ALT)]);
+            input_frame(ctx, a, vec![key_event(egui::Key::AltLeft, false, egui::Modifiers::NONE)]);
+        };
+        let letter = |ctx: &egui::Context, a: &mut WordApp, k: egui::Key| {
+            input_frame(ctx, a, vec![key_event(k, true, egui::Modifiers::NONE), key_event(k, false, egui::Modifiers::NONE)]);
+        };
+        for (second, page) in [(egui::Key::P, "print"), (egui::Key::V, "print"), (egui::Key::A, "saveAs"), (egui::Key::T, "options")] {
+            let mut a = app();
+            if cfg!(target_os = "macos") {
+                activate(&mut a);
+            } else {
+                tap(&ctx, &mut a);
+            }
+            assert_eq!(a.ui.keytips, Phase::Tabs);
+            letter(&ctx, &mut a, egui::Key::F);
+            assert!(a.ui.backstage, "F opens the Backstage");
+            assert_eq!(a.ui.keytips, Phase::Backstage, "and its pages show badges");
+            input_frame(&ctx, &mut a, vec![]);
+            assert_eq!(a.ui.keytips, Phase::Backstage, "the badges stay while it waits");
+            letter(&ctx, &mut a, second);
+            assert_eq!((a.ui.backstage, a.ui.backstage_page.as_str()), (true, page), "{second:?}");
+            assert_eq!(a.ui.keytips, Phase::Off);
+        }
+        // A letter with no page ends the badges and leaves the Backstage open; Esc too.
+        for k in [egui::Key::Q, egui::Key::Escape] {
+            let mut a = app();
+            activate(&mut a);
+            letter(&ctx, &mut a, egui::Key::F);
+            let page = a.ui.backstage_page.clone();
+            letter(&ctx, &mut a, k);
+            assert_eq!((a.ui.keytips, a.ui.backstage, a.ui.backstage_page.clone()), (Phase::Off, true, page), "{k:?}");
+        }
+        assert_eq!(crate::backstage::keytip_page("P"), Some("print"));
+        assert_eq!(crate::backstage::keytip_page("V"), Some("print"));
+        assert_eq!(crate::backstage::keytip_page("R"), None);
+    }
+
+    /// #4981 review: the Backstage closed while its badges show (the back chevron, a mouse Save)
+    /// ends them. The next letter is typed, and never picks a page with the Backstage gone: C used
+    /// to close the document and S to save it.
+    #[test]
+    fn closing_the_backstage_ends_its_keytips() {
+        let mut a = app();
+        a.canvas.focused = true;
+        a.canvas.want_focus = true;
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            a,
+        );
+        h.run_steps(4);
+        let key = |key| key_event(key, true, egui::Modifiers::NONE);
+        h.input_mut().events.push(key(egui::Key::F10));
+        h.step();
+        assert_eq!(h.state().ui.keytips, Phase::Tabs);
+        h.input_mut().events.extend([key(egui::Key::F), egui::Event::Text("f".into())]);
+        h.step();
+        assert_eq!((h.state().ui.backstage, h.state().ui.keytips), (true, Phase::Backstage));
+        // What the back chevron does.
+        h.state_mut().ui.backstage = false;
+        h.state_mut().canvas.want_focus = true;
+        h.run_steps(2);
+        assert_eq!(h.state().ui.keytips, Phase::Off, "the badges end with the Backstage");
+        h.input_mut().events.extend([key(egui::Key::C), egui::Event::Text("c".into())]);
+        h.run_steps(2);
+        assert_eq!(h.state().ui.keytips, Phase::Off);
+        assert!(h.state().has_document(), "C does not close the document");
+        assert!(!h.state().ui.backstage);
+        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body).trim(), "c", "C is typed");
     }
 }
