@@ -522,9 +522,9 @@ fn insert_field(s: &mut Session, instr: &str, placeholder: &str) -> CmdResult {
 }
 
 /// Parse CSV (RFC 4180-ish: quotes, doubled quotes, commas/semicolons/tabs).
-/// The field separator: whichever of `,` `;` and tab the first line (outside quotes) uses most.
+/// The field separator: whichever of `,` `;` and tab the first non-blank line (outside quotes) uses most.
 fn csv_separator(text: &str) -> char {
-    let first = text.lines().next().unwrap_or("");
+    let first = text.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
     let mut quoted = false;
     let mut unquoted = String::new();
     for c in first.chars() {
@@ -1575,6 +1575,13 @@ mod tests {
     fn csv_delimiter_ignores_quoted_text() {
         let r = parse_csv("\"Name, first, last\";City\nAnn;Paris\n");
         assert_eq!(r, vec![vec!["Name, first, last", "City"], vec!["Ann", "Paris"]]);
+    }
+
+    #[test]
+    fn csv_delimiter_skips_leading_blank_lines() {
+        let want = vec![vec!["Name", "Email"], vec!["Ann", "ann@x.org"]];
+        assert_eq!(parse_csv("\nName,Email\nAnn,ann@x.org\n"), want);
+        assert_eq!(parse_csv("\r\n\r\nName;Email\r\nAnn;ann@x.org"), want);
     }
 
     /// Field types ignore case (ECMA-376 Part 1, 17.16.1), and `MERGEFIELDX` is another field.
