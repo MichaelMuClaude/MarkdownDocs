@@ -3028,6 +3028,8 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         "references.citation" if !has("tag") && !has("source") => Some("createSource"),
         // Templates and Add-ins, and the Organizer without a file to list (#377).
         "tools.templates" => Some("templates"),
+        // Macros without a name to run, define or delete shows its dialog (#4327); scripts get the list.
+        "tools.macros" if !["run", "define", "delete"].into_iter().any(has) => Some("macros"),
         "styles.organizer" if !has("path") => Some("organizer"),
         // Language, Envelopes and Labels without settings show their dialogs (#407).
         "review.language" if params.as_object().is_none_or(|m| m.is_empty()) => Some("language"),

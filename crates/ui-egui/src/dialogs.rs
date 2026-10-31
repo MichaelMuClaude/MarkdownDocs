@@ -364,6 +364,10 @@ pub enum Dialog {
         /// The line the border choices draw.
         pen: crate::dialogs_table_style::BorderPen,
     },
+    /// View › Macros: the recorded macros to run or delete, and Record (#4327).
+    Macros {
+        name: String,
+    },
     Commands {
         query: String,
         /// Opened by a shortcut that may also send its key's text (Alt+Q's "q", in the same frame
@@ -1180,6 +1184,7 @@ impl Dialog {
             Dialog::TableStyle { id: None, .. } => "newTableStyle",
             Dialog::TableStyle { .. } => "modifyTableStyle",
             Dialog::Commands { .. } => "commands",
+            Dialog::Macros { .. } => "macros",
             Dialog::Insert(d) => d.name(),
             Dialog::Refs(d) => d.name(),
             Dialog::Icons { .. } => "icons",
@@ -1411,6 +1416,7 @@ impl Dialog {
             "manageStyles" => Dialog::ManageStyles { alphabetical: false, selected: s("style") },
             "newTableStyle" | "modifyTableStyle" => crate::dialogs_table_style::open(app, name)?,
             "commands" => Dialog::Commands { query: String::new(), swallow: true },
+            "macros" => Dialog::Macros { name: String::new() },
             "icons" => Dialog::Icons { query: String::new(), category: String::new(), selected: String::new() },
             "tableProperties" => {
                 let form = Box::new(TableForm::read(app)?);
@@ -1658,6 +1664,7 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::TableStyle { id: None, .. } => "New Table Style",
         Dialog::TableStyle { .. } => "Modify Table Style",
         Dialog::Commands { .. } => "Search Commands",
+        Dialog::Macros { .. } => "Macros",
         Dialog::Insert(d) => d.title(),
         Dialog::Refs(d) => d.title(),
         Dialog::Icons { .. } => "Icons",
@@ -2824,6 +2831,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         }
         Dialog::Insert(f) => crate::dialogs_insert::body(app, ui, f),
         Dialog::Refs(f) => crate::dialogs_refs::body(app, ui, f),
+        Dialog::Macros { name } => macros(app, ui, name),
         Dialog::Commands { query, swallow } => {
             if *swallow {
                 ui.ctx().input_mut(|i| i.events.retain(|e| !swallow_shortcut_text(swallow, e)));
@@ -4344,6 +4352,66 @@ fn icons_body(app: &mut WordApp, ui: &mut Ui, query: &mut String, category: &mut
 
 /// Enclose Characters' preview: the text in the chosen shape, shrunk or with the shape enlarged
 /// (drawn, so it doesn't depend on the interface font having ○ □ △ ◇).
+/// View › Macros (#4327): the macros recorded or defined this session, with Run and Delete beside
+/// the list and Record below it. While a recording is running the box offers Stop Recording instead.
+/// The list is read from the session, not from `tools.macros`, which would ask to open this
+/// dialog again. Run and Record close the dialog; Delete leaves it open.
+fn macros(app: &mut WordApp, ui: &mut Ui, name: &mut String) -> bool {
+    let names: Vec<String> = app.session.macros.keys().cloned().collect();
+    let recording = app.session.recording.as_ref().map(|(n, _)| n.clone());
+    let t = Tokens::get(ui.ctx());
+    let (mut run, mut delete, mut record) = (false, false, false);
+    ui.horizontal_top(|ui| {
+        ui.vertical(|ui| {
+            let name_label = ui.label(tl!("Macro name:"));
+            ui.add(egui::TextEdit::singleline(name).desired_width(240.0)).labelled_by(name_label.id);
+            egui::Frame::NONE.stroke(egui::Stroke::new(1.0, t.border)).inner_margin(4).show(ui, |ui| {
+                ui.set_width(232.0);
+                ui.set_height(150.0);
+                egui::ScrollArea::vertical().id_salt("macro_list").max_height(150.0).auto_shrink([false, false]).show(ui, |ui| {
+                    if names.is_empty() {
+                        ui.label(egui::RichText::new(tl!("There are no macros yet. Record one to add it here.")).small().color(t.text_dim));
+                    }
+                    for n in &names {
+                        if ui.selectable_label(*n == *name, n.as_str()).clicked() {
+                            *name = n.clone();
+                        }
+                    }
+                });
+            });
+        });
+        ui.vertical(|ui| {
+            ui.add_space(18.0);
+            let listed = names.contains(name);
+            let w = vec2(110.0, 0.0);
+            run = ui.add_enabled(listed && recording.is_none(), egui::Button::new(tl!("Run")).min_size(w)).clicked();
+            delete = ui.add_enabled(listed, egui::Button::new(tl!("Delete")).min_size(w)).clicked();
+            let record_label = if recording.is_some() { tl!("Stop Recording") } else { tl!("Record…") };
+            record = ui.add_enabled(recording.is_some() || !name.trim().is_empty(), egui::Button::new(record_label).min_size(w)).clicked();
+        });
+    });
+    if run {
+        let _ = app.run("tools.macros", json!({"run": name.as_str()}));
+        return true;
+    }
+    if delete && app.run("tools.macros", json!({"delete": name.as_str()})).is_ok() {
+        name.clear();
+    }
+    if record {
+        // Stopping takes no name; starting records under the one typed.
+        let _ = app.run("tools.recordMacro", if recording.is_some() { json!({}) } else { json!({"name": name.trim()}) });
+        return true;
+    }
+    ui.add_space(8.0);
+    let mut close = ui.input(|i| i.key_pressed(egui::Key::Escape));
+    ui.horizontal(|ui| {
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            close |= ui.button(tl!("Close")).clicked();
+        });
+    });
+    close
+}
+
 fn enclose_preview(ui: &mut Ui, style: &str, text: &str, shape: &str) {
     let t = Tokens::get(ui.ctx());
     let (r, _) = ui.allocate_exact_size(vec2(110.0, 64.0), Sense::hover());
@@ -4557,6 +4625,67 @@ mod tests {
             assert!(matches!(&app.dialog, Some(Dialog::Find { tab: t, .. }) if *t == tab), "{name}");
             assert_eq!(app.dialog.as_ref().map(|d| d.name()), Some(name));
         }
+    }
+
+    /// #4327: View › Macros opens a dialog that runs, deletes and records macros; the command with
+    /// a name to run or delete (what scripts send) still acts without one.
+    #[test]
+    fn the_macros_button_opens_a_dialog_that_runs_deletes_and_records() {
+        fn press(h: &mut egui_kittest::Harness<'_, WordApp>, label: &str) {
+            use egui_kittest::kittest::Queryable;
+            let dialog = h.ctx.memory(|m| m.area_rect(egui::Id::new(("dialog", "Macros")))).expect("the dialog is open");
+            h.query_all_by_label(label).find(|n| dialog.contains(n.rect().center())).expect(label).click();
+            for _ in 0..3 {
+                h.step();
+            }
+        }
+        let mut app = app_with("Start");
+        for name in ["Greet", "Spare"] {
+            app.run("tools.macros", json!({"define": {"name": name, "steps": [{"command": "text.insert", "params": {"text": name}}]}})).unwrap();
+        }
+        assert!(app.dialog.is_none(), "defining a macro opens nothing");
+        assert_eq!(app.run("tools.macros", json!({})).unwrap(), json!({"pending": "macros"}));
+        let mut h = app_harness(app);
+        h.run_steps(4);
+        assert!(matches!(&h.state().dialog, Some(Dialog::Macros { .. })));
+
+        press(&mut h, "Spare");
+        press(&mut h, "Delete");
+        let names: Vec<&String> = h.state().session.macros.keys().collect();
+        assert_eq!(names, ["Greet"]);
+        assert!(h.state().dialog.is_some(), "Delete leaves the dialog open");
+
+        press(&mut h, "Greet");
+        press(&mut h, "Run");
+        assert!(h.state().dialog.is_none());
+        assert!(body_of(h.state()).contains("Greet"), "the macro ran");
+
+        // A macro whose name has spaces around it (only a script can make one) runs by its exact name.
+        h.state_mut()
+            .run("tools.macros", json!({"define": {"name": " Pad ", "steps": [{"command": "text.insert", "params": {"text": "Padded"}}]}}))
+            .unwrap();
+        h.state_mut().dialog = Dialog::open("macros", h.state_mut());
+        if let Some(Dialog::Macros { name }) = &mut h.state_mut().dialog {
+            *name = " Pad ".into();
+        }
+        h.run_steps(3);
+        press(&mut h, "Run");
+        assert!(h.state().dialog.is_none());
+        assert!(body_of(h.state()).contains("Padded"), "the macro with spaces in its name ran");
+
+        // Record starts a recording under the typed name; the dialog then offers to stop it.
+        h.state_mut().dialog = Dialog::open("macros", h.state_mut());
+        if let Some(Dialog::Macros { name }) = &mut h.state_mut().dialog {
+            *name = "Fresh".into();
+        }
+        h.run_steps(3);
+        press(&mut h, "Record…");
+        assert_eq!(h.state().session.recording.as_ref().map(|(n, _)| n.as_str()), Some("Fresh"));
+        assert!(h.state().dialog.is_none());
+    }
+
+    fn body_of(app: &WordApp) -> String {
+        app.session.doc.plain_text(wordcraft_doc::StoryRef::Body)
     }
 
     fn app_with(text: &str) -> WordApp {
