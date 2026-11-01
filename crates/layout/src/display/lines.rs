@@ -418,15 +418,8 @@ pub(super) fn lines(
             let Some(st) = pl.styles.get(c.style as usize) else { continue };
             let Some(ch) = leader.char() else { continue };
             let gid = st.face.glyph_for(ch);
-            let adv = (st.face.advance(gid) as f32 * st.size / st.face.upem.max(1.0) as f32).max(1.0);
-            let (mut gx, end) = (x + a + adv * 0.5, x + b - adv * 1.2);
-            let mut glyphs = Vec::new();
-            // Align leader dots to a grid so consecutive lines line up.
-            gx = (gx / adv).ceil() * adv;
-            while gx < end && glyphs.len() < 2000 {
-                glyphs.push((gid, gx, base));
-                gx += adv;
-            }
+            let adv = leader_pitch(st.face.advance(gid) as f32, st.face.upem as f32, st.size);
+            let glyphs = leader_xs(x + a, x + b, adv).into_iter().map(|gx| (gid, gx, base)).collect();
             out.push(Draw::Glyphs {
                 face: st.face,
                 size: st.size,
@@ -626,6 +619,43 @@ pub fn section_break_label(start: SectionStart) -> &'static str {
         SectionStart::OddPage => "Section Break (Odd Page)",
         SectionStart::NextColumn => "Section Break (Next Column)",
     }
+}
+
+/// Where a tab leader's glyphs go between page x `left` (the end of the text before the tab) and
+/// `right` (the start of the text after it), `pitch` apart: on the page's grid of that pitch, from
+/// the first place at or after `left` to the last glyph that ends by `right`, as Word draws them.
+/// Each place is worked out from its grid index, so a long leader doesn't drift and lose its last
+/// glyph to rounding.
+pub(crate) fn leader_xs(left: f32, right: f32, pitch: f32) -> Vec<f32> {
+    if !(left.is_finite() && right.is_finite() && pitch.is_finite() && pitch > 0.0) {
+        return Vec::new();
+    }
+    let first = (left / pitch - LEADER_GRID_SLACK).ceil() as i64;
+    (first..first.saturating_add(MAX_LEADER_GLYPHS)).map(|k| k as f32 * pitch).take_while(|x| x + pitch <= right + LEADER_FIT_SLACK).collect()
+}
+
+/// How far, in grid places, `left` may be past a place and still start the leader there: so text
+/// ending on a grid place, give or take float rounding, doesn't lose the first glyph.
+const LEADER_GRID_SLACK: f32 = 0.001;
+
+/// How far, in points, a leader's last glyph may end past `right` and still be drawn: the same
+/// allowance for rounding at the other end.
+const LEADER_FIT_SLACK: f32 = 0.001;
+
+/// The most glyphs one leader draws, so a hostile tab position can't make it loop for long.
+const MAX_LEADER_GLYPHS: i64 = 2000;
+
+/// How far apart a tab leader's glyphs are drawn, as measured in Word: the glyph's advance (`units`
+/// of the font's `upem`) at the font size rounded to whole 600-dpi pixels, rounded to a whole
+/// pixel. So a TH SarabunPSK dot at 16 pt (133 px, 162/1000 em: 21.5 px) is drawn every 22 px,
+/// 2.64 pt rather than 2.59, a Tahoma one at 22 pt (183 px, 620/2048 em: 55.4 px) every 55 px,
+/// 6.6 pt, and an Arial one at 14 pt (116.7 px, so 117; 569/2048 em: 32.5 px) every 33 px,
+/// 3.96 pt. At least 1 pt.
+pub(crate) fn leader_pitch(units: f32, upem: f32, size: f32) -> f32 {
+    const DPI: f32 = 600.0;
+    let ppem = (size * DPI / 72.0).round();
+    let px = (units * ppem / upem.max(1.0)).round();
+    (px * 72.0 / DPI).max(1.0)
 }
 
 /// Width of a [`Draw::MarkText`] label.
