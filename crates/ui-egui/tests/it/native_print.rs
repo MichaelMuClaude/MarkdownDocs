@@ -303,7 +303,7 @@ fn native_print_scales_to_the_chosen_paper() {
 fn native_print_job_leaves_out_link_annotations() {
     let mut app = WordApp::new(Session::new(wordcraft_doc::Document::new()), Services::default());
     app.run("insert.link", json!({"url": "https://example.com", "text": "a link"})).unwrap();
-    app.printing.printers.push(Printer { name: "Queue".into(), label: String::new(), default: true });
+    app.printing.printers.push(Printer { name: "Queue".into(), default: true });
     app.run("ui.printSettings", json!({"printer":"Queue"})).unwrap();
     let jobs = Rc::new(RefCell::new(Vec::new()));
     let observed = jobs.clone();
