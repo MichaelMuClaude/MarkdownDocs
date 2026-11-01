@@ -165,6 +165,7 @@ pub(crate) fn layout_pass(
         early,
         seeded: 0,
         settle: !may_rewrap && !reflow,
+        column_lines: None,
     };
     // Endnotes in document order, with the section of their reference; placed at the end of a
     // section that keeps them there, else at the end of the document.
@@ -268,11 +269,13 @@ pub(crate) fn layout_pass(
             pb.foot_top = foot_top;
         } else {
             // Continuous: new column layout below the current text (its tallest column).
+            pb.close_column_lines();
             pb.cols = sect.column_boxes();
             pb.col = 0;
             pb.top = pb.text_bottom();
             pb.y = pb.top;
             pb.max_y = pb.top;
+            pb.open_column_lines(block);
         }
         prev_turn = turn;
         pb.foot_top = foot_top;
@@ -323,6 +326,7 @@ pub(crate) fn layout_pass(
     // The rest of the endnotes after the last paragraph.
     let rest: Vec<u32> = endnotes.into_iter().map(|(id, _)| id).collect();
     place_endnotes(&mut ctx, &mut pb, rest, block);
+    pb.close_column_lines();
     pb.apply_valign();
     pb.flush_notes();
     // Footnotes still continuing after the last page get pages of their own. Each page takes at
