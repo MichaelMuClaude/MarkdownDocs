@@ -209,6 +209,9 @@ impl Writer<'_> {
                 w.close("w:r");
                 self.rev_close(w, props);
             }
+            InlineObject::Shape { extra, float, .. } if extra.hr.is_some() && float.wrap == Wrap::Inline && !float.hidden => {
+                self.write_hr(w, o, props)
+            }
             InlineObject::Shape { kind, w: sw, h: sh, float, effects, freeform, extra, .. } => {
                 self.rev_open(w, props);
                 w.open("w:r", &[]);
@@ -277,6 +280,7 @@ impl Writer<'_> {
                         w.open("wpg:wgp", &[]);
                         w.empty("wpg:cNvGrpSpPr", &[]);
                         w.open("wpg:grpSpPr", &[]);
+
                         w.open("a:xfrm", &spin_attrs(float.spin()).iter().map(|(k, v)| (*k, v.as_str())).collect::<Vec<_>>());
                         w.empty("a:off", &[("x", "0"), ("y", "0")]);
                         w.empty("a:ext", &[("cx", &emu(gw.max(0.0))), ("cy", &emu(gh.max(0.0)))]);
@@ -384,6 +388,74 @@ impl Writer<'_> {
                 }
             }
         }
+    }
+
+    /// A horizontal rule goes back as the VML rule it was read from: DrawingML has none, and a
+    /// fixed-size shape would lose its line-wide width.
+    fn write_hr(&mut self, w: &mut W, o: &InlineObject, props: &CharProps) {
+        let InlineObject::Shape { w: sw, h: sh, fill, stroke, stroke_width, extra, float, .. } = o else { return };
+        let Some(hr) = extra.hr else { return };
+        let align = match hr.align {
+            wordcraft_doc::props::Align::Center => "center",
+            wordcraft_doc::props::Align::Right => "right",
+            _ => "left",
+        };
+        let width = if hr.pct > 0.0 { "0".to_string() } else { format!("{:.2}pt", sw.max(0.0)) };
+        let mut style = format!("width:{width};height:{:.2}pt", sh.max(0.0));
+        let spin = float.spin();
+        if spin.deg != 0.0 {
+            style.push_str(&format!(";rotation:{}", spin.deg));
+        }
+        match (spin.flip_h, spin.flip_v) {
+            (true, true) => style.push_str(";flip:x y"),
+            (true, false) => style.push_str(";flip:x"),
+            (false, true) => style.push_str(";flip:y"),
+            (false, false) => {}
+        }
+        let pct = format!("{}", (hr.pct * 10.0).round().max(0.0) as u32);
+        let fill_hex = fill.as_ref().map(|f| format!("#{}", f.main_color().hex()));
+        let stroke_hex = stroke.map(|c| format!("#{}", c.hex()));
+        let weight = format!("{stroke_width:.2}pt");
+        let mut attrs: Vec<(&str, &str)> = vec![
+            ("xmlns:v", "urn:schemas-microsoft-com:vml"),
+            ("xmlns:o", "urn:schemas-microsoft-com:office:office"),
+            ("style", &style),
+            ("o:hrpct", &pct),
+            ("o:hralign", align),
+            ("o:hr", "t"),
+        ];
+        if hr.standard {
+            attrs.push(("o:hrstd", "t"));
+        }
+        if let Some(f) = &fill_hex {
+            attrs.push(("fillcolor", f));
+        } else {
+            attrs.push(("filled", "f"));
+        }
+        match &stroke_hex {
+            Some(s) => {
+                attrs.push(("strokecolor", s));
+                attrs.push(("strokeweight", &weight));
+            }
+            None => attrs.push(("stroked", "f")),
+        }
+        self.rev_open(w, props);
+        w.open("w:r", &[]);
+        self.rpr(w, props);
+        w.open("w:pict", &[]);
+        // A see-through fill keeps its opacity, which `fillcolor` can't say.
+        match fill.as_ref() {
+            Some(wordcraft_doc::fill::Fill::Solid { transparency, .. }) if *transparency > 0.0 => {
+                let opacity = format!("{:.4}", (1.0 - transparency / 100.0).clamp(0.0, 1.0));
+                w.open("v:rect", &attrs);
+                w.empty("v:fill", &[("opacity", &opacity)]);
+                w.close("v:rect");
+            }
+            _ => w.empty("v:rect", &attrs),
+        }
+        w.close("w:pict");
+        w.close("w:r");
+        self.rev_close(w, props);
     }
 }
 

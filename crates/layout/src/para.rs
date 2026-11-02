@@ -98,6 +98,19 @@ impl ParaLayout {
     fn auto_space_after(&self, k: usize) -> f32 {
         self.auto_space.binary_search_by_key(&k, |a| a.0).ok().and_then(|i| self.auto_space.get(i)).map_or(0.0, |a| a.1)
     }
+
+    /// The room a horizontal rule at cluster `k` is placed in, from its left edge to the end of
+    /// what the line has left. A first-line indent moves that end along (Word, measured with
+    /// 50 % and fixed-width rules beside floats on either side and with first-line and hanging
+    /// indents: 36 pt of first-line indent ends the room 36 pt past the right margin).
+    pub(crate) fn rule_room(&self, line: &Line, k: usize) -> f32 {
+        let adv = self.clusters.get(k).map_or(0.0, |c| c.adv);
+        if line.rtl {
+            return adv;
+        }
+        let first = if line.c0 == 0 { self.rp.indent_first } else { 0.0 };
+        (line.right + first - line.cl_left(k).unwrap_or(0.0)).max(0.0)
+    }
     /// The line the list label is drawn on: the first, unless the paragraph opens with a page
     /// break, when Word draws it with the text on the next page.
     pub fn label_line(&self) -> usize {
