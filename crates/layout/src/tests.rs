@@ -12153,3 +12153,5 @@ fn an_empty_bulleted_mark_after_a_bulleted_section_closer_draws_no_bullet() {
         assert!(text, "{filler} lines above: the text closer keeps its bullet");
     }
 }
+
+mod shape_alpha;

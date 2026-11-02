@@ -2301,7 +2301,8 @@ mod tests {
         for show_in in ["original", "revised", "new"] {
             let mut s = Session::new(Document::from_text("Body one.\n\nKeep."));
             let mut boxes = Vec::new();
-            for (para, off, text) in [(0usize, "Body one.".len(), "Alpha boxword gamma."), (1, 0, "Vml onlyword here."), (2, "Keep.".len(), "Kept box.")]
+            for (para, off, text) in
+                [(0usize, "Body one.".len(), "Alpha boxword gamma."), (1, 0, "Vml onlyword here."), (2, "Keep.".len(), "Kept box.")]
             {
                 s.run("caret.set", &json!({"pos": Pos::body(para, off)})).unwrap();
                 let id = s.run("insert.textBox", &json!({"text": text})).unwrap()["story"].as_u64().unwrap() as u32;
@@ -2363,9 +2364,14 @@ mod tests {
         let t = |t: &str, del, ins| (t.to_string(), del, ins);
         for show_in in ["original", "revised", "new"] {
             for (then, left) in [("review.acceptAll", "Revised box."), ("review.rejectAll", "Original box.")] {
-                let mut s = with_boxes("Body one.\nOld middle.\nKeep.", &[(1, "Old middle.".len(), "Original box."), (2, "Keep.".len(), "Kept box.")]);
+                let mut s =
+                    with_boxes("Body one.\nOld middle.\nKeep.", &[(1, "Old middle.".len(), "Original box."), (2, "Keep.".len(), "Kept box.")]);
                 s.run("review.compare", &json!({"path": path.to_string_lossy(), "showIn": show_in})).unwrap();
-                assert_eq!(boxes(&s.doc), [t("Kept box.", false, false), t("Original box.", true, false), t("Revised box.", false, true)], "{show_in}");
+                assert_eq!(
+                    boxes(&s.doc),
+                    [t("Kept box.", false, false), t("Original box.", true, false), t("Revised box.", false, true)],
+                    "{show_in}"
+                );
                 s.run(then, &json!({})).unwrap();
                 assert_eq!(boxes(&s.doc), [t("Kept box.", false, false), t(left, false, false)], "{show_in} {then}");
             }
