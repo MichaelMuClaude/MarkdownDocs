@@ -47,6 +47,7 @@ pub mod symbol_fonts;
 pub mod table;
 pub mod wordart;
 pub mod wrap;
+pub mod zip_guard;
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
