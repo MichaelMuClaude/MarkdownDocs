@@ -449,7 +449,7 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                         let quoted = |k: Kind| k == Kind::Quote;
                         let next_is_list = matches!(blocks.get(i + 1), Some(FBlock::Para(q)) if q.list.is_some() && quoted(q.kind) == quoted(p.kind));
                         if !next_is_list {
-                            out.push(String::new());
+                            out.push(quote_gap(p, blocks.get(i + 1)));
                         }
                     }
                     None => {
@@ -475,7 +475,7 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                             }
                         };
                         out.push(line);
-                        out.push(String::new());
+                        out.push(quote_gap(p, blocks.get(i + 1)));
                     }
                 }
             }
@@ -526,4 +526,14 @@ fn lone_display_equation(inlines: &[Inline]) -> Option<String> {
         }
     }
     eq.map(|t| t.trim().to_string()).filter(|t| !t.is_empty() && !t.contains("\n\n"))
+}
+
+/// The line between a block and the next: blank, except inside a block quote, where quoted
+/// paragraphs (and quoted list items) run on in one quote, separated by an empty quoted line
+/// (`>`). A blank line would end the quote and start another one at every paragraph.
+fn quote_gap(p: &crate::model::Para, next: Option<&FBlock>) -> String {
+    match next {
+        Some(FBlock::Para(q)) if p.kind == Kind::Quote && q.kind == Kind::Quote => ">".to_string(),
+        _ => String::new(),
+    }
 }
