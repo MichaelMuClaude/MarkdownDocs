@@ -6599,6 +6599,51 @@ fn at_least_rows(room: f32, rows: usize, build: impl Fn(&mut Table)) -> (DocLayo
     (l, pages)
 }
 
+/// The filler paragraph (and where the table goes) for [`at_least_rows`]: a document whose
+/// first paragraph leaves `room` points of the letter page's 648 pt body.
+fn at_least_rows_filler(room: f32) -> (Document, usize) {
+    let mut d = Document::from_text("Text above the table");
+    d.para_mut(StoryRef::Body, &Path::top(0)).unwrap().props.space_after = Some(648.0 - room - 14.0);
+    (d, if room >= 648.0 { 0 } else { 1 })
+}
+
+/// Give every cell paragraph one exact line of spacing, so row heights don't depend on the font.
+fn set_at_least_row_spacing(t: &mut Table) {
+    for row in &mut t.rows {
+        for cell in &mut row.cells {
+            for block in &mut cell.blocks {
+                if let Block::Para(para) = Arc::make_mut(block) {
+                    para.props.line_spacing = Some(wordcraft_doc::props::LineSpacing::Exactly(14.0));
+                    para.props.space_before = Some(0.0);
+                    para.props.space_after = Some(0.0);
+                }
+            }
+        }
+    }
+}
+
+/// The table rows that have a cell on each page.
+fn at_least_rows_pages(l: &DocLayout) -> Vec<Vec<usize>> {
+    l.pages
+        .iter()
+        .map(|p| {
+            let mut rows: Vec<usize> =
+                p.items.iter().filter_map(|i| if let Placed::Cell { row, cell: 0, .. } = i { Some(*row) } else { None }).collect();
+            rows.dedup();
+            rows
+        })
+        .collect()
+}
+
+/// Failure-only evidence for a pagination assertion: the pages and what each holds.
+fn pagination_fixture_diagnostics(label: &str, _doc: Option<&Document>, layout: &DocLayout) -> String {
+    let mut out = format!("\npagination fixture {label}: {} pages", layout.pages.len());
+    for (i, page) in layout.pages.iter().enumerate().take(8) {
+        out.push_str(&format!("\n  page {i}: body {:?}, {} items, first block {}", page.body, page.items.len(), page.first_block));
+    }
+    out
+}
+
 fn lines_in_cell(n: usize, what: &str) -> Vec<std::sync::Arc<wordcraft_doc::Block>> {
     (1..=n).map(|k| wordcraft_doc::para_block(wordcraft_doc::Paragraph::with_text(&format!("{what} {k}"), Default::default()))).collect()
 }
