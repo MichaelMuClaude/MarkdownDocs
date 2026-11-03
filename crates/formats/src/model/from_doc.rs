@@ -154,6 +154,8 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
     let mut out = Para {
         kind,
         list,
+        cont: None,
+        quoted: false,
         task: None,
         align: p.props.align,
         page_break: p.props.page_break_before.unwrap_or(false),
@@ -166,6 +168,13 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
         mark_del: None,
         fmt_change: None,
     };
+    // A code line with only a left border is one inside a block quote (as `to_doc` writes it).
+    if kind == Kind::Code
+        && borders.is_some_and(|b| b.left.is_some_and(|l| l.is_visible()) && b.top.is_none() && b.bottom.is_none() && b.right.is_none())
+    {
+        out.quoted = true;
+        out.borders = None;
+    }
     let in_code = kind == Kind::Code;
     let mut k = 0usize;
     for (range, props) in p.run_ranges() {
@@ -186,6 +195,8 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
                     let next = Para {
                         kind,
                         list: None,
+                        cont: None,
+                        quoted: out.quoted,
                         task: None,
                         align: p.props.align,
                         page_break: true,
@@ -326,11 +337,30 @@ fn flow_paras_in(doc: &Document, p: &Paragraph, tracked: bool) -> Vec<Para> {
 
 fn flow_blocks(doc: &Document, bl: &Blocks, depth: usize, tracked: bool) -> Vec<FBlock> {
     let mut out = Vec::new();
+    // The list instance of the last list item (or block inside one), for the blocks that follow.
+    let mut in_list: Option<u32> = None;
     for b in bl {
         match &**b {
-            Block::Para(p) => out.extend(flow_paras_in(doc, p, tracked).into_iter().map(FBlock::Para)),
-            Block::Table(t) if depth < MAX_DEPTH => out.push(FBlock::Table(flow_table(doc, t, depth, tracked))),
+            Block::Para(p) => {
+                let mut paras = flow_paras_in(doc, p, tracked);
+                let rp = doc.styles.resolve_para(&p.props);
+                if let Some(n) = rp.numbering {
+                    in_list = Some(n.num);
+                } else if let Some(cont) = in_list.and_then(|num| list_continuation(doc, num, &paras, Some(rp.indent_left))) {
+                    for q in &mut paras {
+                        q.cont = Some(cont);
+                    }
+                } else if !paras.iter().all(|q| q.inlines.is_empty()) {
+                    in_list = None;
+                }
+                out.extend(paras.into_iter().map(FBlock::Para));
+            }
+            Block::Table(t) if depth < MAX_DEPTH => {
+                in_list = None;
+                out.push(FBlock::Table(flow_table(doc, t, depth, tracked)));
+            }
             Block::Table(t) => {
+                in_list = None;
                 for r in &t.rows {
                     for c in &r.cells {
                         out.extend(flow_blocks(doc, &c.blocks, depth, tracked));
@@ -340,6 +370,23 @@ fn flow_blocks(doc: &Document, bl: &Blocks, depth: usize, tracked: bool) -> Vec<
         }
     }
     out
+}
+
+/// A plain or code paragraph right after an item of list instance `num`, indented to where the
+/// text of one of the list's levels starts, is a block inside the item at that level.
+fn list_continuation(doc: &Document, num: u32, paras: &[Para], indent: Option<f32>) -> Option<ListInfo> {
+    let indent = indent.filter(|x| *x > 0.0)?;
+    if !paras.iter().all(|q| matches!(q.kind, Kind::Normal | Kind::Code)) {
+        return None;
+    }
+    (0..9u8).find_map(|level| {
+        let lv = doc.numbering.level(num, level)?;
+        ((lv.indent - indent).abs() < 0.5).then_some(ListInfo {
+            ordered: !matches!(lv.format, NumFormat::Bullet | NumFormat::None),
+            level,
+            start: lv.start,
+        })
+    })
 }
 
 fn flow_table(doc: &Document, t: &Table, depth: usize, tracked: bool) -> FTable {

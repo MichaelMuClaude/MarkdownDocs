@@ -41,6 +41,9 @@ fn code_style() -> Style {
     }
 }
 
+/// Left indent of a code block inside a block quote, points.
+const QUOTED_CODE_INDENT: f32 = 18.0;
+
 fn rule_borders() -> Borders {
     Borders { bottom: Some(Border { style: BorderStyle::Single, width: 0.75, color: Some(Rgb(0xA0, 0xA0, 0xA0)), space: 1.0 }), ..Default::default() }
 }
@@ -82,6 +85,16 @@ fn para_props(p: &Para, list_num: Option<u32>) -> ParaProps {
     } else if p.borders.is_some() {
         out.borders = p.borders;
     }
+    if p.quoted && p.kind == Kind::Code {
+        // A code block in a quote: indented, with a line down its left side.
+        out.borders = Some(Borders {
+            left: Some(Border { style: BorderStyle::Single, width: 2.25, color: Some(Rgb(0xC0, 0xC0, 0xC0)), space: 4.0 }),
+            ..Default::default()
+        });
+    }
+    if p.cont.is_some() && out.style.is_none() {
+        out.style = Some("ListParagraph".into());
+    }
     if let (Some(li), Some(num)) = (p.list, list_num) {
         if out.style.is_none() {
             out.style = Some("ListParagraph".into());
@@ -93,7 +106,7 @@ fn para_props(p: &Para, list_num: Option<u32>) -> ParaProps {
     out.space_before = sp.before;
     out.space_after = sp.after;
     out.line_spacing = sp.line;
-    out.indent_left = sp.left;
+    out.indent_left = sp.left.or((p.quoted && p.kind == Kind::Code).then_some(QUOTED_CODE_INDENT));
     out.indent_right = sp.right;
     out.indent_first = sp.first;
     if p.page_break {
@@ -374,6 +387,11 @@ impl<'a> Builder<'a> {
                     let mut group: Vec<ListInfo> = Vec::new();
                     let mut top: Option<bool> = None;
                     while let Some(FBlock::Para(q)) = blocks.get(j) {
+                        // A block inside an item stays in the list.
+                        if q.list.is_none() && q.cont.is_some() {
+                            j += 1;
+                            continue;
+                        }
                         let Some(li) = q.list else { break };
                         if li.level == 0 {
                             if top.is_some_and(|o| o != li.ordered) {
@@ -390,6 +408,15 @@ impl<'a> Builder<'a> {
                     let mut task_num = None;
                     for q in blocks.get(i..j).unwrap_or(&[]) {
                         if let FBlock::Para(q) = q {
+                            if let (None, Some(c)) = (q.list, q.cont) {
+                                // At the item's text indent, without a label.
+                                let mut para = self.para(q, None);
+                                if para.props.indent_left.is_none() {
+                                    para.props.indent_left = self.doc.numbering.level(num, c.level.min(8)).map(|l| l.indent);
+                                }
+                                out.push(para_block(para));
+                                continue;
+                            }
                             let num = match q.list {
                                 Some(li) if q.task.is_some() && !li.ordered => *task_num.get_or_insert_with(|| self.unlabelled_list(&group)),
                                 _ => num,

@@ -1065,3 +1065,31 @@ fn definitions_and_comments_stay_where_they_were() {
     let out = export_over(&import(src), src);
     assert_eq!(out, src);
 }
+
+/// Paragraphs and code blocks inside list items stay inside them (they were joined to the item's
+/// first paragraph with line breaks, losing the code block), numbering goes on after them, and a
+/// paragraph after a nested list belongs to the outer item (it became a new item).
+#[test]
+fn blocks_inside_list_items_keep_their_place() {
+    for src in [
+        "- Step one:\n\n  ```bash\n  ls -la\n\n  echo done\n  ```\n\n- Step two\n\n  Second paragraph of two.\n",
+        "1. First\n\n   More about the first.\n\n2. Second\n",
+        "- Outer\n    - Inner\n\n      Inside inner.\n\n  Back in outer.\n\n- Next\n",
+        "- ```\n  code first\n  ```\n",
+    ] {
+        assert_eq!(export(&import(src)), src);
+    }
+    let d = import("1. First\n\n   More.\n\n2. Second\n");
+    // The second paragraph is no list item of its own: two items, numbered 1 and 2.
+    let numbered = d.body.iter().filter(|b| matches!(&***b, wordcraft_doc::Block::Para(p) if p.props.numbering.is_some())).count();
+    assert_eq!(numbered, 2);
+}
+
+/// A code block inside a block quote stays in the quote (it came out after it, unquoted).
+#[test]
+fn a_code_block_in_a_quote_stays_quoted() {
+    let src = "> Before:\n>\n> ```rust\n> fn main() {}\n> ```\n>\n> After.\n";
+    assert_eq!(export(&import(src)), src);
+    // Saved over itself, nothing changes either.
+    assert_eq!(export_over(&import(src), src), src);
+}

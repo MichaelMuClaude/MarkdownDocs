@@ -750,10 +750,12 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8, refs: &Refs) -> Vec<F
                 out.push(FBlock::Para(p));
             } else {
                 for mut b in parse_blocks(&inner, depth + 1, level, refs) {
-                    if let FBlock::Para(p) = &mut b
-                        && p.kind == Kind::Normal
-                    {
-                        p.kind = Kind::Quote;
+                    if let FBlock::Para(p) = &mut b {
+                        match p.kind {
+                            Kind::Normal => p.kind = Kind::Quote,
+                            Kind::Code => p.quoted = true,
+                            _ => {}
+                        }
                     }
                     out.push(b);
                 }
@@ -896,20 +898,20 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         }
         for b in inner {
             match b {
-                FBlock::Para(mut p) if p.list.is_none() => {
-                    if !placed {
+                FBlock::Para(mut p) if p.list.is_none() && p.cont.is_none() => {
+                    if !placed && p.kind != Kind::Code {
                         p.list = Some(li);
                         p.task = task;
                         placed = true;
                         out.push(FBlock::Para(p));
-                    } else if let Some(FBlock::Para(prev)) = out.last_mut()
-                        && prev.list.is_some_and(|x| x.level == li.level)
-                    {
-                        // A continuation paragraph joins the item with a line break.
-                        prev.push_text("\n", &Fmt::default());
-                        prev.inlines.extend(p.inlines);
                     } else {
-                        p.list = Some(li);
+                        if !placed {
+                            // The item starts with a code block: give it an empty first line.
+                            out.push(FBlock::Para(Para { list: Some(li), task, ..Default::default() }));
+                            placed = true;
+                        }
+                        // A later paragraph or code line is a block inside the item.
+                        p.cont = Some(li);
                         out.push(FBlock::Para(p));
                     }
                 }

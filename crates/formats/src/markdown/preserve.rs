@@ -394,13 +394,17 @@ fn starts_new_block(cur: &[&str], line: &str) -> bool {
     let last = cur.last().copied().unwrap_or("").trim_start();
     let t = line.trim_start();
     let indented = line.starts_with("  ") || line.starts_with('\t');
+    let first = cur.first().copied().unwrap_or("").trim_start();
+    // An indented line in a list belongs to its item (a code fence or paragraph inside it).
+    if indented && is_list_item(first) {
+        return false;
+    }
     if is_atx_heading(last) || (is_rule(last) && !last.starts_with('-') && !last.starts_with('=')) {
         return true;
     }
     if is_atx_heading(t) || open_fence(t).is_some() || (is_rule(t) && !t.starts_with('-') && !t.starts_with('=')) {
         return true;
     }
-    let first = cur.first().copied().unwrap_or("").trim_start();
     if t.starts_with('>') && !last.starts_with('>') {
         return true;
     }

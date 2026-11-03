@@ -236,6 +236,12 @@ pub struct Spacing {
 pub struct Para {
     pub kind: Kind,
     pub list: Option<ListInfo>,
+    /// A block inside the list item before it, after the item's first paragraph (a second
+    /// paragraph, a line of a code block): written at the item's text indent, without a label.
+    /// `list` stays `None`, so a format that has no such blocks shows a plain paragraph.
+    pub cont: Option<ListInfo>,
+    /// A line of a code block inside a block quote.
+    pub quoted: bool,
     /// A task-list item's check box (`Some(checked)`): a GFM `- [ ]` / `- [x]` item, a document
     /// list paragraph that starts with a check-box content control.
     pub task: Option<bool>,

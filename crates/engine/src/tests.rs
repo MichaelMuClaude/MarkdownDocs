@@ -11551,3 +11551,16 @@ fn export_png_rejects_a_page_number_that_does_not_fit() {
     assert!(!target.exists(), "no file is written for an invalid page");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Paragraphs and code blocks inside list items, and a code block in a quote, survive a trip
+/// through a Word file: unnumbered paragraphs at the item's text indent, and a code paragraph
+/// indented with a line down its left side.
+#[test]
+fn markdown_nesting_round_trips_through_docx() {
+    let md = "1. First\n\n   More about the first.\n\n   ```sh\n   make\n   ```\n\n2. Second\n    - Inner\n\n      Inside inner.\n\n   Back in outer.\n\n> Quote:\n>\n> ```\n> code\n> ```\n>\n> After.\n";
+    let doc = crate::io::open_bytes("a.md", md.as_bytes()).unwrap();
+    let docx = crate::io::save_bytes("a.docx", &doc).unwrap();
+    let back = crate::io::open_bytes("a.docx", &docx).unwrap();
+    let out = String::from_utf8(crate::io::save_bytes("b.md", &back).unwrap()).unwrap();
+    assert_eq!(out, md);
+}

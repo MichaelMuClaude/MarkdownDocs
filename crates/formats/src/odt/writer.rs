@@ -462,6 +462,11 @@ impl Writer {
                     let mut kinds = [p.list.map(|l| l.ordered).unwrap_or(false); 9];
                     let mut seen = [false; 9];
                     while let Some(FBlock::Para(q)) = blocks.get(i) {
+                        // A block inside an item stays in the list (in that item).
+                        if q.list.is_none() && q.cont.is_some() {
+                            i += 1;
+                            continue;
+                        }
                         let Some(li) = q.list else { break };
                         let l = li.level.min(8) as usize;
                         // A top-level item of the other kind starts a new list.
@@ -482,7 +487,21 @@ impl Writer {
                     let mut stack: Vec<bool> = Vec::new();
                     for (qi, q) in blocks.get(start..i).unwrap_or(&[]).iter().enumerate() {
                         let FBlock::Para(q) = q else { continue };
-                        let lv = q.list.map(|l| l.level.min(8) as usize).unwrap_or(0);
+                        // A block inside an item: another paragraph of the open item at its level.
+                        if let (None, Some(c)) = (q.list, q.cont) {
+                            let lv = c.level.min(8) as usize;
+                            while stack.len() > lv + 1 {
+                                if stack.pop() == Some(true) {
+                                    out.push_str("</text:list-item>");
+                                }
+                                out.push_str("</text:list>");
+                            }
+                            if stack.len() == lv + 1 && stack.last() == Some(&true) {
+                                self.para_in(q, chain(start + qi), out);
+                                continue;
+                            }
+                        }
+                        let lv = q.list.or(q.cont).map(|l| l.level.min(8) as usize).unwrap_or(0);
                         while stack.len() > lv + 1 {
                             if stack.pop() == Some(true) {
                                 out.push_str("</text:list-item>");

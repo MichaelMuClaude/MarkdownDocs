@@ -392,14 +392,20 @@ impl Body<'_> {
         let cont = std::mem::take(&mut self.para_cont);
         let level = p.list.map(|l| l.level);
         let c = self.container();
+        // The item this paragraph is in: the last one at its level, past the items of lists
+        // nested in it.
+        let item = c
+            .iter()
+            .rev()
+            .map_while(|b| if let FBlock::Para(q) = b { q.list.or(q.cont) } else { None })
+            .find(|li| level.is_none_or(|l| li.level <= l));
         if cont
-            && let Some(FBlock::Para(prev)) = c.last_mut()
-            && prev.list.is_some()
-            && prev.list.map(|l| l.level) == level
+            && let Some(li) = item
+            && Some(li.level) == level
         {
-            prev.push_text("\n", &Fmt::default());
-            prev.inlines.extend(p.inlines);
-            return;
+            // A later paragraph of a list item is a block inside it.
+            p.list = None;
+            p.cont = Some(li);
         }
         c.push(FBlock::Para(p));
     }

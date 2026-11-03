@@ -366,14 +366,68 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
     let mut counters = [0u32; 9];
     let mut prev_list = false;
     let mut prev_top_ordered = false;
+    // Where the text of the last item at each level starts: blocks inside it are indented so.
+    let mut text_indent = [0usize; 9];
+    // The marker of an empty item whose first block is the one inside it that comes next.
+    let mut pending_marker: Option<String> = None;
     while let Some(b) = blocks.get(i) {
         match b {
+            FBlock::Para(p) if p.list.is_none() && p.cont.is_some() => {
+                let lv = p.cont.map_or(0, |c| c.level.min(8) as usize);
+                let pad = " ".repeat(text_indent.get(lv).copied().filter(|n| *n > 0).unwrap_or(4 * lv + 2));
+                // A blank line before: the item is loose, and the block isn't read as lazy text.
+                let marker = pending_marker.take();
+                if marker.is_none() && out.last().is_some_and(|l| !l.is_empty()) {
+                    out.push(String::new());
+                }
+                let start = out.len();
+                if p.kind == Kind::Code {
+                    let mut lines = Vec::new();
+                    let info = match p.inlines.first() {
+                        Some(Inline::Anchor(a)) => code_info(a),
+                        _ => None,
+                    };
+                    while let Some(FBlock::Para(q)) = blocks.get(i) {
+                        let marked = matches!(q.inlines.first(), Some(Inline::Anchor(a)) if code_info(a).is_some());
+                        if q.kind != Kind::Code
+                            || q.list.is_some()
+                            || q.cont.map(|c| c.level) != p.cont.map(|c| c.level)
+                            || (!lines.is_empty() && marked)
+                        {
+                            break;
+                        }
+                        lines.push(q.text());
+                        i += 1;
+                    }
+                    let longest = lines.iter().map(|l| l.chars().filter(|c| *c == '`').count()).max().unwrap_or(0);
+                    let fence = "`".repeat(3.max(longest + 1));
+                    let info: String = info.unwrap_or_default().chars().filter(|c| *c != '`' && *c != '\n').collect();
+                    out.push(format!("{pad}{fence}{info}"));
+                    out.extend(lines.into_iter().map(|l| if l.is_empty() { l } else { format!("{pad}{l}") }));
+                    out.push(format!("{pad}{fence}"));
+                } else {
+                    let body = escape_lines(inlines_md(&p.inlines));
+                    i += 1;
+                    if body.is_empty() {
+                        continue;
+                    }
+                    out.push(format!("{pad}{}", body.replace("\\\n", &format!("\\\n{pad}"))));
+                }
+                // An empty item's first block starts on its marker's line.
+                if let (Some(m), Some(first)) = (marker, out.get_mut(start)) {
+                    *first = format!("{m}{}", first.get(pad.len()..).unwrap_or(""));
+                }
+                out.push(String::new());
+                prev_list = true;
+                continue;
+            }
             FBlock::Table(t) => {
                 table_md(t, out);
                 out.push(String::new());
                 prev_list = false;
             }
             FBlock::Para(p) if p.kind == Kind::Code && p.list.is_none() => {
+                let quoted = p.quoted;
                 let mark = |q: &Para| match q.inlines.first() {
                     Some(Inline::Anchor(a)) => code_info(a),
                     _ => None,
@@ -382,7 +436,8 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                 let mut lines = Vec::new();
                 while let Some(FBlock::Para(q)) = blocks.get(i) {
                     // A marked line after the first starts the next block.
-                    if q.kind != Kind::Code || q.list.is_some() || (!lines.is_empty() && mark(q).is_some()) {
+                    if q.kind != Kind::Code || q.list.is_some() || q.cont.is_some() || q.quoted != quoted || (!lines.is_empty() && mark(q).is_some())
+                    {
                         break;
                     }
                     lines.push(q.text());
@@ -394,10 +449,22 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                 let fence = "`".repeat(3.max(longest + 1));
                 // A backtick in the info string would end a backtick fence's opening line early.
                 let info: String = info.chars().filter(|c| *c != '`' && *c != '\n').collect();
-                out.push(format!("{fence}{info}"));
-                out.extend(lines);
-                out.push(fence);
-                out.push(String::new());
+                // In a block quote, every line takes the quote marker.
+                let q = |l: String| {
+                    if !quoted {
+                        l
+                    } else if l.is_empty() {
+                        ">".to_string()
+                    } else {
+                        format!("> {l}")
+                    }
+                };
+                out.push(q(format!("{fence}{info}")));
+                out.extend(lines.into_iter().map(q));
+                out.push(q(fence));
+                // A quote paragraph right after stays in the same quote.
+                let next_quote = matches!(blocks.get(i), Some(FBlock::Para(n)) if quoted && n.kind == Kind::Quote && n.list.is_none());
+                out.push(if next_quote { ">".to_string() } else { String::new() });
                 prev_list = false;
                 continue;
             }
@@ -426,6 +493,9 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                         let marker = if li.ordered { format!("{}.", n.unwrap_or(1)) } else { "-".to_string() };
                         let pad = " ".repeat(4 * lv);
                         let cont = " ".repeat(4 * lv + marker.len() + 1);
+                        if let Some(t) = text_indent.get_mut(lv) {
+                            *t = cont.len();
+                        }
                         let body = if p.kind == Kind::Code {
                             code_span(&p.text())
                         } else {
@@ -438,6 +508,15 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                             Some(false) => "[ ] ",
                             None => "",
                         };
+                        // An empty item whose first block is inside it: that block takes the marker's line.
+                        let next_inside =
+                            matches!(blocks.get(i + 1), Some(FBlock::Para(q)) if q.list.is_none() && q.cont.is_some_and(|c| c.level == li.level));
+                        if body.is_empty() && p.kind != Kind::Quote && next_inside {
+                            pending_marker = Some(format!("{pad}{marker} {task}"));
+                            prev_list = true;
+                            i += 1;
+                            continue;
+                        }
                         let line = format!("{pad}{marker} {task}{body}").trim_end().to_string();
                         // A list inside a block quote stays in it: every line of the item, its
                         // continuation lines included, takes the quote marker.
@@ -533,7 +612,7 @@ fn lone_display_equation(inlines: &[Inline]) -> Option<String> {
 /// (`>`). A blank line would end the quote and start another one at every paragraph.
 fn quote_gap(p: &crate::model::Para, next: Option<&FBlock>) -> String {
     match next {
-        Some(FBlock::Para(q)) if p.kind == Kind::Quote && q.kind == Kind::Quote => ">".to_string(),
+        Some(FBlock::Para(q)) if p.kind == Kind::Quote && (q.kind == Kind::Quote || (q.kind == Kind::Code && q.quoted)) => ">".to_string(),
         _ => String::new(),
     }
 }

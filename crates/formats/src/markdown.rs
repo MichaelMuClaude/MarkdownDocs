@@ -2,7 +2,9 @@
 //!
 //! Import: ATX and setext headings, paragraphs with soft/hard breaks, block quotes (→ Quote
 //! style), fenced and indented code (→ one Code paragraph per line), thematic breaks (→ a
-//! bottom-border paragraph), bullet and ordered lists (nested by indentation), GFM pipe tables,
+//! bottom-border paragraph), bullet and ordered lists (nested by indentation; later paragraphs
+//! and code blocks of an item stay in it, as unnumbered paragraphs at its text indent), code
+//! blocks inside block quotes (an indented code paragraph with a left rule), GFM pipe tables,
 //! and inlines: emphasis/strong (the CommonMark delimiter algorithm), `~~strike~~`, code spans,
 //! inline links, autolinks, images (`data:` URIs become pictures, others their alt text),
 //! backslash escapes, entities, HTML comments (`<!-- ... -->`), `<br>` and `<a id>` anchors.

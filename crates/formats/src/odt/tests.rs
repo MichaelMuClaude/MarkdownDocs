@@ -1138,3 +1138,15 @@ fn meta_creation_date_timezones_and_fallbacks() {
     assert_eq!(m2.created, "2024-03-05T13:45:00Z");
     assert_eq!(m2.author, "Solo Creator");
 }
+
+/// Paragraphs and code inside list items are more paragraphs of the same `text:list-item`, and
+/// read back as blocks inside the item: numbering goes on after them, and a paragraph after a
+/// nested list belongs to the outer item.
+#[test]
+fn blocks_inside_list_items_round_trip() {
+    let md =
+        "1. First\n\n   More about the first.\n\n   ```sh\n   make\n   ```\n\n2. Second\n    - Inner\n\n      Inside inner.\n\n   Back in outer.\n";
+    let bytes = export(&crate::markdown::import(md)).unwrap();
+    let back = import(&bytes).unwrap();
+    assert_eq!(crate::markdown::export(&back), md);
+}
