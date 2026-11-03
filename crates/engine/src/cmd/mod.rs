@@ -35,6 +35,7 @@ pub mod phonetic;
 pub mod protect;
 pub mod references;
 pub mod review;
+pub mod rewrite;
 pub mod sections;
 pub mod shape_fill;
 pub mod smart_art;
@@ -75,6 +76,7 @@ pub fn registry() -> Registry {
     v.extend(view::specs());
     v.extend(outline::specs());
     v.extend(sections::specs());
+    v.extend(rewrite::specs());
     v.extend(insert::specs());
     v.extend(equation::specs());
     v.extend(page::specs());

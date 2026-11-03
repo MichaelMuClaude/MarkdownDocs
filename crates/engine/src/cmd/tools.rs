@@ -1483,7 +1483,7 @@ fn mark_block(b: &Block, f: &dyn Fn(&mut CharProps), depth: usize) -> Block {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum Op {
+pub(super) enum Op {
     Same,
     Del,
     Ins,
@@ -1500,7 +1500,7 @@ const MAX_COMPARE_CELLS: u64 = 50_000_000;
 /// LCS edit script between two sequences: the common start and end are matched first, then the
 /// middle (bounded size). The middle's table is charged to `budget`; when it doesn't fit, the
 /// middle is deleted and inserted whole.
-fn lcs_ops<T: PartialEq>(a: &[T], b: &[T], budget: &mut u64) -> Vec<Op> {
+pub(super) fn lcs_ops<T: PartialEq>(a: &[T], b: &[T], budget: &mut u64) -> Vec<Op> {
     let pre = a.iter().zip(b).take_while(|(x, y)| x == y).count();
     let (ra, rb) = (a.get(pre..).unwrap_or_default(), b.get(pre..).unwrap_or_default());
     let suf = ra.iter().rev().zip(rb.iter().rev()).take_while(|(x, y)| x == y).count();
