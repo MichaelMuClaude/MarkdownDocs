@@ -954,6 +954,8 @@ fn saving_an_unchanged_document_over_its_source_changes_nothing() {
     assert_eq!(export_over(&import(&crlf), &crlf), crlf);
     // No trailing newline in the source: the file ends with one, as the plain export does.
     assert_eq!(export_over(&import("a *b*\nc"), "a *b*\nc"), "a *b*\nc\n");
+    // A blank line at the end of the file is kept.
+    assert_eq!(export_over(&import("a *b*\n\n"), "a *b*\n\n"), "a *b*\n\n");
 }
 
 /// Only the blocks that changed are rewritten; the rest keep their text, however it was written.
@@ -991,15 +993,69 @@ fn only_changed_blocks_are_rewritten() {
     assert_eq!(out, "# One\n\nlast\n");
 }
 
-/// Where footnotes are involved the plain export is written (their numbers are by position), and a
-/// base that says nothing gives the plain export too.
+/// A base that says nothing gives the plain export.
 #[test]
-fn saving_over_a_source_falls_back_to_the_plain_export_when_it_cannot_align() {
-    let src = "Text[^1].\n\n[^1]: The note.\n";
-    assert_eq!(export_over(&import(src), src), export(&import(src)));
+fn saving_over_an_empty_source_writes_the_plain_export() {
     let d = import("a\n\nb\n");
     assert_eq!(export_over(&d, ""), export(&d));
     assert_eq!(export_over(&d, "   \n\n"), export(&d));
+}
+
+/// A file with footnotes: named labels, a definition in the middle, wrapped lines.
+const NOTES: &str = "# Notes\n\nFirst claim[^src] wrapped\nover two lines.\n\n[^src]: The source,\n    on two lines.\n\n* star item\n* another[^2]\n\nLast paragraph.\n\n[^2]: Second note.\n";
+
+/// Saved untouched, a file with footnotes is written back byte for byte (the plain export renumbered
+/// the notes, moved every definition to the end and rewrote the rest).
+#[test]
+fn a_file_with_footnotes_saved_untouched_changes_nothing() {
+    assert_ne!(export(&import(NOTES)), NOTES);
+    assert_eq!(export_over(&import(NOTES), NOTES), NOTES);
+}
+
+/// Editing a file with footnotes rewrites only what changed, and its notes stay right.
+#[test]
+fn editing_a_file_with_footnotes_rewrites_only_what_changed() {
+    // A paragraph without a note changes: the notes, their labels and places are kept.
+    let edited = NOTES.replace("Last paragraph.", "Last paragraph, edited.");
+    let out = export_over(&import(&edited), NOTES);
+    assert_eq!(out, edited);
+    // A new paragraph with a new note: the note gets a number the file doesn't use (1, not 2),
+    // its definition goes at the end, and the old ones stay where they were (the definitions at
+    // the end of the file stay after the text, as reference definitions do).
+    let added = format!("{NOTES}\nAdded[^new].\n\n[^new]: Brand new.\n");
+    let out = export_over(&import(&added), NOTES);
+    let expected = NOTES.replace("Last paragraph.\n", "Last paragraph.\n\nAdded[^1].\n") + "\n[^1]: Brand new.\n";
+    assert_eq!(out, expected);
+    assert_eq!(export(&import(&out)), export(&import(&added)));
+    // A new paragraph that refers to an existing note uses that note's label.
+    let again = NOTES.replace("Last paragraph.", "Last paragraph[^2] again.");
+    let out = export_over(&import(&again), NOTES);
+    assert!(out.contains("Last paragraph[^2] again."), "{out}");
+    assert_eq!(export(&import(&out)), export(&import(&again)));
+    // The paragraph with a note is removed (in the editor, which takes the note with it): its
+    // definition goes too.
+    let removed = NOTES.replace("First claim[^src] wrapped\nover two lines.\n\n[^src]: The source,\n    on two lines.\n\n", "");
+    let out = export_over(&import(&removed), NOTES);
+    assert!(!out.contains("[^src]") && !out.contains("The source"), "{out}");
+    assert!(out.contains("* another[^2]") && out.contains("[^2]: Second note."), "{out}");
+    assert_eq!(export(&import(&out)), export(&import(&removed)));
+    // A note's text changes: the paragraph and the note are written again, still meaning the same.
+    let renote = NOTES.replace("Second note.", "Second note, revised.");
+    let out = export_over(&import(&renote), NOTES);
+    assert!(out.contains("Second note, revised.") && !out.contains("Second note.\n"), "{out}");
+    assert!(out.contains("First claim[^src] wrapped\nover two lines."), "{out}");
+    assert_eq!(export(&import(&out)), export(&import(&renote)));
+}
+
+/// A note that shows a reference as code (`` `[^1]` ``) is an ordinary note; one with a note of its
+/// own still saves to what it means.
+#[test]
+fn footnotes_with_references_in_their_text_save_right() {
+    let src = "| a | b |\n|---|---|\n| 1 | 2 |\n\nSee[^1].\n\n[^1]: Written as `[^1]` in Markdown.\n";
+    assert_eq!(export_over(&import(src), src), src);
+    let nested = "Outer[^a].\n\n[^a]: Has its own[^b].\n\n[^b]: Inner.\n\n| x | y |\n|---|---|\n";
+    let out = export_over(&import(nested), nested);
+    assert_eq!(export(&import(&out)), export(&import(nested)), "{out}");
 }
 
 /// A block only the file holds (a comment, a reference definition) stays where it stood.

@@ -12,7 +12,9 @@
 //! outside code fences, so a split in the wrong place can only make a block look changed, never
 //! write wrong text: the worst case is the plain export.
 
-use super::blocks::{import_chunk, reference_definitions};
+use std::collections::HashMap;
+
+use super::blocks::{footnote_definitions, import, import_chunk, reference_definitions};
 use super::export::export;
 use super::{Document, Refs};
 
@@ -33,42 +35,66 @@ struct Chunk {
 }
 
 /// `doc` as Markdown, written over `base`, the Markdown text it was read from: the text of
-/// every block that still means what it did is kept as it was. Falls back to [`export`] where
-/// footnotes are involved (their numbering is by position) or the file is too large to align.
+/// every block that still means what it did is kept as it was. Falls back to [`export`] where the
+/// file is too large to align, or where its footnotes can't be matched up (see [`with_notes`]).
 pub fn export_over(doc: &Document, base: &str) -> String {
     let fresh = export(doc);
     let crlf = base.contains("\r\n");
     let base = base.strip_prefix('\u{FEFF}').unwrap_or(base).replace("\r\n", "\n");
-    if base.trim().is_empty() || has_footnote_definition(&base) || has_footnote_definition(&fresh) {
+    if base.trim().is_empty() {
         return fresh;
     }
-    let old = split_chunks(&base);
-    let new = split_chunks(&fresh);
-    let refs: Refs = reference_definitions(&base);
-    // Each old block's normal form; empty for one that makes no block (definitions, comments).
-    let norm: Vec<String> = old.iter().map(|c| export(&import_chunk(&c.text, &refs)).trim().to_string()).collect();
-    let fresh_blocks: Vec<&str> = new.iter().map(|c| c.text.trim()).collect();
+    let out = if has_footnote_definition(&base) || has_footnote_definition(&fresh) {
+        with_notes(&base, &fresh).unwrap_or_else(|| fresh.clone())
+    } else {
+        let old = split_chunks(&base);
+        let refs: Refs = reference_definitions(&base);
+        let norm: Vec<String> = old.iter().map(|c| normal_form(&c.text, &refs)).collect();
+        let fresh_blocks: Vec<String> = split_chunks(&fresh).into_iter().map(|c| c.text.trim().to_string()).collect();
+        match assemble(&old, &norm, &fresh_blocks, &fresh_blocks) {
+            Some(pieces) => write_pieces(&old, &pieces),
+            None => fresh.clone(),
+        }
+    };
+    // The blank lines the file ended with stay (a file ending "text\n\n" kept its last one).
+    let mut out = out;
+    let tail = base.len() - base.trim_end_matches('\n').len();
+    while out.len() - out.trim_end_matches('\n').len() < tail {
+        out.push('\n');
+    }
+    if crlf { out.replace('\n', "\r\n") } else { out }
+}
+
+/// A chunk's normal form: read and written again on its own; empty for one that makes no block.
+fn normal_form(text: &str, refs: &Refs) -> String {
+    export(&import_chunk(text, refs)).trim().to_string()
+}
+
+/// The pieces of the output: each new block (`fresh_out`, compared by `fresh_cmp`) as it comes,
+/// an old block's own text where one stands for it (its normal form `norm` equals the block's),
+/// and the old blocks that make no block (definitions, comments) where they were. `None` when the
+/// file is too large to align.
+fn assemble(old: &[Chunk], norm: &[String], fresh_cmp: &[String], fresh_out: &[String]) -> Option<Vec<Piece>> {
     let keep: Vec<usize> = (0..old.len()).filter(|i| norm.get(*i).is_some_and(|n| !n.is_empty())).collect();
     let old_forms: Vec<&str> = keep.iter().filter_map(|i| norm.get(*i)).map(String::as_str).collect();
-    let Some(pairs) = align(&old_forms, &fresh_blocks) else { return fresh };
+    let cmp: Vec<&str> = fresh_cmp.iter().map(String::as_str).collect();
+    let pairs = align(&old_forms, &cmp)?;
     // New block index → the old block that stands for it.
-    let mut stands: Vec<Option<usize>> = vec![None; fresh_blocks.len()];
+    let mut stands: Vec<Option<usize>> = vec![None; cmp.len()];
     for (a, b) in pairs {
         if let (Some(slot), Some(i)) = (stands.get_mut(b), keep.get(a)) {
             *slot = Some(*i);
         }
     }
     let matched_old: std::collections::HashSet<usize> = stands.iter().flatten().copied().collect();
-    // Walk both in order: new blocks as they come (an old block's own text where one stands for
-    // it), and the old blocks that make no block (reference definitions, comments) where they were.
     let mut pieces: Vec<Piece> = Vec::new();
     let mut next_old = 0usize;
-    for (j, block) in fresh_blocks.iter().enumerate() {
+    for (j, block) in fresh_out.iter().enumerate() {
         match stands.get(j).copied().flatten() {
             Some(i) => {
                 // Pass-through blocks before this old one come first, in their order.
                 while next_old < i {
-                    take_passthrough(&old, &norm, &matched_old, next_old, &mut pieces);
+                    take_passthrough(old, norm, &matched_old, next_old, &mut pieces);
                     next_old += 1;
                 }
                 if let Some(c) = old.get(i) {
@@ -76,20 +102,24 @@ pub fn export_over(doc: &Document, base: &str) -> String {
                 }
                 next_old = next_old.max(i + 1);
             }
-            None => pieces.push(Piece { text: (*block).to_string(), old: None }),
+            None => pieces.push(Piece { text: block.clone(), old: None }),
         }
     }
     while next_old < old.len() {
-        take_passthrough(&old, &norm, &matched_old, next_old, &mut pieces);
+        take_passthrough(old, norm, &matched_old, next_old, &mut pieces);
         next_old += 1;
     }
+    Some(pieces)
+}
+
+/// The pieces as text. Two blocks that followed each other in the file keep the blank lines (or
+/// none) between them; any other neighbours are one blank line apart.
+fn write_pieces(old: &[Chunk], pieces: &[Piece]) -> String {
     let mut out = String::new();
     for (k, piece) in pieces.iter().enumerate() {
         out.push_str(&piece.text);
         out.push('\n');
         if let Some(next) = pieces.get(k + 1) {
-            // Two blocks that followed each other in the file keep the blank lines (or none)
-            // between them; any other neighbours are one blank line apart.
             let gap = match (piece.old, next.old) {
                 (Some(a), Some(b)) if b == a + 1 => old.get(a).map_or(1, |c| c.gap),
                 (Some(a), _) => old.get(a).map_or(1, |c| c.gap.max(1)),
@@ -98,7 +128,172 @@ pub fn export_over(doc: &Document, base: &str) -> String {
             out.push_str(&"\n".repeat(gap));
         }
     }
-    if crlf { out.replace('\n', "\r\n") } else { out }
+    out
+}
+
+/// [`export_over`] for a file with footnotes. The plain export numbers notes by position
+/// (`[^1]` is the first referred to) and writes their definitions at the end, so blocks are
+/// compared with each reference standing for its note's text, not its label:
+/// - a kept block keeps its own labels, and the definitions it needs stay where they were;
+/// - a new or changed block refers to an existing note by that note's label, and to a new one by
+///   a number the file doesn't use yet, whose definition is added at the end;
+/// - a definition nothing refers to any more is left out.
+///
+/// The result is read back and must mean what the plain export does; `None` (write the plain
+/// export) when it doesn't, or when a definition stands in the middle of a block.
+fn with_notes(base: &str, fresh: &str) -> Option<String> {
+    let refs: Refs = reference_definitions(base);
+    // The fresh export's notes, by number, and the text before them.
+    let (fresh_body, fresh_defs) = footnote_definitions(lines_of(fresh));
+    let mut keys: HashMap<String, usize> = HashMap::new();
+    let mut key_of_fresh: HashMap<String, String> = HashMap::new();
+    let mut body_of_key: HashMap<String, Vec<String>> = HashMap::new();
+    for (label, body) in &fresh_defs {
+        let key = note_key(body, &refs);
+        let n = keys.len();
+        keys.entry(key.clone()).or_insert(n);
+        key_of_fresh.insert(label.clone(), key.clone());
+        body_of_key.entry(key).or_insert_with(|| body.clone());
+    }
+    let token = |key: &str| keys.get(key).map(|id| format!("QZFNOTE{id}ZQ"));
+    // The file's blocks: definitions (their labels) apart from the rest.
+    let old = split_chunks(base);
+    let mut key_of_old: HashMap<String, String> = HashMap::new();
+    let mut def_labels: Vec<Vec<String>> = Vec::with_capacity(old.len());
+    for c in &old {
+        let (rest, defs) = footnote_definitions(lines_of(&c.text));
+        if !defs.is_empty() && rest.iter().any(|l| !l.trim().is_empty()) {
+            return None;
+        }
+        let mut labels = Vec::new();
+        for (label, body) in defs {
+            key_of_old.insert(label.clone(), note_key(&body, &refs));
+            labels.push(label);
+        }
+        def_labels.push(labels);
+    }
+    // A reference stands for its note's text; an old note whose text is no note any more gets a
+    // token of its own, so the block that refers to it counts as changed.
+    let mut old_tokens: HashMap<String, String> = HashMap::new();
+    for (label, key) in &key_of_old {
+        let t = token(key).unwrap_or_else(|| format!("QZFGONE{}ZQ", old_tokens.len()));
+        old_tokens.insert(label.clone(), t);
+    }
+    let fresh_tokens: HashMap<String, String> = key_of_fresh.iter().filter_map(|(l, k)| Some((l.clone(), token(k)?))).collect();
+    let norm: Vec<String> = old
+        .iter()
+        .zip(&def_labels)
+        .map(|(c, labels)| if labels.is_empty() { normal_form(&swap_refs(&c.text, &old_tokens), &refs) } else { String::new() })
+        .collect();
+    let fresh_chunks: Vec<String> = split_chunks(&fresh_body.join("\n")).into_iter().map(|c| c.text.trim().to_string()).collect();
+    let fresh_cmp: Vec<String> = fresh_chunks.iter().map(|b| swap_refs(b, &fresh_tokens)).collect();
+    // New and changed blocks refer to the file's label for a note it already has.
+    let mut label_of_key: HashMap<String, String> = HashMap::new();
+    for (label, key) in &key_of_old {
+        label_of_key.entry(key.clone()).or_insert_with(|| label.clone());
+    }
+    let taken: std::collections::HashSet<String> = key_of_old.keys().cloned().collect();
+    let mut next_number = 1usize;
+    let mut new_label = |key: &str, label_of_key: &mut HashMap<String, String>| -> String {
+        if let Some(l) = label_of_key.get(key) {
+            return l.clone();
+        }
+        while taken.contains(&next_number.to_string()) {
+            next_number += 1;
+        }
+        let l = next_number.to_string();
+        next_number += 1;
+        label_of_key.insert(key.to_string(), l.clone());
+        l
+    };
+    let mut relabel: HashMap<String, String> = HashMap::new();
+    for (fresh_label, key) in &key_of_fresh {
+        relabel.insert(fresh_label.clone(), format!("[^{}]", new_label(key, &mut label_of_key)));
+    }
+    let fresh_out: Vec<String> = fresh_chunks.iter().map(|b| swap_refs(b, &relabel)).collect();
+    let mut pieces = assemble(&old, &norm, &fresh_cmp, &fresh_out)?;
+    // The labels the text refers to now.
+    let all_labels: Vec<String> = key_of_old.keys().chain(label_of_key.values()).cloned().collect();
+    let used: std::collections::HashSet<String> = pieces
+        .iter()
+        .filter(|p| p.old.is_none_or(|i| def_labels.get(i).is_some_and(Vec::is_empty)))
+        .flat_map(|p| all_labels.iter().filter(|l| p.text.contains(&format!("[^{l}]"))).cloned().collect::<Vec<_>>())
+        .collect();
+    // A definition block stays where it was when all its notes are still referred to.
+    let mut written: std::collections::HashSet<String> = std::collections::HashSet::new();
+    pieces.retain(|p| match p.old.and_then(|i| def_labels.get(i)).filter(|l| !l.is_empty()) {
+        Some(labels) if labels.iter().all(|l| used.contains(l)) => {
+            written.extend(labels.iter().cloned());
+            true
+        }
+        Some(_) => false,
+        None => true,
+    });
+    let mut out = write_pieces(&old, &pieces);
+    // The other notes referred to: definitions at the end, in the plain export's form.
+    let mut missing: Vec<(String, &Vec<String>)> = label_of_key
+        .iter()
+        .filter(|(_, l)| used.contains(*l) && !written.contains(*l))
+        .filter_map(|(k, l)| Some((l.clone(), body_of_key.get(k)?)))
+        .collect();
+    missing.sort_by_key(|(label, _)| natural(label));
+    for (label, body) in missing {
+        while !out.ends_with("\n\n") {
+            out.push('\n');
+        }
+        let mut it = body.iter();
+        out.push_str(format!("[^{label}]: {}", it.next().map_or("", String::as_str)).trim_end());
+        out.push('\n');
+        for l in it {
+            if !l.is_empty() {
+                out.push_str("    ");
+            }
+            out.push_str(l);
+            out.push('\n');
+        }
+    }
+    // It must mean what the plain export means.
+    (export(&import(&out)) == export(&import(fresh))).then_some(out)
+}
+
+/// A note's text in normal form, the same however it was wrapped. (A note with notes of its own
+/// refers to them by their labels, which differ between the file and the plain export: its blocks
+/// count as changed, and the check at the end decides.)
+fn note_key(body: &[String], refs: &Refs) -> String {
+    normal_form(&body.join("\n"), refs)
+}
+
+/// Sort key for labels: numbers in order, then the rest by text.
+fn natural(label: &str) -> (u64, String) {
+    (label.parse().unwrap_or(u64::MAX), label.to_string())
+}
+
+/// `text` split into lines, as the importer reads them.
+fn lines_of(text: &str) -> Vec<String> {
+    text.split('\n').map(str::to_string).collect()
+}
+
+/// `text` with each footnote reference `[^label]` whose label `map` has replaced by its value.
+fn swap_refs(text: &str, map: &HashMap<String, String>) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(k) = rest.find("[^") {
+        let (before, from) = rest.split_at(k);
+        out.push_str(before);
+        let label = from.get(2..).and_then(|r| r.get(..r.len().min(101))).and_then(|r| r.find(']').and_then(|e| r.get(..e)));
+        match label.and_then(|l| map.get(l).map(|v| (l.len(), v))) {
+            Some((n, v)) => {
+                out.push_str(v);
+                rest = from.get(n + 3..).unwrap_or("");
+            }
+            None => {
+                out.push_str("[^");
+                rest = from.get(2..).unwrap_or("");
+            }
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 /// An old block that makes no block of its own (a reference definition, a comment) is kept where

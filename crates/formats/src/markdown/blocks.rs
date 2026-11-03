@@ -242,7 +242,7 @@ fn footnote_label(s: &str) -> Option<&str> {
 /// Take the footnote definitions out of `lines`: (the other lines, (label, definition lines) in
 /// order). A definition is `[^label]: text` at less than four spaces' indent outside code, with
 /// following lines indented four spaces (or blank, between them) continuing it.
-fn footnote_definitions(lines: Vec<String>) -> (Vec<String>, Vec<(String, Vec<String>)>) {
+pub(super) fn footnote_definitions(lines: Vec<String>) -> (Vec<String>, Vec<(String, Vec<String>)>) {
     let mut rest = Vec::with_capacity(lines.len());
     let mut defs: Vec<(String, Vec<String>)> = Vec::new();
     let mut fenced: Option<(char, usize)> = None;
