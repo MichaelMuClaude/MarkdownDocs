@@ -534,8 +534,10 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                     None => {
                         prev_list = false;
                         let line = match p.kind {
-                            Kind::Heading(n) => format!("{} {}", "#".repeat(n.clamp(1, 6) as usize), body.replace("\\\n", " ")),
-                            Kind::Title => format!("# {}", body.replace("\\\n", " ")),
+                            Kind::Heading(n) => {
+                                format!("{} {}", "#".repeat(n.clamp(1, 6) as usize), heading_md(&p.inlines, body).replace("\\\n", " "))
+                            }
+                            Kind::Title => format!("# {}", heading_md(&p.inlines, body).replace("\\\n", " ")),
                             Kind::Rule => "---".to_string(),
                             Kind::Quote => {
                                 let b = escape_lines(body);
@@ -565,6 +567,23 @@ pub(super) fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
 
 /// A task item's inlines without the check box glyph (☐/☒) and the space after it, which may be
 /// one run or two.
+/// A heading's text: `body`, or without the `**` when all of it is bold (a heading is bold
+/// already; a web page's headings carry bold of their own).
+fn heading_md(inlines: &[Inline], body: String) -> String {
+    let texts = || inlines.iter().filter_map(|i| if let Inline::Text(t, f) = i { Some((t, f)) } else { None });
+    if texts().next().is_none() || !texts().all(|(t, f)| f.bold || t.trim().is_empty()) {
+        return body;
+    }
+    let plain: Vec<Inline> = inlines
+        .iter()
+        .map(|i| match i {
+            Inline::Text(t, f) => Inline::Text(t.clone(), Fmt { bold: false, ..f.clone() }),
+            other => other.clone(),
+        })
+        .collect();
+    inlines_md(&plain)
+}
+
 fn without_task_glyph(inlines: &[Inline]) -> Vec<Inline> {
     let mut out = inlines.to_vec();
     let mut glyph = true;

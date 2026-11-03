@@ -1093,3 +1093,11 @@ fn a_code_block_in_a_quote_stays_quoted() {
     // Saved over itself, nothing changes either.
     assert_eq!(export_over(&import(src), src), src);
 }
+
+/// A heading that is bold all through is written without `**` (a web page's headings carry bold
+/// of their own: `# **Title**` came out of every saved page); part-bold headings keep theirs.
+#[test]
+fn an_all_bold_heading_is_written_plain() {
+    assert_eq!(export(&import("# **Saved page**\n")), "# Saved page\n");
+    assert_eq!(export(&import("## Part **bold**\n")), "## Part **bold**\n");
+}
