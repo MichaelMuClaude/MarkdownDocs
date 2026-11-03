@@ -376,7 +376,7 @@ fn save(s: &mut Session, v: &Value) -> CmdResult {
     let password = s.password.as_ref().map(crate::io::Password::as_str);
     // A header/footer just made and left empty isn't saved (#960).
     let copy = super::insert::saved_copy(s);
-    if let Err(e) = crate::io::save_path_with(&path, copy.as_ref().unwrap_or(&s.doc), password, &opts) {
+    if let Err(e) = crate::io::save_path_over(&path, copy.as_ref().unwrap_or(&s.doc), password, &opts, s.path.as_deref()) {
         (s.doc.settings.zoom, s.doc.core.last_modified_by, s.doc.core.created, s.doc.core.modified, s.doc.core.revision) = before_stamp;
         return Err(CmdError::Failed(e));
     }

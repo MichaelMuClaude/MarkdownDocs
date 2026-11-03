@@ -940,3 +940,21 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
     }
     i
 }
+
+/// The link reference definitions of `text` (`[label]: destination`), as the parser sees them.
+pub(super) fn reference_definitions(text: &str) -> Refs {
+    let text = text.strip_prefix('\u{FEFF}').unwrap_or(text);
+    let mut lines: Vec<String> = text.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
+    take_definitions(&mut lines)
+}
+
+/// One top-level block's Markdown (`chunk`) as a document, its reference links resolved through
+/// `refs` (the definitions of the file it came from) and footnotes left out.
+pub(super) fn import_chunk(chunk: &str, refs: &Refs) -> Document {
+    model::begin_import();
+    let mut lines: Vec<String> = chunk.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
+    // A definition is no block: a chunk of definitions only is empty, as in the whole file.
+    take_definitions(&mut lines);
+    let blocks = parse_blocks(&lines, 0, 0, refs);
+    model::to_doc(&model::Flow { blocks, meta: Default::default() })
+}

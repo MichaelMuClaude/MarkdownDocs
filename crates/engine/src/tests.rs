@@ -1556,6 +1556,35 @@ fn text_from_file_unlinks_inserted_sections_headers() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// Saving a Markdown file in place writes over the Markdown it was read from: an edit changes
+/// the blocks it touches and leaves the rest of the file as it was written (wrapped lines, `*`
+/// bullets, raw HTML, table spacing), so a save is a small diff, not a rewrite.
+#[test]
+fn saving_markdown_in_place_changes_only_the_edited_blocks() {
+    let dir = std::env::temp_dir().join(format!("wordcraft-md-in-place-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("note.md");
+    let src = "# Title\n\nA paragraph wrapped\nover two lines.\n\n* star one\n* star two\n\n<div>raw html</div>\n\n| a   | b |\n|:----|--:|\n| 1   | 2 |\n\nLast paragraph with __bold__ text.\n";
+    std::fs::write(&path, src).unwrap();
+    let mut s = Session::new(crate::io::open_path(&path).unwrap());
+    s.path = Some(path.clone());
+    // Saved untouched, the file is byte for byte what it was.
+    run(&mut s, "file.save", json!({}));
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), src);
+    // One word of the last paragraph changes: that block alone is written in normal form.
+    run(&mut s, "edit.replaceAll", json!({"text": "Last paragraph", "with": "Final paragraph"}));
+    run(&mut s, "file.save", json!({}));
+    let out = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(out, src.replace("Last paragraph with __bold__ text.", "Final paragraph with **bold** text."), "{out}");
+    // Save As to a new Markdown file: no file to write over there, so the plain form, and the
+    // source file of the session is the base for blocks that did not change.
+    let other = dir.join("copy.md");
+    run(&mut s, "file.saveAs", json!({"path": other.to_string_lossy()}));
+    let copy = std::fs::read_to_string(&other).unwrap();
+    assert!(copy.contains("A paragraph wrapped\nover two lines.") && copy.contains("* star one"), "{copy}");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 #[test]
 fn paste_special_html_and_rtf_keep_bold() {
     let mut s = s();

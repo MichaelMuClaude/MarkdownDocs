@@ -783,13 +783,58 @@ pub fn save_path(path: &std::path::Path, doc: &Document) -> Result<(), String> {
 /// [`save_path`], encrypted with `password` as [`save_bytes_with`] does.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn save_path_with(path: &std::path::Path, doc: &Document, password: Option<&str>, opts: &ExportOptions) -> Result<(), String> {
+    save_path_over(path, doc, password, opts, None)
+}
+
+/// [`save_path_with`] for a document read from the file `source`: a Markdown copy is written over
+/// that file's text (else over the file at `path`, if it is Markdown), so every block that still
+/// means what it did keeps its text and a save changes only what was edited (see
+/// [`wordcraft_formats::markdown::export_over`]).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn save_path_over(
+    path: &std::path::Path,
+    doc: &Document,
+    password: Option<&str>,
+    opts: &ExportOptions,
+    source: Option<&std::path::Path>,
+) -> Result<(), String> {
     crate::file_access::check_write(&path.to_string_lossy())?;
-    let bytes = save_bytes_with(&path.to_string_lossy(), doc, password, opts)?;
+    let bytes = match markdown_base(path, source, opts) {
+        Some(base) => wordcraft_formats::markdown::export_over(doc, &base).into_bytes(),
+        None => save_bytes_with(&path.to_string_lossy(), doc, password, opts)?,
+    };
     safe_save::write(path, &bytes).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// The Markdown text a save to `path` writes over: the file `source` the document was read from
+/// when that is Markdown too, else the file already at `path`. `None` for any other format, for a
+/// copy with Print Markup, and for a file that can't be read.
+#[cfg(not(target_arch = "wasm32"))]
+fn markdown_base(path: &std::path::Path, source: Option<&std::path::Path>, opts: &ExportOptions) -> Option<String> {
+    let is_md = |p: &std::path::Path| matches!(ext_of(&p.to_string_lossy()).as_str(), "md" | "markdown");
+    if opts.markup || !is_md(path) {
+        return None;
+    }
+    let from = source.filter(|s| is_md(s) && s.is_file()).unwrap_or(path);
+    if !from.is_file() {
+        return None;
+    }
+    read_file(&from.to_string_lossy()).ok().map(|bytes| decode_text(&bytes))
 }
 
 #[cfg(target_arch = "wasm32")]
 pub fn save_path_with(path: &std::path::Path, _doc: &Document, _password: Option<&str>, _opts: &ExportOptions) -> Result<(), String> {
+    Err(format!("{}: files are saved through the browser on the web", path.display()))
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn save_path_over(
+    path: &std::path::Path,
+    _doc: &Document,
+    _password: Option<&str>,
+    _opts: &ExportOptions,
+    _source: Option<&std::path::Path>,
+) -> Result<(), String> {
     Err(format!("{}: files are saved through the browser on the web", path.display()))
 }
 

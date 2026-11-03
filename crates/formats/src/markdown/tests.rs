@@ -937,3 +937,75 @@ fn many_unclosed_dollars_are_read_in_linear_time() {
     assert!(equations(&doc).is_empty());
     assert!(t.elapsed() < std::time::Duration::from_secs(10), "{:?}", t.elapsed());
 }
+
+/// A source with every habit the plain export normalizes away: wrapped paragraphs, `*` bullets,
+/// `__bold__`, a raw HTML block, a loose list, a table with its own spacing, a reference link,
+/// a Setext heading, two blank lines.
+const HABITS: &str = "Setext Heading\n==============\n\nA paragraph wrapped\nover two lines with __bold__ and a [ref link][r].\n\n* star one\n* star two\n\n<div>raw html</div>\n\n- loose one\n\n- loose two\n\n\n| a   | b |\n|:----|--:|\n| 1   | 2 |\n\n> quoted\n> over two lines\n\n```rust\nfn main() {}\n```\n\n[r]: https://example.com \"title\"\n";
+
+/// A document saved over the Markdown it was read from, unchanged, writes that Markdown back
+/// byte for byte (the plain export rewrote most of the file).
+#[test]
+fn saving_an_unchanged_document_over_its_source_changes_nothing() {
+    assert_ne!(export(&import(HABITS)), HABITS, "the plain export does normalize this source");
+    assert_eq!(export_over(&import(HABITS), HABITS), HABITS);
+    // Windows line endings are kept too.
+    let crlf = HABITS.replace('\n', "\r\n");
+    assert_eq!(export_over(&import(&crlf), &crlf), crlf);
+    // No trailing newline in the source: the file ends with one, as the plain export does.
+    assert_eq!(export_over(&import("a *b*\nc"), "a *b*\nc"), "a *b*\nc\n");
+}
+
+/// Only the blocks that changed are rewritten; the rest keep their text, however it was written.
+#[test]
+fn only_changed_blocks_are_rewritten() {
+    let mut d = import(HABITS);
+    // Change one word of the wrapped paragraph.
+    let src = HABITS.replace("wrapped\nover two lines", "wrapped\nover THREE lines");
+    let edited = import(&src);
+    let out = export_over(&edited, HABITS);
+    assert!(out.contains("over THREE lines"), "{out}");
+    // The edited paragraph is written in normal form (joined, `**bold**`); nothing else moved.
+    assert!(out.contains("A paragraph wrapped over THREE lines with **bold** and a [ref link](https://example.com)."), "{out}");
+    for kept in [
+        "Setext Heading\n==============",
+        "* star one\n* star two",
+        "<div>raw html</div>",
+        "- loose one\n\n- loose two",
+        "| a   | b |\n|:----|--:|",
+        "> quoted\n> over two lines",
+        "[r]: https://example.com \"title\"",
+    ] {
+        assert!(out.contains(kept), "{kept:?} kept in {out}");
+    }
+    // A paragraph appended to the document is added in normal form; one removed is gone.
+    d.body.push(wordcraft_doc::para_block(wordcraft_doc::Paragraph::with_text("New last paragraph.", Default::default())));
+    let out = export_over(&d, HABITS);
+    // The reference definitions at the end of the file stay at the end, after the new paragraph.
+    assert!(out.contains("New last paragraph.\n\n[r]: https://example.com"), "{out}");
+    assert!(out.contains("* star one\n* star two") && out.contains("<div>raw html</div>"));
+    let shorter = "# One\n\nkeep   spaced\n\nlast\n";
+    let mut d = import(shorter);
+    d.body.remove(1);
+    let out = export_over(&d, shorter);
+    assert_eq!(out, "# One\n\nlast\n");
+}
+
+/// Where footnotes are involved the plain export is written (their numbers are by position), and a
+/// base that says nothing gives the plain export too.
+#[test]
+fn saving_over_a_source_falls_back_to_the_plain_export_when_it_cannot_align() {
+    let src = "Text[^1].\n\n[^1]: The note.\n";
+    assert_eq!(export_over(&import(src), src), export(&import(src)));
+    let d = import("a\n\nb\n");
+    assert_eq!(export_over(&d, ""), export(&d));
+    assert_eq!(export_over(&d, "   \n\n"), export(&d));
+}
+
+/// A block only the file holds (a comment, a reference definition) stays where it stood.
+#[test]
+fn definitions_and_comments_stay_where_they_were() {
+    let src = "<!-- keep me -->\n\nFirst [x][a].\n\n[a]: https://a.test\n\nSecond\nline.\n";
+    let out = export_over(&import(src), src);
+    assert_eq!(out, src);
+}

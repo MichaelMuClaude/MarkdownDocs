@@ -258,3 +258,8 @@ the distance from the text). Missing fields are `none`, 0, no colour and 0, so a
 "right"?: pt}`: the alignment and indents as seen on the page, which each selected paragraph turns
 into its own start and end once `props` (a `bidi` in it, say) is applied. The Paragraph dialog sends
 only the fields that changed this way, as one command and so one undo step.
+
+## Markdown files: a save changes only what you changed
+
+A document read from a `.md` file and saved back to Markdown is written over that file's text: every top-level block (paragraph, heading, list, table, quote, code fence, HTML block) that still means what it did is kept **exactly as it was written**: wrapped lines, `*` bullets, `__bold__`, raw HTML, table spacing, reference links, line endings. Only blocks that changed or are new are written in the normal form (`**bold**`, `-` bullets, one line per paragraph). So after `execute` edits and `save_document` the file's diff is as small as the edit. Reference definitions and comments stay where they were. Saving as a different Markdown file, or `wordcraft-cli convert a.md b.md`, uses the file read as the base. Files with footnotes, or with thousands of blocks that cannot be aligned cheaply, are written in the normal form.
+

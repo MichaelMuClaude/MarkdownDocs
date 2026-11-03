@@ -26,6 +26,7 @@ use crate::model::{self, Cell, FBlock, FTable, Fmt, Inline, Kind, ListInfo, Para
 mod blocks;
 mod export;
 mod inlines;
+mod preserve;
 
 pub use blocks::{Refs, import, import_on, import_on_with, parse};
 pub(crate) use export::escape;
@@ -33,6 +34,7 @@ pub use export::export;
 #[cfg(test)]
 use export::{escape_line_start, inlines_md, table_md, write_blocks};
 pub use inlines::parse_inlines;
+pub use preserve::export_over;
 
 #[cfg(test)]
 mod tests;
