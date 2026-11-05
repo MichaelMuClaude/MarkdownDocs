@@ -202,6 +202,13 @@ pub(crate) fn layout_pass(
             _ if reflow => sect_ref,
             _ => sect,
         };
+        let starts_page = si > 0 && (sect.start != SectionStart::Continuous || turn != prev_turn);
+        if !web && !pb.pages.is_empty() && starts_page {
+            // The page the section before ends on is finished with its own margins and footnote
+            // separators, before this section's replace them: the footnotes pending on it
+            // belong to the section whose page it is (#5289).
+            pb.finish_page();
+        }
         pb.sect = sect;
         pb.sect_idx = si;
         ctx.grid = para::Grid::default();
