@@ -38,12 +38,22 @@ struct Chunk {
 /// every block that still means what it did is kept as it was. Falls back to [`export`] where the
 /// file is too large to align, or where its footnotes can't be matched up (see [`with_notes`]).
 pub fn export_over(doc: &Document, base: &str) -> String {
-    let fresh = export(doc);
+    let fresh_all = export(doc);
     let crlf = base.contains("\r\n");
-    let base = base.strip_prefix('\u{FEFF}').unwrap_or(base).replace("\r\n", "\n");
-    if base.trim().is_empty() {
-        return fresh;
+    let base_all = base.strip_prefix('\u{FEFF}').unwrap_or(base).replace("\r\n", "\n");
+    if base_all.trim().is_empty() {
+        return fresh_all;
     }
+    // Front matter isn't Markdown: kept as the file wrote it when it says the same, the blocks after
+    // it aligned on their own.
+    let (base_fm, base_rest) = split_front(&base_all);
+    let (fresh_fm, fresh_rest) = split_front(&fresh_all);
+    let prefix = match (base_fm, fresh_fm) {
+        (Some(a), Some(b)) if a == b => base_all.get(..base_all.len() - base_rest.len()).unwrap_or("").to_string(),
+        (_, Some(_)) => fresh_all.get(..fresh_all.len() - fresh_rest.len()).unwrap_or("").to_string(),
+        (_, None) => String::new(),
+    };
+    let (base, fresh) = (base_rest.to_string(), fresh_rest.to_string());
     let out = if has_footnote_definition(&base) || has_footnote_definition(&fresh) {
         with_notes(&base, &fresh).unwrap_or_else(|| fresh.clone())
     } else {
@@ -62,7 +72,16 @@ pub fn export_over(doc: &Document, base: &str) -> String {
     while out.len() - out.trim_end_matches('\n').len() < tail {
         out.push('\n');
     }
+    let out = if base.trim().is_empty() && fresh.trim().is_empty() { prefix.trim_end().to_string() + "\n" } else { prefix + &out };
     if crlf { out.replace('\n', "\r\n") } else { out }
+}
+
+/// `text`'s front matter and the rest, the blank lines after the front matter going with it.
+fn split_front(text: &str) -> (Option<&str>, &str) {
+    match super::front_matter::split(text) {
+        (Some(fm), rest) => (Some(fm), rest.trim_start_matches('\n')),
+        none => none,
+    }
 }
 
 /// A chunk's normal form: read and written again on its own; empty for one that makes no block.
@@ -333,8 +352,11 @@ fn split_chunks(text: &str) -> Vec<Chunk> {
             i += 1;
             if run >= n && t.trim_start_matches(c).trim().is_empty() {
                 fence = None;
-                // The fence's end ends the block.
-                if lines.get(i).is_some_and(|l| !l.trim().is_empty()) {
+                // The fence's end ends the block, unless the fence is inside a list item and the
+                // list goes on (an indented line or another item next).
+                let in_list = cur.first().is_some_and(|f| is_list_item(f.trim_start()));
+                let list_goes_on = lines.get(i).is_some_and(|l| l.starts_with("  ") || l.starts_with('\t') || is_list_item(l.trim_start()));
+                if lines.get(i).is_some_and(|l| !l.trim().is_empty()) && !(in_list && list_goes_on) {
                     chunks.push(Chunk { text: cur.join("\n"), gap: 0 });
                     cur.clear();
                 }

@@ -1122,3 +1122,43 @@ fn huge_markdown_tables_are_bounded() {
     let cols = d.body.iter().find_map(|b| if let wordcraft_doc::Block::Table(t) = &**b { t.rows.first().map(|r| r.cells.len()) } else { None });
     assert_eq!(cols, Some(63));
 }
+
+/// YAML front matter is kept verbatim and fills the document's properties: it was read as a rule
+/// and a Setext heading of every key (`## title: … author: …`), rewriting the file.
+#[test]
+fn front_matter_round_trips_and_gives_the_documents_properties() {
+    let src =
+        "---\ntitle: \"Kiln notes\"\nauthor: Ada\ntags:\n  - pottery\n  - kilns\nlayout: post # a key we don't map\n---\n\n# Firing\n\nBody text.\n";
+    let d = import(src);
+    assert_eq!((d.core.title.as_str(), d.core.creator.as_str(), d.core.keywords.as_str()), ("Kiln notes", "Ada", "pottery, kilns"));
+    assert_eq!(d.custom_prop(super::FRONT_MATTER_PROP).map(|y| y.lines().count()), Some(6));
+    assert_eq!(export(&d), src);
+    assert_eq!(export_over(&d, src), src);
+    // Edited below it, the front matter stays as written; the edit is written.
+    let edited = src.replace("Body text.", "Body text, edited.");
+    assert_eq!(export_over(&import(&edited), src), edited);
+    // Flow-style lists and `...` as the closing fence.
+    let d = import("---\nkeywords: [a, \"b c\"]\n...\nText\n");
+    assert_eq!(d.core.keywords, "a, b c");
+    assert!(export(&d).starts_with("---\nkeywords: [a, \"b c\"]\n---\n\nText"), "{}", export(&d));
+}
+
+/// Only a block at the very start that closes is front matter: a rule with no closing fence, or
+/// one later in the file, stays Markdown; an oversized block is no front matter either.
+#[test]
+fn only_a_closed_leading_block_is_front_matter() {
+    let d = import("---\nNot closed\n");
+    assert!(d.custom_prop(super::FRONT_MATTER_PROP).is_none());
+    let d = import("Intro\n\n---\ntitle: x\n---\n");
+    assert!(d.custom_prop(super::FRONT_MATTER_PROP).is_none() && d.core.title.is_empty());
+    let huge = format!("---\n{}---\nText\n", "k: v\n".repeat(20_000));
+    assert!(import(&huge).custom_prop(super::FRONT_MATTER_PROP).is_none());
+}
+
+/// A tight list whose item holds a fenced code block is kept as written when saved over itself:
+/// the fence's end split the list in two, so it never matched and was rewritten loose.
+#[test]
+fn a_tight_list_with_code_in_an_item_is_kept_on_save() {
+    let src = "- [ ] Run the script\n  ```bash\n  curl x | bash\n  ```\n- [ ] Save it\n\nAfter.\n";
+    assert_eq!(export_over(&import(src), src), src);
+}

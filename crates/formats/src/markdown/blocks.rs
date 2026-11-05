@@ -10,13 +10,13 @@ pub(super) const MAX_NEST: usize = 32;
 /// Parse Markdown text into a document.
 pub fn import(text: &str) -> Document {
     model::begin_import();
-    model::to_doc(&parse(text))
+    keep_front_matter(text, model::to_doc(&parse(text)))
 }
 
 /// [`import`] onto `page`: Markdown gives no page size (#1381).
 pub fn import_on(text: &str, page: &wordcraft_doc::SectionProps) -> Document {
     model::begin_import();
-    model::to_doc_in(&parse(text), page.clone())
+    keep_front_matter(text, model::to_doc_in(&parse(text), page.clone()))
 }
 
 /// [`import_on`], loading each image's file through `images` (relative to the document; the caller
@@ -24,7 +24,15 @@ pub fn import_on(text: &str, page: &wordcraft_doc::SectionProps) -> Document {
 pub fn import_on_with(text: &str, images: crate::html::ImageLoader, page: &wordcraft_doc::SectionProps) -> Document {
     let mut flow = parse(text);
     load_images(&mut flow.blocks, images, 0);
-    model::to_doc_in(&flow, page.clone())
+    keep_front_matter(text, model::to_doc_in(&flow, page.clone()))
+}
+
+/// `doc` read from `text`, with `text`'s front matter kept verbatim in its custom property.
+fn keep_front_matter(text: &str, mut doc: Document) -> Document {
+    if let (Some(yaml), _) = super::front_matter::split(text) {
+        doc.set_custom_prop(super::front_matter::PROP, yaml);
+    }
+    doc
 }
 
 /// Replace placeholder pictures whose destination `images` can load with the real picture.
@@ -187,6 +195,8 @@ fn take_definitions(lines: &mut Vec<String>) -> Refs {
 
 /// Parse Markdown text into the flow model.
 pub fn parse(text: &str) -> model::Flow {
+    // YAML front matter isn't Markdown: its plain keys give the document's properties.
+    let (front, text) = super::front_matter::split(text);
     let text = text.strip_prefix('\u{FEFF}').unwrap_or(text);
     let mut lines: Vec<String> = text.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
     let refs = take_definitions(&mut lines);
@@ -216,11 +226,11 @@ pub fn parse(text: &str) -> model::Flow {
         blocks.push(FBlock::Para(first));
         blocks.extend(body);
     }
-    // A leading "Title" from front matter isn't supported; a first-level heading stays a heading.
+    // A first-level heading stays a heading (front matter's `title` is the document's title).
     if blocks.is_empty() {
         blocks.push(FBlock::Para(Para::default()));
     }
-    model::Flow { blocks, meta: Default::default() }
+    model::Flow { blocks, meta: front.map(super::front_matter::meta).unwrap_or_default() }
 }
 
 /// Table cells a Markdown document makes in all, header rows included (hostile input). A short

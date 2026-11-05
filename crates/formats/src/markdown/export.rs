@@ -330,6 +330,10 @@ pub(super) fn table_md(t: &FTable, out: &mut Vec<String>) {
 pub fn export(doc: &Document) -> String {
     let flow = model::from_doc(doc);
     let mut out: Vec<String> = Vec::new();
+    // The file's front matter first, as it was read (`front_matter`).
+    if let Some(yaml) = doc.custom_prop(super::front_matter::PROP) {
+        out.extend(super::front_matter::write(yaml).lines().map(str::to_string));
+    }
     NOTES_OUT.with_borrow_mut(Vec::clear);
     write_blocks(&flow.blocks, &mut out);
     // Footnotes, numbered in reference order, after the text: `[^1]: first line`, further lines
