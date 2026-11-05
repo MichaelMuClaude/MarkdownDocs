@@ -169,6 +169,12 @@ Table rows and cells inside `mc:AlternateContent` use the same selected-branch p
 
 ## Revision history
 
+> 2026-11-03 · Section `w:chapStyle` values now preserve the complete unsigned-byte range, including 10; values above 255 are rejected.
+
+> 2026-11-03 · Gap 11: the Arabic dialogs, tables and galleries read right to left (rtl::Table); readiness unchanged.
+>
+> 2026-10-27 · Technical synchronization: existing Proofing pane hooks and regression tests follow the extracted engine/UI modules on main `436d444`; compact context menus remain upstream. New-SHA validation is pending; readiness unchanged.
+>
 > 2026-10-23 · cu20we review follow-up: Only paragraph-relative box floats use the pre-spacing origin. Line-relative floats and page/margin fallbacks in cells and text boxes keep the text-top origin. Synthetic controls compare zero and 24 pt space-before across all four box contexts. New cap conversion helpers and regression tests document their contracts; readiness estimates unchanged.
 
 > 2026-10-23 · cu20we: DrawingML flat, square and round line caps are imported, saved, displayed and exported to PDF; absent or unknown caps default to flat. VML end caps (including shapetype inheritance) are preserved through DOCX save. Ink and metafile stroke handling remain separate. Synthetic DOCX, raster and PDF regressions cover the change; no new native Word comparison.

@@ -746,6 +746,8 @@ Imported Word 97–2003 `.doc`/`.dot` files now ask for a supported DOCX target 
 
 Footer page-table height and body wrapping are corrected. Other pagination gaps remain open.
 
+Section page-numbering settings preserve `w:chapStyle` values across the full unsigned-byte range.
+
 ## Revision history
 
 > 2026-10-28 · Markdown import bounds reference-label scans and normalization within the existing link-work allowance. Nested undefined labels preserve literal text instead of causing quadratic work (#4658).
