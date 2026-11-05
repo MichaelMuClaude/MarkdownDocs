@@ -190,6 +190,7 @@ pub fn parse(text: &str) -> model::Flow {
     let text = text.strip_prefix('\u{FEFF}').unwrap_or(text);
     let mut lines: Vec<String> = text.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
     let refs = take_definitions(&mut lines);
+    TABLE_BUDGET.with(|b| b.set(MAX_TABLE_CELLS));
     // GFM footnotes: definitions (`[^label]: text`, continued by indented lines) anywhere in the
     // document are taken out first, so a reference before its definition finds it.
     let (lines, defs) = footnote_definitions(lines);
@@ -222,7 +223,17 @@ pub fn parse(text: &str) -> model::Flow {
     model::Flow { blocks, meta: Default::default() }
 }
 
+/// Table cells a Markdown document makes in all, header rows included (hostile input). A short
+/// row is padded to its header's width, so a 197 KB file of one-cell rows under a 63-column header
+/// made 2 million cells and took gigabytes to convert (upstream #3862); past this, rows are left out.
+const MAX_TABLE_CELLS: usize = 1 << 18;
+
+/// Columns a table keeps (Word's limit); the rest of a row's cells are left out.
+const MAX_TABLE_COLS: usize = 63;
+
 thread_local! {
+    /// The table cells the document being parsed may still make ([`MAX_TABLE_CELLS`]).
+    static TABLE_BUDGET: std::cell::Cell<usize> = const { std::cell::Cell::new(MAX_TABLE_CELLS) };
     /// The footnote definitions of the document being parsed, by label.
     static FOOTNOTES: std::cell::RefCell<HashMap<String, Vec<FBlock>>> = std::cell::RefCell::new(HashMap::new());
     /// The labels referred to so far.
@@ -773,18 +784,37 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8, refs: &Refs) -> Vec<F
                     let p = Para { align: a, inlines: parse_inlines(s, &Fmt::default(), depth, refs), ..Default::default() };
                     Cell { blocks: vec![FBlock::Para(p)], header, ..Default::default() }
                 };
-                table.rows.push(head.iter().zip(&aligns).map(|(s, a)| cell(s, true, *a)).collect());
+                // No more columns than Word's, nor cells past the document's budget: rows past it
+                // are not built, though their lines are still the table's.
+                let aligns: Vec<Option<Align>> = aligns.into_iter().take(MAX_TABLE_COLS).collect();
+                let cols = aligns.len();
+                let take = || TABLE_BUDGET.with(|b| b.get().checked_sub(cols).map(|left| b.set(left)).is_some());
+                let mut cut = head.len() > cols;
+                if take() {
+                    table.rows.push(head.iter().zip(&aligns).map(|(s, a)| cell(s, true, *a)).collect());
+                } else {
+                    cut = true;
+                }
                 i += 2;
                 while let Some(l) = lines.get(i) {
                     if is_blank(l) || !l.contains('|') || interrupts(l) {
                         break;
                     }
-                    let mut cells = split_row(l);
-                    cells.resize(aligns.len(), String::new());
-                    table.rows.push(cells.iter().zip(&aligns).map(|(s, a)| cell(s, false, *a)).collect());
+                    if !table.rows.is_empty() && take() {
+                        let mut cells = split_row(l);
+                        cells.resize(cols, String::new());
+                        table.rows.push(cells.iter().zip(&aligns).map(|(s, a)| cell(s, false, *a)).collect());
+                    } else {
+                        cut = true;
+                    }
                     i += 1;
                 }
-                out.push(FBlock::Table(table));
+                if cut {
+                    model::dropped(model::Dropped::TableCells);
+                }
+                if !table.rows.is_empty() {
+                    out.push(FBlock::Table(table));
+                }
                 continue;
             }
         }
@@ -954,6 +984,7 @@ pub(super) fn reference_definitions(text: &str) -> Refs {
 /// `refs` (the definitions of the file it came from) and footnotes left out.
 pub(super) fn import_chunk(chunk: &str, refs: &Refs) -> Document {
     model::begin_import();
+    TABLE_BUDGET.with(|b| b.set(MAX_TABLE_CELLS));
     let mut lines: Vec<String> = chunk.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
     // A definition is no block: a chunk of definitions only is empty, as in the whole file.
     take_definitions(&mut lines);

@@ -1101,3 +1101,24 @@ fn an_all_bold_heading_is_written_plain() {
     assert_eq!(export(&import("# **Saved page**\n")), "# Saved page\n");
     assert_eq!(export(&import("## Part **bold**\n")), "## Part **bold**\n");
 }
+
+/// Hostile tables: a 63-column header over 200,000 one-cell rows made 12.6 million padded cells;
+/// the document now stops at its cell budget. A header wider than Word's 63 columns keeps 63.
+#[test]
+fn huge_markdown_tables_are_bounded() {
+    let header = format!("|{}\n|{}\n", "h|".repeat(63), "-|".repeat(63));
+    let src = format!("{header}{}", "|x|\n".repeat(200_000));
+    let started = std::time::Instant::now();
+    let d = import(&src);
+    let cells: usize = d
+        .body
+        .iter()
+        .filter_map(|b| if let wordcraft_doc::Block::Table(t) = &**b { Some(t.rows.iter().map(|r| r.cells.len()).sum::<usize>()) } else { None })
+        .sum();
+    assert!(cells > 0 && cells <= 1 << 18, "{cells} cells");
+    assert!(started.elapsed().as_secs() < 60, "took {:?}", started.elapsed());
+    let wide = format!("|{}\n|{}\n|{}\n", "h|".repeat(100), "-|".repeat(100), "c|".repeat(100));
+    let d = import(&wide);
+    let cols = d.body.iter().find_map(|b| if let wordcraft_doc::Block::Table(t) = &**b { t.rows.first().map(|r| r.cells.len()) } else { None });
+    assert_eq!(cols, Some(63));
+}

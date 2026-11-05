@@ -54,6 +54,8 @@ pub(crate) enum Dropped {
     RunStrings,
     /// A style name cut to [`MAX_FONT_NAME`].
     StyleName,
+    /// Markdown table columns past Word's 63, or cells past the document's budget.
+    TableCells,
 }
 
 impl Dropped {
@@ -65,6 +67,7 @@ impl Dropped {
                 format!("import: the document's runs carry more than {MAX_RUN_STRINGS} bytes of links and font names; later runs lose them")
             }
             Dropped::StyleName => format!("import: style names longer than {MAX_FONT_NAME} bytes are cut short"),
+            Dropped::TableCells => "import: table columns past 63, or rows past the document's cell limit, are left out".to_string(),
         }
     }
 }
