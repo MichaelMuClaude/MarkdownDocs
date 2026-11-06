@@ -116,6 +116,9 @@ pub(crate) struct Reader<'p> {
     pub theme_fills: shape_style::ThemeFills,
     /// The fill of the group being read (what its members' `a:grpFill` stands for).
     pub group_fill: Option<wordcraft_doc::fill::Fill>,
+    /// The styles part's default table style (`w:type="table" w:default="1"`), which formats a
+    /// table without `w:tblStyle` (#5056). `None` for Normal Table.
+    pub default_table_style: Option<String>,
 }
 
 /// The package path that internal relationship `id` points at, if it has type `kind` (an `rt`
@@ -189,6 +192,7 @@ fn read_opened_in(pkg: &Package, chunks: ChunkState) -> Result<(Document, usize,
         theme_fills: Default::default(),
         group_fill: None,
         chunks,
+        default_table_style: None,
     };
     r.pc.major_font = r.doc.settings.major_font.clone();
     r.pc.minor_font = r.doc.settings.minor_font.clone();
