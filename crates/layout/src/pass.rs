@@ -1,6 +1,6 @@
 use super::cache::{LayoutCache, Totals, env_hash, hash_of};
 use super::ctx::{Ctx, Pass, with_pct_base};
-use super::floats::{EarlyFloats, WrapArea, early_covered};
+use super::floats::{EarlyFloats, WrapArea, early_covered, left_out_objects};
 use super::flow::{OutlinePass, place_outline_para, place_para};
 use super::headers::{HfLinks, bookmark_pages, headers_footers, headers_footers_refer_to_pages, marks_key, mirror_even_pages, section_side};
 use super::notes::{MAX_NOTE_PAGES, NoteSeps, note_info, place_endnotes};
@@ -93,12 +93,9 @@ pub(crate) fn layout_pass(
             end.checked_sub(1).and_then(|i| doc.body.get(i)).and_then(|b| b.as_para()).is_some_and(|p| p.section.is_some() && p.text.is_empty())
         });
     if !opts.show_hidden {
-        ctx.quiet_marks.extend(
-            doc.body
-                .iter()
-                .enumerate()
-                .filter_map(|(i, b)| b.as_para().filter(|p| p.mark.hidden == Some(true) && p.plain_text().is_empty()).map(|_| i)),
-        );
+        ctx.quiet_marks.extend(doc.body.iter().enumerate().filter_map(|(i, b)| {
+            b.as_para().filter(|p| p.mark.hidden == Some(true) && p.plain_text().is_empty() && !has_inline_content(doc, opts, p)).map(|_| i)
+        }));
     }
     ctx.quiet_marks.sort_unstable();
     ctx.quiet_marks.dedup();
@@ -587,4 +584,15 @@ pub fn now_ms() -> f64 {
         let ms = js_sys::Date::now();
         if ms.is_finite() { ms } else { 0.0 }
     }
+}
+
+/// An in-line picture, shape or chart, or a note reference mark, is visible content with no plain
+/// text, so its line keeps its room even when the paragraph mark is hidden (#5288). Not one the
+/// layout leaves out (a hidden drawing, or one in hidden or deleted text).
+fn has_inline_content(doc: &Document, opts: &LayoutOptions, p: &Paragraph) -> bool {
+    let left_out = left_out_objects(doc, p, None, opts.show_hidden, opts.hides_deleted(StoryRef::Body));
+    p.objects
+        .iter()
+        .enumerate()
+        .any(|(k, o)| !left_out(k) && (matches!(o, InlineObject::NoteRef { .. }) || (o.frame().is_some() && !o.is_floating())))
 }
